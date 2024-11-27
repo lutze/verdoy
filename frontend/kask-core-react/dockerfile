@@ -1,0 +1,28 @@
+# Build stage
+FROM node:18-alpine as build
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy package.json and install dependencies
+COPY package.json package-lock.json ./
+RUN npm install
+
+# Copy the rest of the application files
+COPY . .
+
+# Build the React app for production
+RUN npm run build
+
+# Serve stage
+FROM nginx:alpine
+
+# Copy the build output from the previous stage
+COPY --from=build /app/build /usr/share/nginx/html
+
+# Expose the default NGINX port
+EXPOSE 80
+
+# Start NGINX server
+CMD ["nginx", "-g", "daemon off;"]
+
