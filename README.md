@@ -1,24 +1,7 @@
-# Kask Core Mvp
-
+# LMS Evo Core POC
 
 
 ## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://gitlab.com/kask561948/kask-core-mvp.git
-git branch -M main
-git push -uf origin main
-```
 
 ## Integrate with your tools
 
@@ -42,21 +25,36 @@ Use the built-in continuous integration in GitLab.
 - [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
 - [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
 
-***
 
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
 
 ## Name
 Choose a self-explaining name for your project.
 
 ## Description
 Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+
+### Repository Structure
+
+The project follows a microservices architecture with the following main components:
+
+```
+.
+├── backend/                 # Backend service
+│   ├── db/                 # Database migrations and schemas
+│   ├── dockerfile         # Backend service container configuration
+│   ├── main.py            # Main application entry point
+│   └── requirements.txt   # Python dependencies
+├── frontend/              # Frontend application
+│   └── kask-core-nextjs/ # Next.js web application
+├── flask_app1/           # Additional Flask service
+├── docker-compose.yml    # Container orchestration configuration
+└── README.md            # Project documentation
+```
+
+The project uses Docker for containerization and includes database migrations for schema management. The backend is built with Python, while the frontend uses Next.js. Each service has its own container configuration and can be orchestrated using Docker Compose.
+
+
+
 
 ## Badges
 On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
@@ -69,6 +67,37 @@ Within a particular ecosystem, there may be a common way of installing things, s
 
 ## Usage
 Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+
+### Database Migrations
+
+The project uses a custom migration runner to manage database schema changes. Migrations are stored in the `backend/db/migrations` directory and are applied in alphabetical order.
+
+#### Migration Files
+
+- **000_clean_database.sql**: Drops all tables and resets the database.
+- **000_create_migrations_table.sql**: Creates the `schema_migrations` table to track applied migrations.
+- **000_extensions.sql**: Loads required PostgreSQL extensions (e.g., TimescaleDB).
+- **001_initial_schema.sql**: Defines the initial schema, including the `events` table with a composite primary key.
+- **002_indexes.sql**: Creates indexes on the `events` table.
+- **003_timescale_config.sql**: Configures TimescaleDB for the `events` table.
+- **004_initial_data.sql**: Inserts initial data into the database.
+- **005_schema_validation.sql**: Validates the schema by inserting test data into the `schemas` table.
+
+#### Running Migrations
+
+To run the migrations, use Docker Compose:
+
+```sh
+# Clean and rebuild the database
+docker compose down -v
+docker compose up --build -d db-init
+
+# Verify the schema
+docker compose exec db psql -U postgres -d myapp -c '\dt'
+```
+
+This will apply all migrations in order and ensure the database is ready for use.
+
 
 ## Support
 Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
