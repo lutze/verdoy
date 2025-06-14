@@ -1,7 +1,7 @@
 services:
 
   db:
-    image: postgres:15
+    image: timescale/timescaledb:latest-pg15
     container_name: postgres-db
     environment:
       POSTGRES_USER: postgres
@@ -11,6 +11,36 @@ services:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-init:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        while ! nc -z db 5432; do
+          sleep 1
+        done &&
+        echo 'Database is ready!' &&
+        python -m db.setup_db
+      "
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=myapp
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/db/migrations:/migrations  # TODO: For production, remove this mount and embed migrations in the image
 
   backend:
     build:
@@ -19,16 +49,20 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-     - db
+      - db
+      - db-init
 
-  react-app:
+  next-app:
     build:
-      context: ./frontend/kask-core-react
+      context: ./frontend/kask-core-nextjs
       dockerfile: Dockerfile
     ports:
-      - "3000:80"
+      - "3000:3000"
     depends_on:
       - backend
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://backend:8000
 
 volumes:
   postgres-data: 
