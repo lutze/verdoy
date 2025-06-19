@@ -19,6 +19,10 @@ CREATE INDEX IF NOT EXISTS idx_rel_type ON relationships(relationship_type);
 CREATE INDEX IF NOT EXISTS idx_rel_time ON relationships(valid_from, valid_to);
 CREATE INDEX IF NOT EXISTS idx_rel_properties ON relationships USING GIN(properties);
 
+-- Device ownership indexes
+CREATE INDEX IF NOT EXISTS idx_rel_device_ownership ON relationships(from_entity, to_entity, relationship_type) 
+    WHERE relationship_type = 'owns';
+
 -- Process indexes
 CREATE INDEX IF NOT EXISTS idx_process_instances_batch ON process_instances(batch_id);
 CREATE INDEX IF NOT EXISTS idx_process_instances_status ON process_instances(status);

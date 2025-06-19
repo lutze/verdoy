@@ -30,14 +30,78 @@ BEGIN
         INSERT INTO entities (id, entity_type, name, properties) VALUES
         (
             uuid_generate_v4(),
-            'sensor.node',
+            'device.esp32',
             'DEMO ESP32 Node 042',
             '{
-                "macAddress": "24:6F:28:XX:XX:XX",
-                "firmware": "LMSevo-v0.4",
-                "sensors": ["BME680"],
-                "capabilities": ["temperature", "humidity", "pressure", "gas_resistance"],
-                "installLocation": "Oven-001-Zone-1"
+                "name": "DEMO ESP32 Node 042",
+                "location": "Oven-001-Zone-1",
+                "status": "online",
+                "firmware": {
+                    "version": "LMSevo-v0.4",
+                    "lastUpdate": "2024-03-01T00:00:00Z"
+                },
+                "hardware": {
+                    "model": "ESP32-WROOM-32",
+                    "macAddress": "24:6F:28:XX:XX:XX",
+                    "sensors": [
+                        {
+                            "type": "temperature",
+                            "unit": "celsius",
+                            "range": {
+                                "min": -40,
+                                "max": 125
+                            }
+                        },
+                        {
+                            "type": "humidity",
+                            "unit": "percent",
+                            "range": {
+                                "min": 0,
+                                "max": 100
+                            }
+                        },
+                        {
+                            "type": "pressure",
+                            "unit": "hPa",
+                            "range": {
+                                "min": 300,
+                                "max": 1100
+                            }
+                        },
+                        {
+                            "type": "gas_resistance",
+                            "unit": "kOhm",
+                            "range": {
+                                "min": 0,
+                                "max": 100000
+                            }
+                        }
+                    ]
+                },
+                "config": {
+                    "readingInterval": 300,
+                    "wifi": {
+                        "ssid": "Production-Network",
+                        "signalStrength": -65
+                    },
+                    "alertThresholds": {
+                        "temperature": {
+                            "min": 15,
+                            "max": 30
+                        },
+                        "humidity": {
+                            "min": 30,
+                            "max": 70
+                        }
+                    }
+                },
+                "lastSeen": "2024-03-20T10:00:00Z",
+                "batteryLevel": 85,
+                "metadata": {
+                    "installDate": "2024-03-01",
+                    "position": "upper-center",
+                    "zone": 1
+                }
             }'
         ) RETURNING id INTO sensor_id;
     ELSE

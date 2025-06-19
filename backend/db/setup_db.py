@@ -21,19 +21,24 @@ def wait_for_db(db_params, max_retries=5, retry_interval=2):
     return False
 
 def get_migration_files():
-    """Get all SQL migration files in order."""
+    """Get all SQL migration files in order, excluding rollback files."""
     migrations_dir = Path(__file__).parent / "migrations"
-    return sorted(migrations_dir.glob("*.sql"))
+    # Get all .sql files, excluding those with _rollback in the name
+    return sorted(f for f in migrations_dir.glob("*.sql") if "_rollback" not in f.name)
 
 def get_applied_migrations(conn):
-    """Get list of already applied migrations."""
+    """Get list of already applied migrations. Returns empty set if table does not exist."""
     with conn.cursor() as cur:
+        # Check if schema_migrations table exists
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS schema_migrations (
-                version VARCHAR(255) PRIMARY KEY,
-                applied_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            SELECT EXISTS (
+                SELECT 1 FROM information_schema.tables 
+                WHERE table_name = 'schema_migrations'
             )
         """)
+        exists = cur.fetchone()[0]
+        if not exists:
+            return set()
         cur.execute("SELECT version FROM schema_migrations")
         return {row[0] for row in cur.fetchall()}
 

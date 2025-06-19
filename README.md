@@ -67,31 +67,7 @@ The project uses Docker for containerization and includes database migrations fo
 
 The project uses a custom migration runner to manage database schema changes. Migrations are stored in the `backend/db/migrations` directory and are applied in alphabetical order.
 
-#### Migration Files
-
-- **000_clean_database.sql**: Drops all tables and resets the database.
-- **000_create_migrations_table.sql**: Creates the `schema_migrations` table to track applied migrations.
-- **000_extensions.sql**: Loads required PostgreSQL extensions (e.g., TimescaleDB).
-- **001_initial_schema.sql**: Defines the initial schema, including the `events` table with a composite primary key.
-- **002_indexes.sql**: Creates indexes on the `events` table.
-- **003_timescale_config.sql**: Configures TimescaleDB for the `events` table.
-- **004_initial_data.sql**: Inserts initial data into the database.
-- **005_schema_validation.sql**: Validates the schema by inserting test data into the `schemas` table.
-
-#### Running Migrations
-
-To run the migrations, use Docker Compose:
-
-```sh
-# Clean and rebuild the database
-docker compose down -v
-docker compose up --build -d db-init
-
-# Verify the schema
-docker compose exec db psql -U postgres -d myapp -c '\dt'
-```
-
-This will apply all migrations in order and ensure the database is ready for use.
+For detailed instructions on setting up the database, running and rolling back the migrations, refer to `backend/db/migrations/README.md`
 
 
 ## Support
