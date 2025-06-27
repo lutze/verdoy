@@ -108,7 +108,7 @@ class DeviceHealthResponse(BaseModel):
     status: DeviceStatus
     battery_level: Optional[float]
     wifi_signal_strength: Optional[int]
-    last_seen: datetime
+    last_seen: Optional[datetime]
     uptime: Optional[int] = Field(None, description="Uptime in seconds")
     firmware_version: str
     sensor_count: int

@@ -85,7 +85,7 @@ def check_migrations():
         print(f"  Pending: {pending_count}")
         
         if pending_count > 0:
-            print(f"\n⚠️  {pending_count} migration(s) pending. Run 'python backend/db/setup_db.py' to apply.")
+            print(f"\n⚠️  {pending_count} migration(s) pending. Run 'python database/setup_db.py' to apply.")
         
         if rolled_back_count > 0:
             print(f"\n⚠️  {rolled_back_count} migration(s) rolled back. Check rollback reasons above.")

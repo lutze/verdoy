@@ -40,7 +40,7 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - ./backend/db/migrations:/migrations  # TODO: For production, remove this mount and embed migrations in the image
+      - ./database:/app/db  # Mount database directory to /app/db
 
   backend:
     build:

@@ -231,12 +231,20 @@ def get_device_status(
     
     properties = device.properties or {}
     
+    # Convert lastSeen string to datetime if it exists
+    last_seen = None
+    if properties.get("lastSeen"):
+        try:
+            last_seen = datetime.fromisoformat(properties["lastSeen"].replace('Z', '+00:00'))
+        except (ValueError, TypeError):
+            last_seen = None
+    
     return DeviceHealthResponse(
         device_id=device.id,
         status=properties.get("status", "offline"),
         battery_level=properties.get("batteryLevel"),
         wifi_signal_strength=properties.get("config", {}).get("wifi", {}).get("signalStrength"),
-        last_seen=properties.get("lastSeen"),
+        last_seen=last_seen,
         uptime=None,  # Would need to be calculated from events
         firmware_version=properties.get("firmware", {}).get("version", "unknown"),
         sensor_count=len(properties.get("hardware", {}).get("sensors", []))

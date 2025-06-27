@@ -66,7 +66,7 @@ class Event(Base):
     entity_id = Column(PostgresUUID(as_uuid=True), nullable=False)
     entity_type = Column(String(100), nullable=False)
     data = Column(JSONB, nullable=False)
-    metadata = Column(JSONB, default={})
+    event_metadata = Column(JSONB, default={})
     source_node = Column(String(50))
     created_at = Column(DateTime, default=datetime.utcnow)
 

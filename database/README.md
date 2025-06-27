@@ -34,12 +34,12 @@ This will apply all migrations in order and ensure the database is ready for use
 
 ### Automatic Setup
 ```bash
-python backend/db/setup_db.py
+python database/setup_db.py
 ```
 
 ### Manual Migration
 ```bash
-psql -d myapp -f backend/db/migrations/XXX_migration_name.sql
+psql -d myapp -f database/migrations/XXX_migration_name.sql
 ```
 
 ## Rollback Process
@@ -48,7 +48,7 @@ psql -d myapp -f backend/db/migrations/XXX_migration_name.sql
 Rollback files are named with `_rollback` suffix and should be run manually:
 
 ```bash
-psql -d myapp -f backend/db/migrations/003_esp32_device_schema_rollback.sql
+psql -d myapp -f database/migrations/003_esp32_device_schema_rollback.sql
 ```
 
 ### Rollback Tracking
@@ -61,7 +61,7 @@ Rollbacks are tracked in the `schema_migrations` table with:
 
 Check migration status:
 ```bash
-python backend/db/check_migrations.py
+python database/check_migrations.py
 ```
 
 ## Schema Design

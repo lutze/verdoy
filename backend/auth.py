@@ -9,6 +9,16 @@ from models import User, Entity
 from schemas import UserResponse
 import os
 
+# Database dependency
+def get_db():
+    """Database dependency."""
+    from database import SessionLocal
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 # Security configuration
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
 ALGORITHM = "HS256"
@@ -134,16 +144,6 @@ def authenticate_device(
         )
     
     return device
-
-# Database dependency
-def get_db():
-    """Database dependency."""
-    from database import SessionLocal
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # Organization access control
 def check_organization_access(

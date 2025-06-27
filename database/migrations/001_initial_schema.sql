@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS events (
     entity_id UUID NOT NULL,
     entity_type VARCHAR(100) NOT NULL,
     data JSONB NOT NULL,
-    metadata JSONB DEFAULT '{}',
+    event_metadata JSONB DEFAULT '{}',
     source_node VARCHAR(50),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (timestamp, id)

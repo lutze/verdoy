@@ -3,7 +3,7 @@ CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events(timestamp);
 CREATE INDEX IF NOT EXISTS idx_events_entity ON events(entity_id, entity_type);
 CREATE INDEX IF NOT EXISTS idx_events_type ON events(event_type);
 CREATE INDEX IF NOT EXISTS idx_events_data ON events USING GIN(data);
-CREATE INDEX IF NOT EXISTS idx_events_metadata ON events USING GIN(metadata);
+CREATE INDEX IF NOT EXISTS idx_events_metadata ON events USING GIN(event_metadata);
 CREATE INDEX IF NOT EXISTS idx_events_source ON events(source_node);
 
 -- Entities table indexes

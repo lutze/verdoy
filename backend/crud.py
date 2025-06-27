@@ -373,7 +373,7 @@ class ReadingCRUD:
                 entity_id=device_id,
                 entity_type="device.esp32",
                 data=reading,
-                metadata={
+                event_metadata={
                     "sensor_type": reading.get("sensor_type"),
                     "quality": reading.get("quality", "good")
                 }
@@ -406,6 +406,6 @@ class ReadingCRUD:
         if end_time:
             query = query.filter(Event.timestamp <= end_time)
         if sensor_type:
-            query = query.filter(Event.metadata['sensor_type'].astext == sensor_type)
+            query = query.filter(Event.event_metadata['sensor_type'].astext == sensor_type)
         
         return query.order_by(desc(Event.timestamp)).offset(skip).limit(limit).all() 

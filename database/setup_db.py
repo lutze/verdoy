@@ -64,33 +64,43 @@ def run_migrations(conn, migration_files, db_params):
             continue
 
         print(f"Running migration: {migration_file.name}")
-        with open(migration_file) as f:
-            sql = f.read()
-            with psycopg2.connect(**db_params) as migration_conn:
-                migration_conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-                with migration_conn.cursor() as cur:
-                    cur.execute(sql)
-                    # Only track migrations except the clean database migration
-                    if version != "000_clean_database":
-                        cur.execute(
-                            "INSERT INTO schema_migrations (version) VALUES (%s)",
-                            (version,)
-                        )
-        print(f"Completed migration: {migration_file.name}")
+        try:
+            with open(migration_file) as f:
+                sql = f.read()
+                with psycopg2.connect(**db_params) as migration_conn:
+                    migration_conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+                    with migration_conn.cursor() as cur:
+                        cur.execute(sql)
+                        # Only track migrations except the clean database migration
+                        if version != "000_clean_database":
+                            try:
+                                cur.execute(
+                                    "INSERT INTO schema_migrations (version) VALUES (%s)",
+                                    (version,)
+                                )
+                            except psycopg2.IntegrityError as e:
+                                if "duplicate key" in str(e).lower():
+                                    print(f"Migration {version} already recorded, continuing...")
+                                else:
+                                    raise
+            print(f"Completed migration: {migration_file.name}")
 
-        # If we just ran the clean database migration, reconnect and reset state
-        if version == "000_clean_database":
-            print("Reconnecting and resetting migration state after clean...")
-            with psycopg2.connect(**db_params) as conn2:
-                conn2.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-                get_applied_migrations(conn2)  # This will recreate schema_migrations
-            applied_migrations = set()
-            # Also, skip incrementing i so we re-check all migrations after clean
+            # If we just ran the clean database migration, reconnect and reset state
+            if version == "000_clean_database":
+                print("Reconnecting and resetting migration state after clean...")
+                with psycopg2.connect(**db_params) as conn2:
+                    conn2.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+                    get_applied_migrations(conn2)  # This will recreate schema_migrations
+                applied_migrations = set()
+                # Also, skip incrementing i so we re-check all migrations after clean
+                i += 1
+                continue
+
+            applied_migrations.add(version)
             i += 1
-            continue
-
-        applied_migrations.add(version)
-        i += 1
+        except Exception as e:
+            print(f"Error running migration {migration_file.name}: {str(e)}")
+            raise
 
 def setup_database():
     """Set up the database with all migrations."""

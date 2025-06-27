@@ -75,7 +75,4 @@ BEGIN
     UPDATE entities 
     SET organization_id = default_org_id 
     WHERE organization_id IS NULL AND entity_type != 'organization';
-END $$;
-
--- Record the migration
-INSERT INTO schema_migrations (version) VALUES ('006_add_users_table'); 
+END $$; 

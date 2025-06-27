@@ -36,16 +36,15 @@ The project follows a microservices architecture with the following main compone
 
 ```
 .
-├── backend/                 # Backend service
-│   ├── db/                 # Database migrations and schemas
+├── backend/               # Backend service
 │   ├── dockerfile         # Backend service container configuration
 │   ├── main.py            # Main application entry point
 │   └── requirements.txt   # Python dependencies
 ├── frontend/              # Frontend application
-│   └── kask-core-nextjs/ # Next.js web application
-├── flask_app1/           # Additional Flask service
-├── docker-compose.yml    # Container orchestration configuration
-└── README.md            # Project documentation
+│   └── kask-core-nextjs/  # Next.js web application
+├── database/              # Database migrations and schemas
+├── docker-compose.yml     # Container orchestration configuration
+└── README.md              # Project documentation
 ```
 
 The project uses Docker for containerization and includes database migrations for schema management. The backend is built with Python, while the frontend uses Next.js. Each service has its own container configuration and can be orchestrated using Docker Compose.
@@ -65,9 +64,9 @@ The project uses Docker for containerization and includes database migrations fo
 
 ### Database Migrations
 
-The project uses a custom migration runner to manage database schema changes. Migrations are stored in the `backend/db/migrations` directory and are applied in alphabetical order.
+The project uses a custom migration runner to manage database schema changes. Migrations are stored in the `database/migrations` directory and are applied in alphabetical order.
 
-For detailed instructions on setting up the database, running and rolling back the migrations, refer to `backend/db/migrations/README.md`
+For detailed instructions on setting up the database, running and rolling back the migrations, refer to `database/README.md`
 
 
 ## Support
