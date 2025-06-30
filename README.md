@@ -62,6 +62,162 @@ The project uses Docker for containerization and includes database migrations fo
 ## Usage
 *Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.*
 
+### API Overview
+
+The LMS Core API provides a comprehensive IoT device management system with the following key features:
+
+- **User Authentication**: JWT-based authentication for web interface users
+- **Device Management**: ESP32 device registration, configuration, and monitoring
+- **Data Ingestion**: Sensor readings collection and storage
+- **Device Control**: Command queuing and device control operations
+- **Real-time Data**: WebSocket endpoints for live data streaming
+
+### Authentication
+
+#### User Authentication (Web Interface)
+
+Users authenticate using JWT tokens:
+
+```bash
+# Login to get access token
+curl -X POST "http://localhost:8000/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "password123"
+  }'
+
+# Response
+{
+  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+  "token_type": "bearer",
+  "expires_in": 1800,
+  "user": {
+    "id": "uuid",
+    "email": "user@example.com",
+    "name": "User Name",
+    "organization_id": "uuid",
+    "is_active": true
+  }
+}
+```
+
+Use the token in subsequent requests:
+
+```bash
+curl -X GET "http://localhost:8000/api/v1/devices" \
+  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+```
+
+#### Device Authentication (IoT Devices)
+
+ESP32 devices authenticate using API keys stored in their properties:
+
+```bash
+# Device sends sensor readings
+curl -X POST "http://localhost:8000/api/v1/devices/{device_id}/readings" \
+  -H "Authorization: Bearer device_abc123def456" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "device_id": "uuid",
+    "readings": [
+      {
+        "sensor_type": "temperature",
+        "value": 23.5,
+        "unit": "°C",
+        "timestamp": "2024-01-01T12:00:00Z",
+        "quality": "good"
+      }
+    ]
+  }'
+```
+
+### Key API Endpoints
+
+#### Device Management
+
+```bash
+# List user's devices
+GET /api/v1/devices
+
+# Register new device
+POST /api/v1/devices
+{
+  "name": "My ESP32 Device",
+  "description": "Temperature sensor in lab",
+  "location": "Lab A",
+  "firmware_version": "1.0.0",
+  "hardware_model": "ESP32-WROOM-32",
+  "mac_address": "24:6F:28:XX:XX:XX"
+}
+
+# Get device details
+GET /api/v1/devices/{device_id}
+
+# Update device
+PUT /api/v1/devices/{device_id}
+```
+
+#### Data Ingestion (Device → Server)
+
+```bash
+# Send sensor readings
+POST /api/v1/devices/{device_id}/readings
+
+# Device heartbeat
+POST /api/v1/devices/{device_id}/heartbeat
+
+# Update device status
+POST /api/v1/devices/{device_id}/status
+```
+
+#### Data Retrieval (Web Dashboard)
+
+```bash
+# Get device readings
+GET /api/v1/devices/{device_id}/readings
+
+# Get latest readings
+GET /api/v1/devices/{device_id}/readings/latest
+
+# Get reading statistics
+GET /api/v1/devices/{device_id}/readings/stats
+```
+
+#### Device Control (Server → Device)
+
+```bash
+# Queue command for device
+POST /api/v1/devices/{device_id}/commands
+
+# Device polls for commands
+GET /api/v1/devices/{device_id}/commands
+
+# Mark command as executed
+PUT /api/v1/devices/{device_id}/commands/{cmd_id}
+```
+
+### WebSocket Endpoints
+
+For real-time data streaming:
+
+```javascript
+// Live sensor data
+const ws = new WebSocket('ws://localhost:8000/ws/live-data');
+
+// Device status events
+const ws = new WebSocket('ws://localhost:8000/ws/device-status');
+
+// Real-time alerts
+const ws = new WebSocket('ws://localhost:8000/ws/alerts');
+```
+
+### API Documentation
+
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+- **OpenAPI JSON**: http://localhost:8000/openapi.json
+
 ### Database Migrations
 
 The project uses a custom migration runner to manage database schema changes. Migrations are stored in the `database/migrations` directory and are applied in alphabetical order.
