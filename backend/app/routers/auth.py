@@ -34,7 +34,7 @@ from ..exceptions import (
     InvalidTokenException
 )
 
-router = APIRouter(tags=["authentication"])
+router = APIRouter(tags=["Authentication"])
 
 @router.post("/register", response_model=UserResponse, responses={
     400: {"model": ErrorResponse},

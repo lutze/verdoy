@@ -19,7 +19,7 @@ from ..dependencies import get_db, get_current_user
 from ..schemas.base import BaseResponse, ErrorResponse
 from ..models.user import User
 
-router = APIRouter(tags=["analytics"])
+router = APIRouter(tags=["Analytics"])
 
 @router.get("/summary")
 async def get_dashboard_summary(

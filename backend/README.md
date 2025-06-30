@@ -273,7 +273,7 @@ SECRET_KEY=your-super-secret-key
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/lms_core
+DATABASE_URL=postgresql://user:password@db:5432/lmsevo-db
 
 # Redis (optional)
 REDIS_URL=redis://localhost:6379/0
@@ -288,7 +288,7 @@ The API supports both PostgreSQL (production) and SQLite (development):
 
 ```bash
 # PostgreSQL (production)
-DATABASE_URL=postgresql://user:password@localhost:5432/lms_core
+DATABASE_URL=postgresql://user:password@db:5432/lmsevo-db
 
 # SQLite (development)
 DATABASE_URL=sqlite:///./lms_core.db

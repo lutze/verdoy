@@ -34,7 +34,7 @@ from ..exceptions import (
     ValidationException
 )
 
-router = APIRouter(tags=["readings"])
+router = APIRouter(tags=["Data Ingestion"])
 
 @router.get("", response_model=ReadingListResponse, responses={
     401: {"model": ErrorResponse},

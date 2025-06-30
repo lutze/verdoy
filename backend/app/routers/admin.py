@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from ..dependencies import get_db, get_current_user
 from ..models.user import User
 
-router = APIRouter(tags=["admin"])
+router = APIRouter(tags=["Admin"])
 
 @router.get("/users")
 async def list_all_users(

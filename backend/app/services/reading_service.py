@@ -119,6 +119,51 @@ class ReadingService(BaseService[Reading]):
             logger.error(f"Error during reading ingestion: {e}")
             raise ServiceException("Failed to ingest reading")
     
+    def create_reading(self, reading_data: ReadingCreate) -> Reading:
+        """
+        Create a new sensor reading.
+        
+        Args:
+            reading_data: Sensor reading data
+            
+        Returns:
+            The created reading
+            
+        Raises:
+            ValidationException: If data validation fails
+            ServiceException: If creation fails
+        """
+        try:
+            # Validate reading data
+            self.validate_reading_data(reading_data)
+            
+            # Create reading entity
+            reading = Reading(
+                device_id=reading_data.device_id,
+                sensor_type=reading_data.sensor_type,
+                value=reading_data.value,
+                unit=reading_data.unit,
+                timestamp=reading_data.timestamp or datetime.utcnow(),
+                metadata=reading_data.metadata or {}
+            )
+            
+            # Save to database
+            self.db.add(reading)
+            self.db.commit()
+            self.db.refresh(reading)
+            
+            logger.info(f"Reading created: {reading.sensor_type} = {reading.value} {reading.unit}")
+            return reading
+            
+        except IntegrityError as e:
+            self.db.rollback()
+            logger.error(f"Database integrity error during reading creation: {e}")
+            raise ServiceException("Failed to create reading")
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error during reading creation: {e}")
+            raise ServiceException("Failed to create reading")
+    
     def bulk_ingest_readings(self, readings_data: List[ReadingCreate], device_id: UUID) -> List[Reading]:
         """
         Ingest multiple sensor readings in a single transaction.

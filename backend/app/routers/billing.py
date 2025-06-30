@@ -17,7 +17,7 @@ from ..dependencies import get_db, get_current_user
 from ..schemas.base import BaseResponse, ErrorResponse
 from ..models.user import User
 
-router = APIRouter(tags=["billing"])
+router = APIRouter(tags=["Billing"])
 
 @router.get("/subscription")
 async def get_subscription(

@@ -37,7 +37,7 @@ from ..exceptions import (
     ValidationException
 )
 
-router = APIRouter(tags=["commands"])
+router = APIRouter(tags=["Device Control"])
 
 # ============================================================================
 # COMMAND MANAGEMENT (Web Interface)

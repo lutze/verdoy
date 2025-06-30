@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: myapp
+      POSTGRES_DB: lmsevo-db
     ports:
       - "5432:5432"
     volumes:
@@ -33,7 +33,7 @@ services:
     environment:
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_NAME=myapp
+      - DB_NAME=lmsevo-db
       - DB_USER=postgres
       - DB_PASSWORD=password
     depends_on:
@@ -48,6 +48,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/lmsevo-db
+      - SECRET_KEY=your-very-long-secret-key-here-at-least-32-characters
     depends_on:
       - db
       - db-init

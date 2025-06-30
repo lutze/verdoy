@@ -8,7 +8,7 @@ This router handles:
 
 from fastapi import APIRouter
 
-router = APIRouter(tags=["health"])
+router = APIRouter(tags=["Health"])
 
 @router.get("")
 async def health_check():

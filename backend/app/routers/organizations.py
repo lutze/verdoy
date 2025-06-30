@@ -16,7 +16,7 @@ from ..dependencies import get_db, get_current_user
 from ..schemas.base import BaseResponse, ErrorResponse
 from ..models.user import User
 
-router = APIRouter(tags=["organizations"])
+router = APIRouter(tags=["Organizations"])
 
 @router.get("")
 async def list_organizations(

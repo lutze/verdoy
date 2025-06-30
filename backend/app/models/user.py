@@ -8,9 +8,13 @@ for user authentication and management.
 from sqlalchemy import Column, String, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
+from passlib.context import CryptContext
 import uuid
 
 from .base import BaseModel
+
+# Password hashing configuration
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class User(BaseModel):
@@ -32,6 +36,33 @@ class User(BaseModel):
     # Relationships
     entity = relationship("Entity", back_populates="user")
     devices = relationship("Device", back_populates="user")
+    
+    @classmethod
+    def hash_password(cls, password: str) -> str:
+        """
+        Hash a password using bcrypt.
+        
+        Args:
+            password: Plain text password
+            
+        Returns:
+            Hashed password
+        """
+        return pwd_context.hash(password)
+    
+    @classmethod
+    def verify_password(cls, plain_password: str, hashed_password: str) -> bool:
+        """
+        Verify a password against its hash.
+        
+        Args:
+            plain_password: Plain text password
+            hashed_password: Hashed password
+            
+        Returns:
+            True if password matches, False otherwise
+        """
+        return pwd_context.verify(plain_password, hashed_password)
     
     @classmethod
     def get_by_email(cls, db, email: str):

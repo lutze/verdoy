@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from ..dependencies import get_db
 
-router = APIRouter(tags=["system"])
+router = APIRouter(tags=["System"])
 
 @router.get("/health")
 async def health_check():

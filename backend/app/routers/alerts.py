@@ -17,7 +17,7 @@ from ..dependencies import get_db, get_current_user
 from ..schemas.base import BaseResponse, ErrorResponse
 from ..models.user import User
 
-router = APIRouter(tags=["alerts"])
+router = APIRouter(tags=["Alerts"])
 
 @router.get("/rules")
 async def list_alert_rules(
@@ -53,4 +53,34 @@ async def list_active_alerts(
 ):
     """List currently active alerts."""
     # TODO: Implement active alerts listing
-    return {"active_alerts": "Not implemented"} 
+    return {"active_alerts": "Not implemented"}
+
+@router.put("/rules/{rule_id}")
+async def update_alert_rule(
+    rule_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update an alert rule."""
+    # TODO: Implement alert rule update
+    return {"rule": "Not implemented"}
+
+@router.delete("/rules/{rule_id}")
+async def delete_alert_rule(
+    rule_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete an alert rule."""
+    # TODO: Implement alert rule deletion
+    return {"deleted": "Not implemented"}
+
+@router.put("/{alert_id}/acknowledge")
+async def acknowledge_alert(
+    alert_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Acknowledge an alert (mark as seen)."""
+    # TODO: Implement alert acknowledge
+    return {"acknowledged": "Not implemented"} 

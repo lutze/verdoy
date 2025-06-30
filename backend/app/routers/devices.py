@@ -46,7 +46,7 @@ from ..exceptions import (
     ValidationException
 )
 
-router = APIRouter(tags=["devices"])
+router = APIRouter(tags=["Device Management"])
 
 # ============================================================================
 # DEVICE CRUD OPERATIONS (Web Interface)

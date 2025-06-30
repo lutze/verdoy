@@ -25,7 +25,7 @@ os.environ["ENVIRONMENT"] = "test"
 # SECRET_KEY will also be loaded from .env.test file
 
 # Import from the correct module structure
-from main import app
+from app.main import app
 from app.database import get_db, Base
 from app.models.user import User
 from app.models.device import Device

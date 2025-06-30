@@ -348,86 +348,72 @@ def register_routers(app: FastAPI) -> None:
     # Core functionality routers
     app.include_router(
         auth_router,
-        prefix=f"{settings.api_prefix}/auth",
-        tags=["Authentication"]
+        prefix=f"{settings.api_prefix}/auth"
     )
     
     app.include_router(
         devices_router,
-        prefix=f"{settings.api_prefix}/devices",
-        tags=["Device Management"]
+        prefix=f"{settings.api_prefix}/devices"
     )
     
     app.include_router(
         readings_router,
-        prefix=f"{settings.api_prefix}/readings",
-        tags=["Data Ingestion"]
+        prefix=f"{settings.api_prefix}/readings"
     )
     
     app.include_router(
         commands_router,
-        prefix=f"{settings.api_prefix}/commands",
-        tags=["Device Control"]
+        prefix=f"{settings.api_prefix}/commands"
     )
     
     # Feature routers
     app.include_router(
         analytics_router,
-        prefix=f"{settings.api_prefix}/analytics",
-        tags=["Analytics"]
+        prefix=f"{settings.api_prefix}/analytics"
     )
     
     app.include_router(
         alerts_router,
-        prefix=f"{settings.api_prefix}/alerts",
-        tags=["Alerts"]
+        prefix=f"{settings.api_prefix}/alerts"
     )
     
     app.include_router(
         organizations_router,
-        prefix=f"{settings.api_prefix}/organizations",
-        tags=["Organizations"]
+        prefix=f"{settings.api_prefix}/organizations"
     )
     
     app.include_router(
         billing_router,
-        prefix=f"{settings.api_prefix}/billing",
-        tags=["Billing"]
+        prefix=f"{settings.api_prefix}/billing"
     )
     
     # System routers
     app.include_router(
         system_router,
-        prefix=f"{settings.api_prefix}/system",
-        tags=["System"]
+        prefix=f"{settings.api_prefix}/system"
     )
     
     app.include_router(
         admin_router,
-        prefix=f"{settings.api_prefix}/admin",
-        tags=["Admin"]
+        prefix=f"{settings.api_prefix}/admin"
     )
     
     app.include_router(
         health_router,
-        prefix=f"{settings.api_prefix}/health",
-        tags=["Health"]
+        prefix=f"{settings.api_prefix}/health"
     )
     
     # WebSocket routers (no API prefix for WebSocket endpoints)
     app.include_router(
-        live_data_ws_router,
-        tags=["WebSocket - Live Data"]
+        live_data_ws_router
     )
     
     app.include_router(
-        device_status_ws_router,
-        tags=["WebSocket - Device Status"]
+        device_status_ws_router
     )
     
     app.include_router(
-        alerts_ws_router,
-        tags=["WebSocket - Alerts"]
+        alerts_ws_router
     )
 
 # Create the application instance
