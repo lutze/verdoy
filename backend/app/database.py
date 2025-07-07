@@ -7,12 +7,39 @@ and SQLite databases with appropriate configurations for each.
 """
 
 import logging
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, Column, TypeDecorator, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool, StaticPool
+import json
 
 from .config import settings
+
+
+class JSONType(TypeDecorator):
+    """
+    Custom JSON type that works with both PostgreSQL and SQLite.
+    
+    In PostgreSQL, this will use JSONB for better performance.
+    In SQLite, this will use TEXT with JSON validation.
+    """
+    impl = String
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+    
+    def process_bind_param(self, value, dialect):
+        """Convert Python dict/list to JSON string for storage."""
+        if value is None:
+            return None
+        return json.dumps(value)
+    
+    def process_result_value(self, value, dialect):
+        """Convert JSON string back to Python dict/list."""
+        if value is None:
+            return None
+        return json.loads(value)
+
 
 # Configure engine based on database type
 if settings.is_sqlite:

@@ -7,13 +7,14 @@ for managing alerts and alert rules.
 
 from sqlalchemy import Column, String, Boolean, Text, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from datetime import datetime
 from typing import Dict, Any, Optional
 
 from .base import BaseModel
 from .event import Event
 from .entity import Entity
+from ..database import JSONType
 
 
 class Alert(Event):
@@ -21,7 +22,7 @@ class Alert(Event):
     Alert model for alert events.
     
     Maps to the existing events table with event_type = 'alert.triggered'
-    and stores alert data in the data JSONB column.
+    and stores alert data in the data JSON column.
     """
     
     def __init__(self, *args, **kwargs):
@@ -180,8 +181,12 @@ class AlertRule(Entity):
     Alert rule model for defining alert conditions.
     
     Maps to the existing entities table with entity_type = 'alert.rule'
-    and stores rule configuration in the properties JSONB column.
+    and stores rule configuration in the properties JSON column.
     """
+    
+    __mapper_args__ = {
+        'polymorphic_identity': 'alert.rule',
+    }
     
     def __init__(self, *args, **kwargs):
         # Set default entity_type for alert rules

@@ -5,14 +5,15 @@ This module contains the Command model and related functionality
 for device command management and control.
 """
 
-from sqlalchemy import Column, String, Boolean, Text, ForeignKey, DateTime
+from sqlalchemy import Column, String, Boolean, Text, ForeignKey, DateTime, Integer
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from datetime import datetime
 from typing import Dict, Any, Optional
 
 from .base import BaseModel
 from .event import Event
+from ..database import JSONType
 
 
 class Command(Event):
@@ -20,7 +21,7 @@ class Command(Event):
     Command model for device commands.
     
     Maps to the existing events table with event_type = 'device.command'
-    and stores command data in the data JSONB column.
+    and stores command data in the data JSON column.
     """
     
     def __init__(self, *args, **kwargs):
@@ -224,4 +225,30 @@ class Command(Event):
     
     def __repr__(self):
         """String representation of the command."""
-        return f"<Command(id={self.id}, type={self.get_command_type()}, status={self.get_status()})>" 
+        return f"<Command(id={self.id}, type={self.get_command_type()}, status={self.get_status()})>"
+
+# Command details
+command_type = Column(String(100), nullable=False, index=True)
+target_device_id = Column(PostgresUUID(as_uuid=True), ForeignKey("devices.id"), nullable=False, index=True)
+
+# Command data and parameters
+data = Column(JSONType, nullable=False)
+parameters = Column(JSONType, default={})
+
+# Command status and execution
+status = Column(String(50), default="pending", nullable=False, index=True)
+priority = Column(String(20), default="normal", nullable=False)
+scheduled_at = Column(DateTime, nullable=True, index=True)
+executed_at = Column(DateTime, nullable=True)
+completed_at = Column(DateTime, nullable=True)
+
+# Command results and metadata
+results = Column(JSONType, default={})
+error_message = Column(Text, nullable=True)
+retry_count = Column(Integer, default=0, nullable=False)
+max_retries = Column(Integer, default=3, nullable=False)
+
+# Relationships
+device = relationship("Device", back_populates="commands")
+user_id = Column(PostgresUUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+user = relationship("User", back_populates="commands") 

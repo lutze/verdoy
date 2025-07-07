@@ -5,14 +5,16 @@ This module contains the Billing and Subscription models and related functionali
 for billing and subscription management.
 """
 
-from sqlalchemy import Column, String, Boolean, Text, ForeignKey, DateTime
+from sqlalchemy import Column, String, Boolean, Text, ForeignKey, DateTime, Float
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from datetime import datetime
 from typing import Dict, Any, Optional
+import uuid
 
 from .base import BaseModel
 from .entity import Entity
+from ..database import JSONType
 
 
 class Billing(Entity):
@@ -20,8 +22,12 @@ class Billing(Entity):
     Billing model for billing accounts.
     
     Maps to the existing entities table with entity_type = 'billing.account'
-    and stores billing configuration in the properties JSONB column.
+    and stores billing configuration in the properties JSON column.
     """
+    
+    __mapper_args__ = {
+        'polymorphic_identity': 'billing.account',
+    }
     
     def __init__(self, *args, **kwargs):
         # Set default entity_type for billing accounts
@@ -96,8 +102,12 @@ class Subscription(Entity):
     Subscription model for subscription management.
     
     Maps to the existing entities table with entity_type = 'subscription'
-    and stores subscription data in the properties JSONB column.
+    and stores subscription data in the properties JSON column.
     """
+    
+    __mapper_args__ = {
+        'polymorphic_identity': 'subscription',
+    }
     
     def __init__(self, *args, **kwargs):
         # Set default entity_type for subscriptions
@@ -182,4 +192,7 @@ class Subscription(Entity):
     
     def __repr__(self):
         """String representation of the subscription."""
-        return f"<Subscription(id={self.id}, plan={self.get_plan_name()})>" 
+        return f"<Subscription(id={self.id}, plan={self.get_plan_name()})>"
+
+
+ 

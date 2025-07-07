@@ -7,12 +7,13 @@ for ESP32 device management and IoT operations.
 
 from sqlalchemy import Column, String, Boolean, Text, JSON, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from datetime import datetime
 from typing import Dict, Any, Optional
 
 from .base import BaseModel
 from .entity import Entity
+from ..database import JSONType
 
 
 class Device(Entity):
@@ -20,8 +21,12 @@ class Device(Entity):
     Device model for ESP32 devices.
     
     Maps to the existing entities table with entity_type = 'device.esp32'
-    and stores device configuration in the properties JSONB column.
+    and stores device configuration in the properties JSON column.
     """
+    
+    __mapper_args__ = {
+        'polymorphic_identity': 'device.esp32',
+    }
     
     def __init__(self, *args, **kwargs):
         # Set default entity_type for devices

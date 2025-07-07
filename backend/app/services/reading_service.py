@@ -13,7 +13,7 @@ from typing import Optional, Dict, Any, List, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc, and_
 from sqlalchemy.exc import IntegrityError
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 import logging
 import json
@@ -82,13 +82,22 @@ class ReadingService(BaseService[Reading]):
             
             # Create reading entity
             reading = Reading(
-                device_id=device_id,
-                sensor_type=reading_data.sensor_type,
-                value=reading_data.value,
-                unit=reading_data.unit,
+                entity_id=device_id,
+                entity_type="device.esp32",
+                event_type="sensor.reading",
                 timestamp=reading_data.timestamp or datetime.utcnow(),
-                metadata=reading_data.metadata or {},
-                organization_id=device.organization_id
+                data={
+                    'sensorType': reading_data.sensor_type,
+                    'value': reading_data.value,
+                    'unit': reading_data.unit,
+                    'quality': getattr(reading_data, 'quality', 'good'),
+                    'location': getattr(reading_data, 'location', None),
+                    'batteryLevel': getattr(reading_data, 'battery_level', None),
+                    'metadata': reading_data.metadata or {}
+                },
+                event_metadata={
+                    'organization_id': str(device.organization_id) if device.organization_id else None
+                }
             )
             
             # Save to database
@@ -139,12 +148,20 @@ class ReadingService(BaseService[Reading]):
             
             # Create reading entity
             reading = Reading(
-                device_id=reading_data.device_id,
-                sensor_type=reading_data.sensor_type,
-                value=reading_data.value,
-                unit=reading_data.unit,
+                entity_id=reading_data.device_id,
+                entity_type="device.esp32",
+                event_type="sensor.reading",
                 timestamp=reading_data.timestamp or datetime.utcnow(),
-                metadata=reading_data.metadata or {}
+                data={
+                    'sensorType': reading_data.sensor_type,
+                    'value': reading_data.value,
+                    'unit': reading_data.unit,
+                    'quality': getattr(reading_data, 'quality', 'good'),
+                    'location': getattr(reading_data, 'location', None),
+                    'batteryLevel': getattr(reading_data, 'battery_level', None),
+                    'metadata': reading_data.metadata or {}
+                },
+                event_metadata={}
             )
             
             # Save to database
@@ -556,8 +573,18 @@ class ReadingService(BaseService[Reading]):
         if not isinstance(reading_data.value, (int, float)):
             raise ValidationException("Reading value must be numeric")
         
-        if reading_data.timestamp and reading_data.timestamp > datetime.utcnow() + timedelta(minutes=5):
-            raise ValidationException("Reading timestamp cannot be in the future")
+        if reading_data.timestamp:
+            # Convert to UTC if timezone-aware, or assume UTC if naive
+            if reading_data.timestamp.tzinfo is not None:
+                # Timezone-aware datetime - convert to UTC
+                utc_timestamp = reading_data.timestamp.astimezone(timezone.utc).replace(tzinfo=None)
+            else:
+                # Timezone-naive datetime - assume it's UTC
+                utc_timestamp = reading_data.timestamp
+            
+            # Compare with current UTC time
+            if utc_timestamp > datetime.utcnow() + timedelta(minutes=5):
+                raise ValidationException("Reading timestamp cannot be in the future")
         
         return True
     

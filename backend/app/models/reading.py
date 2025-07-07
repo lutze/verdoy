@@ -7,12 +7,14 @@ for storing and retrieving sensor data from ESP32 devices.
 
 from sqlalchemy import Column, String, Float, Text, ForeignKey, DateTime, Index
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from datetime import datetime
 from typing import Dict, Any, Optional
+import uuid
 
 from .base import BaseModel
 from .event import Event
+from ..database import JSONType
 
 
 class Reading(Event):
@@ -20,7 +22,7 @@ class Reading(Event):
     Reading model for sensor data storage.
     
     Maps to the existing events table with event_type = 'sensor.reading'
-    and stores sensor data in the data JSONB column.
+    and stores sensor data in the data JSON column.
     """
     
     def __init__(self, *args, **kwargs):

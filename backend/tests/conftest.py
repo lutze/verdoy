@@ -21,8 +21,9 @@ from uuid import UUID, uuid4
 
 # Set test environment variables before importing app modules
 os.environ["ENVIRONMENT"] = "test"
-# Note: DATABASE_URL will be loaded from .env.test file
-# SECRET_KEY will also be loaded from .env.test file
+os.environ["DATABASE_URL"] = "sqlite:///./test.db"
+os.environ["SECRET_KEY"] = "test-secret-key-32-chars-long-for-testing"
+# Note: These environment variables must be set before importing app modules
 
 # Import from the correct module structure
 from app.main import app
@@ -160,8 +161,13 @@ def test_organization(db_session) -> Organization:
     """Create a test organization."""
     org = Organization(
         name="Test Organization",
-        organization_type="business",
-        is_active=True
+        description="Test organization for unit testing",
+        properties={
+            'organization_type': 'business',
+            'contact_email': 'test@organization.com',
+            'website': 'https://test-org.com',
+            'member_count': 0
+        }
     )
     db_session.add(org)
     db_session.commit()

@@ -1,63 +1,71 @@
 """
-Base model class for LMS Core API.
+Base model for all database models in the LMS Core API.
 
-This module provides a base model class with common functionality
-used by all database models in the application.
+This module provides the base model class with common fields and
+functionality that all models inherit from.
 """
 
-from sqlalchemy import Column, DateTime, String, Text, JSON
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID, JSONB
 from datetime import datetime
-import uuid
+from sqlalchemy import Column, DateTime, Boolean
+from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declared_attr
+from sqlalchemy import String, Text
+from ..database import JSONType
 
 Base = declarative_base()
 
 
 class BaseModel(Base):
     """
-    Base model class with common functionality.
+    Base model class with common fields and functionality.
     
-    Provides:
+    All models should inherit from this class to get:
     - UUID primary key
-    - Created and updated timestamps
+    - Created/updated timestamps
+    - Soft delete functionality
     - Common utility methods
     """
     
     __abstract__ = True
     
-    id = Column(PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    # Use UUID as primary key
+    id = Column(PostgresUUID(as_uuid=True), primary_key=True, index=True)
+    
+    # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     
+    # Soft delete
+    is_active = Column(Boolean, default=True, nullable=False)
+    
+    @declared_attr
+    def __tablename__(cls):
+        """Generate table name from class name."""
+        return cls.__name__.lower() + 's'
+    
     def to_dict(self):
-        """
-        Convert model instance to dictionary.
-        
-        Returns:
-            Dictionary representation of the model
-        """
-        result = {}
-        for column in self.__table__.columns:
-            value = getattr(self, column.name)
-            if isinstance(value, datetime):
-                result[column.name] = value.isoformat()
-            elif isinstance(value, uuid.UUID):
-                result[column.name] = str(value)
-            else:
-                result[column.name] = value
-        return result
+        """Convert model instance to dictionary."""
+        return {
+            column.name: getattr(self, column.name)
+            for column in self.__table__.columns
+        }
     
     def update(self, **kwargs):
-        """
-        Update model instance with provided values.
-        
-        Args:
-            **kwargs: Fields to update
-        """
+        """Update model instance with provided values."""
         for key, value in kwargs.items():
             if hasattr(self, key):
                 setattr(self, key, value)
+        self.updated_at = datetime.utcnow()
+    
+    def soft_delete(self):
+        """Soft delete the model instance."""
+        self.is_active = False
+        self.updated_at = datetime.utcnow()
+    
+    def restore(self):
+        """Restore a soft-deleted model instance."""
+        self.is_active = True
         self.updated_at = datetime.utcnow()
     
     @classmethod

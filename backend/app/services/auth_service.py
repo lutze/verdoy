@@ -19,6 +19,7 @@ import logging
 from .base import BaseService
 from ..models.user import User
 from ..models.organization import Organization
+from ..models.entity import Entity
 from ..schemas.user import UserCreate, UserUpdate, UserLogin
 from ..exceptions import (
     ServiceException,
@@ -77,24 +78,33 @@ class AuthService(BaseService[User]):
             # Create user with hashed password
             hashed_password = User.hash_password(user_data.password)
             
-            # Create user entity
+            # Create associated entity for user profile first
+            user_entity = Entity(
+                entity_type='user',
+                name=user_data.name,
+                description=f"User profile for {user_data.email}",
+                organization_id=user_data.organization_id,
+                properties={
+                    'email': user_data.email,
+                    'user_type': 'standard'
+                }
+            )
+            
+            # Save entity first to get the ID
+            self.db.add(user_entity)
+            self.db.flush()  # Flush to get the entity ID
+            
+            # Create user record with entity_id reference
             user = User(
+                entity_id=user_entity.id,
                 email=user_data.email,
                 hashed_password=hashed_password,
-                is_active=True
+                is_active=True,
+                is_superuser=False
             )
             
-            # Create associated entity for user profile
-            user_entity = Organization.create_user_entity(
-                db=self.db,
-                user=user,
-                name=user_data.name,
-                organization_id=user_data.organization_id
-            )
-            
-            # Save to database
+            # Save user and commit
             self.db.add(user)
-            self.db.add(user_entity)
             self.db.commit()
             self.db.refresh(user)
             

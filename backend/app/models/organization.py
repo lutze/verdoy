@@ -7,12 +7,13 @@ for multi-tenant organization management.
 
 from sqlalchemy import Column, String, Boolean, Text, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from datetime import datetime
 from typing import Dict, Any, Optional
 
 from .base import BaseModel
 from .entity import Entity
+from ..database import JSONType
 
 
 class Organization(Entity):
@@ -20,8 +21,12 @@ class Organization(Entity):
     Organization model for multi-tenant support.
     
     Maps to the existing entities table with entity_type = 'organization'
-    and stores organization configuration in the properties JSONB column.
+    and stores organization configuration in the properties JSON column.
     """
+    
+    __mapper_args__ = {
+        'polymorphic_identity': 'organization',
+    }
     
     def __init__(self, *args, **kwargs):
         # Set default entity_type for organizations
@@ -29,8 +34,8 @@ class Organization(Entity):
             kwargs['entity_type'] = 'organization'
         super().__init__(*args, **kwargs)
     
-    # Relationships
-    devices = relationship("Device", back_populates="organization")
+    # Relationships - these are handled through the Entity base class
+    # Users, devices, etc. are accessed through the entities relationship
     
     @classmethod
     def get_by_name(cls, db, name: str):
@@ -119,15 +124,6 @@ class Organization(Entity):
             Subscription plan string
         """
         return self.get_property('subscriptionPlan', 'free')
-    
-    def is_active(self) -> bool:
-        """
-        Check if organization is active.
-        
-        Returns:
-            True if active, False otherwise
-        """
-        return self.status == "active"
     
     def __repr__(self):
         """String representation of the organization."""

@@ -34,7 +34,8 @@ class User(BaseModel):
     is_superuser = Column(Boolean, default=False, nullable=False)
     
     # Relationships
-    entity = relationship("Entity", back_populates="user")
+    # Bi-directional one-to-one relationship to Entity (user profile)
+    entity = relationship("Entity", back_populates="user", uselist=False)
     devices = relationship("Device", back_populates="user")
     
     @classmethod

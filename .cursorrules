@@ -1,0 +1,556 @@
+# LIMS (Laboratory Information Management System) .cursorrules
+
+Expert in: Python, FastAPI, PostgreSQL, SQLAlchemy, HTML, CSS, vanilla JavaScript, scientific data management.
+
+## System Overview
+
+Laboratory Information Management System for research labs, R&D facilities, and fermentation monitoring. Core features: experiment tracking, sensor data collection, equipment integration, knowledge graph relationships.
+
+## Architecture Principles
+
+1. **Frontend**: Server-rendered HTML, progressive enhancement, no JS frameworks
+2. **Backend**: FastAPI + PostgreSQL, async Python, REST APIs
+3. **Data**: Time-series sensor readings, experiment relationships, audit trails
+4. **Performance**: HTML-first, edge caching, async operations
+
+## Backend Rules
+
+### API Design
+```python
+# All endpoints return HTML by default, JSON for AJAX
+@router.get("/experiments/{id}")
+async def get_experiment(request: Request, id: int, db: AsyncSession = Depends(get_db)):
+    experiment = await get_experiment_by_id(db, id)
+    
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return experiment.dict()
+    
+    return templates.TemplateResponse("experiments/detail.html", {
+        "request": request, 
+        "experiment": experiment
+    })
+```
+
+### Database Architecture
+
+**Event-Sourced Knowledge Graph**: Immutable event history with current state tracking.
+
+```sql
+-- Immutable event stream (TimescaleDB hypertable)
+CREATE TABLE events (
+    id BIGSERIAL,
+    timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    event_type VARCHAR(100) NOT NULL,
+    entity_id UUID NOT NULL,
+    data JSONB NOT NULL,
+    created_by UUID
+);
+SELECT create_hypertable('events', 'timestamp');
+
+-- Current entity state (nodes in graph)
+CREATE TABLE entities (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    entity_type VARCHAR(100) NOT NULL,
+    properties JSONB NOT NULL DEFAULT '{}',
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
+    CHECK (entity_type ~ '^[a-z]+(\.[a-z]+)*
+
+### Code Patterns
+- Use `async def` for all database operations
+- Type hints on all functions
+- Pydantic for validation
+- Background tasks for data processing
+- UTC timestamps everywhere
+- Event-sourcing: Create events for all state changes
+- Schema validation: Validate entities against JSON schemas
+
+### Database Operations
+```python
+# Migration management
+python backend/db/setup_db.py          # Apply migrations
+python backend/db/check_migrations.py  # Check status
+docker compose up --build -d db-init   # Docker setup
+
+# Migrations follow alphabetical order with rollback support
+# Example: 001_initial_schema.sql, 001_initial_schema_rollback.sql
+```
+
+### Graph Queries
+```python
+# Find all active devices connected to a process instance
+async def get_process_devices(db: AsyncSession, process_instance_id: UUID):
+    return await db.execute("""
+        SELECT e.* FROM entities e
+        JOIN relationships r ON r.to_entity = e.id
+        WHERE r.from_entity = :process_id 
+        AND r.relationship_type = 'monitors'
+        AND r.valid_to IS NULL
+        AND e.entity_type LIKE 'device.%'
+        AND e.status = 'active'
+    """, {"process_id": process_instance_id})
+
+# Get entity history from events
+async def get_entity_timeline(db: AsyncSession, entity_id: UUID, days: int = 7):
+    return await db.execute("""
+        SELECT timestamp, event_type, data, metadata
+        FROM events 
+        WHERE entity_id = :entity_id
+        AND timestamp > NOW() - INTERVAL ':days days'
+        ORDER BY timestamp DESC
+    """, {"entity_id": entity_id, "days": days})
+
+# Find relationships with strength threshold
+async def get_strong_connections(db: AsyncSession, entity_id: UUID, min_strength: float = 0.7):
+    return await db.execute("""
+        SELECT r.*, e.name, e.entity_type 
+        FROM relationships r
+        JOIN entities e ON e.id = r.to_entity
+        WHERE r.from_entity = :entity_id
+        AND r.strength >= :min_strength
+        AND r.valid_to IS NULL
+    """, {"entity_id": entity_id, "min_strength": min_strength})
+```
+
+### SQL Conventions
+- Use `IF NOT EXISTS` for all CREATE statements
+- Explicit defaults: `DEFAULT '{}'` for JSONB, `DEFAULT NOW()` for timestamps
+- UUID generation: `uuid_generate_v4()` or `gen_random_uuid()`
+- Cascade deletes for maintaining referential integrity
+- Descriptive column names with underscores (not camelCase)
+- Comments for complex columns (e.g., `-- 0.0-1.0` for strength)
+- Status fields use VARCHAR(50) with string values ('active', 'running')
+- Composite primary keys for time-series tables: `PRIMARY KEY (timestamp, id)`
+
+## Frontend Rules
+
+### HTML Structure
+```html
+<!-- Progressive enhancement: works without JS -->
+<section class="dashboard-widget" 
+         data-update-endpoint="/api/metrics/active-users" 
+         data-refresh="5000">
+  <h2>Active Users</h2>
+  <div class="metric" data-value>247</div>
+</section>
+
+<!-- Forms submit without JS -->
+<form action="/experiments" method="post">
+  <input name="name" required>
+  <button type="submit">Create</button>
+</form>
+```
+
+### JavaScript Usage
+```javascript
+// Only for enhancement, never required
+// Real-time updates via SSE
+if (typeof EventSource !== 'undefined') {
+  const source = new EventSource('/api/experiment/1/stream');
+  source.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    document.querySelector('[data-value]').textContent = data.value;
+  };
+}
+
+// AJAX form submission (optional enhancement)
+document.querySelectorAll('form[data-ajax]').forEach(form => {
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const response = await fetch(form.action, {
+      method: form.method,
+      body: new FormData(form),
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    });
+    // Handle response
+  });
+});
+```
+
+### CSS Patterns
+```css
+/* Use modern CSS instead of JS */
+details summary { cursor: pointer; }
+.tabs input[type="radio"]:checked + label { background: var(--active); }
+.modal:target { display: block; }
+```
+
+## Decision Tree
+
+**Before adding any code, ask:**
+1. Does it work without JavaScript? (must be yes)
+2. Can CSS handle this instead of JS?
+3. Is this complexity serving users or developers?
+
+**Use JavaScript only for:**
+- WebSocket/SSE real-time updates
+- Chart libraries (with table fallbacks)
+- AJAX form enhancement (not replacement)
+
+**Never use JavaScript for:**
+- Page routing
+- Initial content rendering  
+- Basic interactions (use CSS)
+
+## File Structure
+```
+/
+├── api/
+│   ├── routers/
+│   │   ├── experiments.py
+│   │   └── sensors.py
+│   ├── models/
+│   ├── schemas/
+│   └── services/
+├── templates/
+│   ├── experiments/
+│   │   ├── list.html
+│   │   └── detail.html
+│   └── base.html
+├── static/
+│   ├── css/
+│   └── js/
+│       └── enhancements.js  # Optional progressive enhancements
+└── alembic/
+```
+
+## Performance Checklist
+
+- [ ] Page loads < 1 second
+- [ ] Works without JavaScript
+- [ ] Forms submit with Enter key
+- [ ] Back button works correctly
+- [ ] URLs are bookmarkable
+- [ ] Keyboard navigation works
+- [ ] Screen reader compatible
+- [ ] No loading spinners on initial load
+
+## Scientific Data Guidelines
+
+- Validate sensor ranges (e.g., temperature: -50°C to 150°C)
+- Store UTC timestamps with microsecond precision
+- Implement data retention (archive >1 year)
+- Batch insert high-frequency sensor data
+- Version control experiment protocols
+- Maintain audit trail for GLP compliance)
+);
+
+-- Graph relationships (edges with temporal validity)
+CREATE TABLE relationships (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    from_entity_id UUID REFERENCES entities(id),
+    to_entity_id UUID REFERENCES entities(id),
+    relationship_type VARCHAR(100) NOT NULL,
+    properties JSONB DEFAULT '{}',
+    valid_from TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    valid_to TIMESTAMPTZ,
+    CHECK (relationship_type ~ '^[a-z]+(\.[a-z]+)*
+
+### Code Patterns
+- Use `async def` for all database operations
+- Type hints on all functions
+- Pydantic for validation
+- Background tasks for data processing
+- UTC timestamps everywhere
+
+## Frontend Rules
+
+### HTML Structure
+```html
+<!-- Progressive enhancement: works without JS -->
+<section class="dashboard-widget" 
+         data-update-endpoint="/api/metrics/active-users" 
+         data-refresh="5000">
+  <h2>Active Users</h2>
+  <div class="metric" data-value>247</div>
+</section>
+
+<!-- Forms submit without JS -->
+<form action="/experiments" method="post">
+  <input name="name" required>
+  <button type="submit">Create</button>
+</form>
+```
+
+### JavaScript Usage
+```javascript
+// Only for enhancement, never required
+// Real-time updates via SSE
+if (typeof EventSource !== 'undefined') {
+  const source = new EventSource('/api/experiment/1/stream');
+  source.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    document.querySelector('[data-value]').textContent = data.value;
+  };
+}
+
+// AJAX form submission (optional enhancement)
+document.querySelectorAll('form[data-ajax]').forEach(form => {
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const response = await fetch(form.action, {
+      method: form.method,
+      body: new FormData(form),
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    });
+    // Handle response
+  });
+});
+```
+
+### CSS Patterns
+```css
+/* Use modern CSS instead of JS */
+details summary { cursor: pointer; }
+.tabs input[type="radio"]:checked + label { background: var(--active); }
+.modal:target { display: block; }
+```
+
+## Decision Tree
+
+**Before adding any code, ask:**
+1. Does it work without JavaScript? (must be yes)
+2. Can CSS handle this instead of JS?
+3. Is this complexity serving users or developers?
+
+**Use JavaScript only for:**
+- WebSocket/SSE real-time updates
+- Chart libraries (with table fallbacks)
+- AJAX form enhancement (not replacement)
+
+**Never use JavaScript for:**
+- Page routing
+- Initial content rendering  
+- Basic interactions (use CSS)
+
+## File Structure
+```
+/
+├── api/
+│   ├── routers/
+│   │   ├── experiments.py
+│   │   └── sensors.py
+│   ├── models/
+│   ├── schemas/
+│   └── services/
+├── templates/
+│   ├── experiments/
+│   │   ├── list.html
+│   │   └── detail.html
+│   └── base.html
+├── static/
+│   ├── css/
+│   └── js/
+│       └── enhancements.js  # Optional progressive enhancements
+└── alembic/
+```
+
+## Performance Checklist
+
+- [ ] Page loads < 1 second
+- [ ] Works without JavaScript
+- [ ] Forms submit with Enter key
+- [ ] Back button works correctly
+- [ ] URLs are bookmarkable
+- [ ] Keyboard navigation works
+- [ ] Screen reader compatible
+- [ ] No loading spinners on initial load
+
+## Scientific Data Guidelines
+
+- Validate sensor ranges (e.g., temperature: -50°C to 150°C)
+- Store UTC timestamps with microsecond precision
+- Implement data retention (archive >1 year)
+- Batch insert high-frequency sensor data
+- Version control experiment protocols
+- Maintain audit trail for GLP compliance)
+);
+
+-- Schema validation for entity types
+CREATE TABLE schemas (
+    entity_type VARCHAR(100) PRIMARY KEY,
+    json_schema JSONB NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Process templates and instances
+CREATE TABLE processes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    entity_type VARCHAR(100) DEFAULT 'process',
+    steps JSONB NOT NULL
+);
+
+CREATE TABLE process_instances (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    process_id UUID REFERENCES processes(id),
+    entity_id UUID REFERENCES entities(id),
+    state JSONB NOT NULL,
+    started_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for graph traversal
+CREATE INDEX idx_entities_type ON entities(entity_type);
+CREATE INDEX idx_relationships_from ON relationships(from_entity_id, relationship_type);
+CREATE INDEX idx_relationships_to ON relationships(to_entity_id, relationship_type);
+CREATE INDEX idx_relationships_temporal ON relationships(valid_from, valid_to);
+```
+
+### Event Flow Pattern
+```python
+# All changes go through events
+async def update_entity(db: AsyncSession, entity_id: UUID, changes: dict):
+    # 1. Create immutable event
+    event = Event(
+        event_type="entity.updated",
+        entity_id=entity_id,
+        data=changes
+    )
+    db.add(event)
+    
+    # 2. Trigger updates current state (via DB trigger or application)
+    # 3. Relationships maintain graph consistency
+```
+
+### Entity Examples
+```python
+# ESP32 device as entity
+device_entity = {
+    "entity_type": "device.esp32",
+    "properties": {
+        "firmware_version": "1.0.0",
+        "hardware_revision": "v2",
+        "sensors": ["BME680", "DS18B20"],
+        "status": "active"
+    }
+}
+
+# Experiment as entity  
+experiment_entity = {
+    "entity_type": "experiment.fermentation",
+    "properties": {
+        "name": "Batch 2024-001",
+        "protocol_id": "proto-123",
+        "parameters": {"temperature": 25.0}
+    }
+}
+```
+
+### Code Patterns
+- Use `async def` for all database operations
+- Type hints on all functions
+- Pydantic for validation
+- Background tasks for data processing
+- UTC timestamps everywhere
+
+## Frontend Rules
+
+### HTML Structure
+```html
+<!-- Progressive enhancement: works without JS -->
+<section class="dashboard-widget" 
+         data-update-endpoint="/api/metrics/active-users" 
+         data-refresh="5000">
+  <h2>Active Users</h2>
+  <div class="metric" data-value>247</div>
+</section>
+
+<!-- Forms submit without JS -->
+<form action="/experiments" method="post">
+  <input name="name" required>
+  <button type="submit">Create</button>
+</form>
+```
+
+### JavaScript Usage
+```javascript
+// Only for enhancement, never required
+// Real-time updates via SSE
+if (typeof EventSource !== 'undefined') {
+  const source = new EventSource('/api/experiment/1/stream');
+  source.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    document.querySelector('[data-value]').textContent = data.value;
+  };
+}
+
+// AJAX form submission (optional enhancement)
+document.querySelectorAll('form[data-ajax]').forEach(form => {
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const response = await fetch(form.action, {
+      method: form.method,
+      body: new FormData(form),
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    });
+    // Handle response
+  });
+});
+```
+
+### CSS Patterns
+```css
+/* Use modern CSS instead of JS */
+details summary { cursor: pointer; }
+.tabs input[type="radio"]:checked + label { background: var(--active); }
+.modal:target { display: block; }
+```
+
+## Decision Tree
+
+**Before adding any code, ask:**
+1. Does it work without JavaScript? (must be yes)
+2. Can CSS handle this instead of JS?
+3. Is this complexity serving users or developers?
+
+**Use JavaScript only for:**
+- WebSocket/SSE real-time updates
+- Chart libraries (with table fallbacks)
+- AJAX form enhancement (not replacement)
+
+**Never use JavaScript for:**
+- Page routing
+- Initial content rendering  
+- Basic interactions (use CSS)
+
+## File Structure
+```
+/
+├── api/
+│   ├── routers/
+│   │   ├── experiments.py
+│   │   └── sensors.py
+│   ├── models/
+│   ├── schemas/
+│   └── services/
+├── templates/
+│   ├── experiments/
+│   │   ├── list.html
+│   │   └── detail.html
+│   └── base.html
+├── static/
+│   ├── css/
+│   └── js/
+│       └── enhancements.js  # Optional progressive enhancements
+└── alembic/
+```
+
+## Performance Checklist
+
+- [ ] Page loads < 1 second
+- [ ] Works without JavaScript
+- [ ] Forms submit with Enter key
+- [ ] Back button works correctly
+- [ ] URLs are bookmarkable
+- [ ] Keyboard navigation works
+- [ ] Screen reader compatible
+- [ ] No loading spinners on initial load
+
+## Scientific Data Guidelines
+
+- Validate sensor ranges (e.g., temperature: -50°C to 150°C)
+- Store UTC timestamps with microsecond precision
+- Implement data retention (archive >1 year)
+- Batch insert high-frequency sensor data
+- Version control experiment protocols
+- Maintain audit trail for GLP compliance

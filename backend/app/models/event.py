@@ -1,88 +1,181 @@
 """
 Event model for LMS Core API.
 
-This module defines the canonical Event model that maps to the events table.
-All event types (alerts, readings, commands, etc.) are stored in this single table
-and differentiated by the event_type field.
+This module defines the Event model which represents system events
+and stores event data in the data JSON column.
 """
 
-from sqlalchemy import Column, DateTime, String
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID, JSONB
+from sqlalchemy import Column, String, DateTime, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
+from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
 
-from .base import Base
+from .base import BaseModel
+from ..database import JSONType
 
 
-class Event(Base):
+class Event(BaseModel):
     """
-    Canonical Event model for the events table.
+    Event model for tracking system events.
     
-    This model stores all types of events in the system:
-    - Sensor readings (event_type = 'sensor.reading')
-    - Alert triggers (event_type = 'alert.triggered')
-    - Device commands (event_type = 'device.command')
-    - System events (event_type = 'system.*')
-    - Audit events (event_type = 'audit.*')
+    Events are used to track important system activities like:
+    - User actions (login, logout, data changes)
+    - Device events (connect, disconnect, errors)
+    - System events (backups, maintenance, alerts)
+    - Data events (imports, exports, processing)
     """
     
     __tablename__ = "events"
     
-    id = Column(PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow)
-    event_type = Column(String(100), nullable=False)
-    entity_id = Column(PostgresUUID(as_uuid=True), nullable=False)
-    entity_type = Column(String(100), nullable=False)
-    data = Column(JSONB, nullable=False)
-    event_metadata = Column(JSONB, default={})
-    source_node = Column(String(50))
-    created_at = Column(DateTime, default=datetime.utcnow)
+    # Event details
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    event_type = Column(String(100), nullable=False, index=True)
+    entity_id = Column(PostgresUUID(as_uuid=True), nullable=False, index=True)
+    entity_type = Column(String(100), nullable=False, index=True)
     
-    def get_data_value(self, key: str, default=None):
+    # Event data and metadata
+    data = Column(JSONType, nullable=False)
+    event_metadata = Column(JSONType, default={})
+    
+    # Relationships
+    user_id = Column(PostgresUUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    user = relationship("User")
+    
+    def get_data_value(self, key, default=None):
         """
-        Get data value from JSONB data.
+        Get data value from JSON data.
         
         Args:
-            key: Data key
-            default: Default value if key not found
+            key: Key to retrieve from data
+            default: Default value if key doesn't exist
             
         Returns:
-            Data value or default
+            Value from data or default
         """
         return self.data.get(key, default) if self.data else default
     
-    def set_data_value(self, key: str, value):
+    def set_data_value(self, key, value):
         """
-        Set data value in JSONB data.
+        Set data value in JSON data.
         
         Args:
-            key: Data key
-            value: Data value
+            key: Key to set in data
+            value: Value to set
         """
-        if not self.data:
+        if self.data is None:
             self.data = {}
         self.data[key] = value
     
-    def to_dict(self):
+    def add_metadata(self, key, value):
         """
-        Convert model instance to dictionary.
+        Add metadata to the event.
         
-        Returns:
-            Dictionary representation of the model
+        Args:
+            key: Metadata key
+            value: Metadata value
         """
-        result = {
-            'id': str(self.id),
-            'timestamp': self.timestamp.isoformat() if self.timestamp else None,
-            'event_type': self.event_type,
-            'entity_id': str(self.entity_id),
-            'entity_type': self.entity_type,
-            'data': self.data,
-            'event_metadata': self.event_metadata,
-            'source_node': self.source_node,
-            'created_at': self.created_at.isoformat() if self.created_at else None
-        }
-        return result
+        if self.event_metadata is None:
+            self.event_metadata = {}
+        self.event_metadata[key] = value
     
-    def __repr__(self):
-        """String representation of the model."""
-        return f"<Event(id={self.id}, type={self.event_type}, entity={self.entity_id})>" 
+    def get_metadata(self, key, default=None):
+        """
+        Get metadata value.
+        
+        Args:
+            key: Metadata key
+            default: Default value if key doesn't exist
+            
+        Returns:
+            Metadata value or default
+        """
+        return self.event_metadata.get(key, default) if self.event_metadata else default
+    
+    @classmethod
+    def create_event(cls, db, event_type, entity_id, entity_type, data=None, 
+                    event_metadata=None, user_id=None):
+        """
+        Create a new event.
+        
+        Args:
+            db: Database session
+            event_type: Type of event
+            entity_id: ID of the entity involved
+            entity_type: Type of the entity
+            data: Event data dictionary
+            event_metadata: Event metadata dictionary
+            user_id: ID of the user who triggered the event
+            
+        Returns:
+            Created Event instance
+        """
+        event = cls(
+            id=uuid.uuid4(),
+            event_type=event_type,
+            entity_id=entity_id,
+            entity_type=entity_type,
+            data=data or {},
+            event_metadata=event_metadata or {},
+            user_id=user_id
+        )
+        db.add(event)
+        db.commit()
+        db.refresh(event)
+        return event
+    
+    @classmethod
+    def get_events_by_entity(cls, db, entity_id, entity_type, limit=100):
+        """
+        Get events for a specific entity.
+        
+        Args:
+            db: Database session
+            entity_id: Entity ID
+            entity_type: Entity type
+            limit: Maximum number of events to return
+            
+        Returns:
+            List of events
+        """
+        return db.query(cls).filter(
+            cls.entity_id == entity_id,
+            cls.entity_type == entity_type,
+            cls.is_active == True
+        ).order_by(cls.timestamp.desc()).limit(limit).all()
+    
+    @classmethod
+    def get_events_by_type(cls, db, event_type, limit=100):
+        """
+        Get events by type.
+        
+        Args:
+            db: Database session
+            event_type: Event type to filter by
+            limit: Maximum number of events to return
+            
+        Returns:
+            List of events
+        """
+        return db.query(cls).filter(
+            cls.event_type == event_type,
+            cls.is_active == True
+        ).order_by(cls.timestamp.desc()).limit(limit).all()
+    
+    @classmethod
+    def get_events_by_user(cls, db, user_id, limit=100):
+        """
+        Get events for a specific user.
+        
+        Args:
+            db: Database session
+            user_id: User ID
+            limit: Maximum number of events to return
+            
+        Returns:
+            List of events
+        """
+        return db.query(cls).filter(
+            cls.user_id == user_id,
+            cls.is_active == True
+        ).order_by(cls.timestamp.desc()).limit(limit).all() 
