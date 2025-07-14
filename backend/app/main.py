@@ -155,7 +155,7 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Shutdown error: {e}")
 
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory="app/templates")
 
 def create_app() -> FastAPI:
     """
@@ -226,7 +226,7 @@ def create_app() -> FastAPI:
     register_routers(app)
     
     # Mount static files
-    app.mount("/static", StaticFiles(directory="static"), name="static")
+    app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
     # Add a simple root route for manual verification
     @app.get("/frontend-test", response_class=HTMLResponse)
