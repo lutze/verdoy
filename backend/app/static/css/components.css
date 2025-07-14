@@ -1,0 +1,62 @@
+/* components.css - UI component styles for LIM OS */
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1.2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.button:hover {
+  background: var(--accent);
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-weight: 500;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  box-sizing: border-box;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.error {
+  color: var(--danger);
+  font-size: 0.95em;
+  margin-top: -0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.success {
+  color: var(--success);
+  font-size: 0.95em;
+  margin-top: -0.5rem;
+  margin-bottom: 0.5rem;
+} 

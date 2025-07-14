@@ -28,6 +28,9 @@ from typing import Optional
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 
 # Import configuration and core components
 from app.config import settings
@@ -152,6 +155,8 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Shutdown error: {e}")
 
+templates = Jinja2Templates(directory="backend/app/templates")
+
 def create_app() -> FastAPI:
     """
     Application factory function that creates and configures the FastAPI application.
@@ -219,6 +224,14 @@ def create_app() -> FastAPI:
     
     # Register routers with API versioning
     register_routers(app)
+    
+    # Mount static files
+    app.mount("/static", StaticFiles(directory="backend/app/static"), name="static")
+
+    # Add a simple root route for manual verification
+    @app.get("/frontend-test", response_class=HTMLResponse)
+    async def frontend_test(request: Request):
+        return templates.TemplateResponse("base.html", {"request": request, "year": 2024})
     
     # Add root endpoint
     @app.get("/", tags=["root"])
