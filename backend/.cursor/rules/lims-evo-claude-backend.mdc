@@ -1,0 +1,257 @@
+---
+description: Rules and standards for building the backend of the system. We'll support both an HTML-first frontend for web clients, and REST/SOSA compliant APIs for other devices.
+globs:
+alwaysApply: false
+---
+# FastAPI & Server-Side Rendering
+
+You are an expert in Python, FastAPI, Jinja2 templates, SQLAlchemy, and building server-first web applications for the future operating system of scientific laboratory and commercial R&D.
+
+## Backend Languages & Libraries:
+Python 3.11+ — main backend language
+FastAPI — async web framework for REST APIs
+SQLAlchemy — ORM for PostgreSQL/TimescaleDB
+Pydantic — data validation and serialization
+Alembic — database migrations
+passlib[bcrypt] — password hashing
+Pytest — testing framework
+Docker — containerization for backend and database
+JWT — authentication tokens
+WebSockets (FastAPI) — real-time data
+TimescaleDB — time-series extension for PostgreSQL
+
+All backend code is type-annotated, async-first, and follows modern Python best practices.
+
+## Client support
+- **Web browsers**: HTML-first with progressive enhancement
+- **Programmatic clients**: JSON APIs following REST/SOSA standards
+- **Same business logic**: Shared service layer regardless of response format
+
+## Core Backend Principles for the web browsers
+- **Server-side rendering first** - For the Web Frontend, return complete HTML responses, not JSON APIs
+- **Template-driven architecture** - Use Jinja2 for all HTML generation
+- **Form-centric interactions** - Handle user input through HTML forms
+- **Business logic on server** - Keep all validation and processing server-side
+- **RESTful but HTML-returning** - Follow REST principles but return HTML
+
+## Core Backend Principles for programmatic clients
+
+### Response Format Strategy
+- **Content negotiation**: Use Accept headers to determine HTML vs JSON response
+- **Explicit format override**: Support `?format=json` parameter for testing
+- **Consistent error format**: JSON errors follow RFC 7807 Problem Details standard
+- **SOSA compliance**: Sensor data follows W3C SOSA/SSN ontology standards
+
+### Data Integrity & Validation
+- **Scientific units**: Always include units with measurements
+- **Temporal precision**: UTC timestamps with microsecond precision
+- **Quality indicators**: Every sensor reading includes quality/validation flags
+- **Batch operations**: Support bulk ingestion for high-frequency sensor data
+
+### Equipment Integration
+- **Asynchronous by default**: All equipment communication is non-blocking
+- **Idempotent operations**: Equipment commands can be safely retried
+- **Real-time status**: WebSocket endpoints for live equipment monitoring
+- **Graceful degradation**: Handle offline equipment without breaking workflows
+
+### Scientific Interoperability
+- **SOSA/SSN compliance**: Follow W3C semantic sensor network standards
+- **Standard units**: Support SI units and common laboratory units
+- **Metadata preservation**: Maintain provenance and calibration information
+- **Export formats**: Support common scientific formats (CSV, JSON-LD, RDF)
+
+### Performance & Scaling
+- **Time-series optimization**: Efficient storage and querying of sensor data
+- **Pagination**: Large datasets use cursor-based pagination
+- **Caching strategy**: Cache reference data, stream real-time sensor data
+- **Rate limiting**: Protect against sensor data flooding
+
+
+## Code Organization
+File Structure
+app/
+├── main.py                       # FastAPI app and middleware setup
+├── routers/                      # Route handlers grouped by domain
+│   ├── __init__.py
+│   ├── experiments.py            # Experiment CRUD operations
+│   ├── sensors.py                # Sensor data and monitoring
+│   ├── equipment.py              # Equipment management
+│   ├── users.py                  # User authentication and profiles
+│   └── dashboard.py              # Dashboard and summary views
+├── services/                     # Business logic layer
+│   ├── __init__.py
+│   ├── experiment_service.py     # Experiment business logic
+│   ├── sensor_service.py         # Sensor data processing
+│   ├── equipment_service.py      # Equipment integration
+│   └── auth_service.py           # Authentication logic
+├── dependencies/                 # FastAPI dependencies
+│   ├── __init__.py
+│   ├── database.py               # Database session management
+│   ├── auth.py                   # Authentication dependencies
+│   └── validation.py             # Custom validators
+└── utils/                        # Helper functions
+    ├── __init__.py
+    ├── time_utils.py             # UTC timestamp handling
+    ├── data_validation.py        # Scientific data validation
+    └── formatting.py             # Data formatting utilities
+
+# Conventions 
+
+## Code Style & Structure
+- **Type hints required**: All function signatures must include type annotations
+- **Naming conventions**: Use `snake_case` for variables, functions, modules, files, and directories (e.g., `routers/user_routes.py`)
+- **Descriptive naming**: Use auxiliary verbs in variable names (e.g., `is_active`, `has_permission`)
+- **Follow PEP 8**: Adhere to Python style guide for formatting
+- **Documentation**: All functions and classes need docstrings explaining their purpose
+- **Keep it simple**: Write clear code, avoid unnecessary complexity
+
+## FastAPI Patterns
+- **Function-based routes**: Use plain functions with Pydantic models for validation
+- **Async by default**: Use `async def` for I/O operations, `def` for pure functions  
+- **RORO pattern**: Receive an Object, Return an Object for function parameters
+- **Declarative routes**: Clear return type annotations on all route handlers
+- **Named exports**: Favor named exports for routes and utility functions
+
+## Data Handling
+- **Pydantic models**: Use BaseModel for input validation and response schemas over raw dictionaries
+- **Functional approach**: Prefer iteration and modularization over code duplication
+- **List comprehensions**: Use when appropriate instead of traditional loops
+
+## Error Handling & Performance
+- **HTTPException**: Use for expected errors with specific HTTP responses
+- **Middleware**: Handle unexpected errors, logging, and performance monitoring
+- **Async I/O**: All database calls and external API requests must be asynchronous
+- **Caching**: Implement for static and frequently accessed data
+- **Lazy loading**: Use for large datasets and substantial API responses
+
+## Application Lifecycle
+- **Lifespan context managers**: Prefer over `@app.on_event()` for startup/shutdown
+- **Virtual environments**: Isolate project dependencies
+- **Testing**: Implement unit tests with pytest for code reliability
+- **Exception handling**: Use try-except blocks for graceful error handling
+- **Minimize globals**: Limit global variables to reduce side effects
+
+
+
+# Examples for programmitic clients
+
+Here's a proposed set of principles for the API layer serving ESP32 and other non-HTML clients:
+
+### Content-Aware Response Strategy
+```python
+# Single route, multiple response formats based on Accept header
+@router.get("/experiments/{experiment_id}")
+async def get_experiment(
+    request: Request,
+    experiment_id: int,
+    format: str = None  # Optional override
+):
+    experiment = await experiment_service.get_by_id(experiment_id)
+    
+    # Determine response format
+    if accepts_json(request) or format == "json":
+        return experiment  # Pydantic model auto-serializes to JSON
+    else:
+        return templates.TemplateResponse(
+            "experiments/detail.html",
+            {"request": request, "experiment": experiment}
+        )
+```
+
+### SOSA-Compliant Data Models
+```python
+class SensorObservation(BaseModel):
+    """SOSA-compliant sensor observation model"""
+    
+    # SOSA core properties
+    observed_property: str  # e.g., "temperature", "humidity"
+    has_feature_of_interest: str  # What was observed
+    result_time: datetime  # When observation was made
+    phenomenon_time: datetime  # When phenomenon occurred
+    used_procedure: Optional[str] = None  # Sensing procedure
+    made_by_sensor: str  # Sensor identifier
+    
+    # Scientific measurement details
+    has_simple_result: float  # The actual measurement value
+    unit_of_measurement: str  # e.g., "°C", "%RH", "hPa"
+    accuracy: Optional[float] = None
+    precision: Optional[float] = None
+    
+    # Quality and validation
+    quality_flag: str = "valid"  # "valid", "suspect", "invalid"
+    validation_status: str = "automatic"  # How it was validated
+
+class SensorSystem(BaseModel):
+    """SOSA-compliant sensor system model"""
+    
+    # Identity and description
+    sensor_id: str
+    sensor_type: str
+    observes: List[str]  # What properties it can observe
+    
+    # Deployment information
+    is_hosted_by: str  # Platform/equipment hosting the sensor
+    deployment_location: Optional[str] = None
+    deployment_time: Optional[datetime] = None
+    
+    # Capabilities
+    measurement_range: Optional[Dict[str, Tuple[float, float]]] = None
+    sampling_frequency: Optional[float] = None  # Hz
+    response_time: Optional[float] = None  # seconds
+```
+
+### JSON API Principles for Laboratory Equipment
+
+**1. Time-Series Optimized Endpoints**
+```python
+# Bulk sensor data ingestion from ESP32
+@router.post("/api/v1/sensors/{sensor_id}/observations", response_model=IngestionResponse)
+async def ingest_sensor_data(
+    sensor_id: str,
+    observations: List[SensorObservation],
+    db: AsyncSession = Depends(get_db)
+):
+    """Optimized endpoint for high-frequency sensor data"""
+    pass
+
+# Efficient time-series queries
+@router.get("/api/v1/sensors/{sensor_id}/observations", response_model=List[SensorObservation])
+async def get_sensor_observations(
+    sensor_id: str,
+    start_time: datetime,
+    end_time: datetime,
+    aggregation: Optional[str] = None,  # "1min", "1hour", "1day"
+    db: AsyncSession = Depends(get_db)
+):
+    """Time-series data retrieval with optional aggregation"""
+    pass
+```
+
+**2. Equipment Control & Status APIs**
+```python
+@router.post("/api/v1/equipment/{equipment_id}/commands")
+async def send_equipment_command(
+    equipment_id: str,
+    command: EquipmentCommand,
+    db: AsyncSession = Depends(get_db)
+):
+    """Send control commands to laboratory equipment"""
+    pass
+
+@router.get("/api/v1/equipment/{equipment_id}/status")
+async def get_equipment_status(equipment_id: str) -> EquipmentStatus:
+    """Real-time equipment status for monitoring dashboards"""
+    pass
+```
+
+**3. Helper Functions**
+```python
+def accepts_json(request: Request) -> bool:
+    """Check if client accepts JSON responses"""
+    accept_header = request.headers.get("accept", "")
+    return (
+        "application/json" in accept_header or
+        "application/ld+json" in accept_header or
+        request.url.path.startswith("/api/")
+    )
+```

@@ -55,17 +55,5 @@ services:
       - db
       - db-init
 
-  next-app:
-    build:
-      context: ./frontend/kask-core-nextjs
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
-    environment:
-      - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://backend:8000
-
 volumes:
   postgres-data: 

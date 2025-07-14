@@ -1,0 +1,74 @@
+---
+description: Guidelines for building the frontend for our platform, when it is served to web browser clients. 
+globs:
+alwaysApply: false
+---
+
+
+## Frontend Guidelines (HTML/CSS/Minimal JS)
+
+**HTML Templates (Jinja2):**
+- Semantic HTML5 elements (article, section, nav, etc.)
+- Proper form elements with labels and validation
+- Accessible table structures for data display
+- Progressive disclosure for complex interfaces
+
+**CSS Approach:**
+- Mobile-first responsive design
+- CSS Grid and Flexbox for layouts
+- CSS custom properties for theming
+- Avoid CSS frameworks unless essential
+- Focus on readability and scientific data presentation
+
+**HTMX Integration:**
+- Use `hx-*` attributes for dynamic behavior
+- Update specific page sections, not entire page
+- Handle real-time sensor data with `hx-sse` or `hx-ws`
+- Graceful degradation when HTMX fails
+
+**Minimal JavaScript:**
+- Only for features impossible with HTML/CSS/HTMX
+- Vanilla JavaScript, no libraries unless essential
+- Use Web APIs directly (Fetch, WebSocket, etc.)
+- Progressive enhancement pattern
+- Handle errors gracefully
+
+
+## Frontend Rules
+
+**Before adding any code, ask:**
+1. Does it work without JavaScript? (must be yes)
+2. Can CSS handle this instead of JS?
+3. Is this complexity serving users or developers?
+
+**Use JavaScript only for:**
+- WebSocket/SSE real-time updates
+- Chart libraries (with table fallbacks)
+- AJAX form enhancement (not replacement)
+
+**Never use JavaScript for:**
+- Page routing
+- Initial content rendering  
+- Basic interactions (use CSS)
+
+
+## Performance Checklist
+
+- [ ] Page loads < 1 second
+- [ ] Works without JavaScript
+- [ ] Forms submit with Enter key
+- [ ] Back button works correctly
+- [ ] URLs are bookmarkable
+- [ ] Keyboard navigation works
+- [ ] Screen reader compatible
+- [ ] No loading spinners on initial load
+
+## Scientific Data Guidelines
+
+- Validate sensor ranges (e.g., temperature: -50°C to 150°C)
+- Store UTC timestamps with microsecond precision
+- Implement data retention (archive >1 year)
+- Batch insert high-frequency sensor data
+- Version control experiment protocols
+- Maintain audit trail for GLP compliance)
+);

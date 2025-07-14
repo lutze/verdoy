@@ -1,0 +1,268 @@
+---
+description: Top level rules for the project. These principles should inspire and drive our design and architecture.
+globs:
+alwaysApply: false
+---
+
+# LIMS Architecture & Project-Wide Standards
+
+## Project Philosophy: "JavaScript Last, or Not at All"
+
+This Laboratory Information Management System (LIMS) follows server-first web development principles:
+
+- **Server-rendered HTML by default** - Every page must work without JavaScript
+- **Progressive enhancement** - Add interactivity layer by layer, never as a requirement
+- **Semantic, accessible markup** - Use proper HTML elements for their intended purpose
+- **Performance and reliability over developer experience** - Build for users, not developers
+- **Minimal client-side complexity** - Avoid build tools, bundlers, and transpilation
+- **Data integrity first** - Critical scientific data requires reliable, predictable interfaces
+
+## Client Support Strategy
+
+This LIMS system serves two distinct types of clients with tailored approaches:
+
+### Web Browsers (Human Users)
+- **HTML-first with progressive enhancement** - Complete functionality without JavaScript
+- **Server-rendered templates** - Jinja2 templates with semantic markup
+- **Form-driven interactions** - Standard HTML forms with server-side processing
+- **HTMX for enhancement** - Dynamic updates without complex client-side frameworks
+
+### Programmatic Clients (Equipment & Applications)
+- **REST APIs with JSON responses** - Structured data for ESP32 sensors, mobile apps, integrations
+- **SOSA/SSN compliance** - Scientific sensor data following W3C semantic standards
+- **Time-series optimization** - Efficient bulk data ingestion and retrieval
+- **Real-time WebSocket endpoints** - Live sensor monitoring and equipment control
+
+### Shared Foundation
+- **Single backend codebase** - Same FastAPI application serves both client types
+- **Unified business logic** - Common service layer regardless of response format
+- **Content negotiation** - Routes determine response format based on Accept headers
+- **Scientific data integrity** - Consistent validation and quality standards across all interfaces
+
+## Project Context & Target Users
+
+### Primary Users
+- **University research laboratories** - Multi-user environments, budget constraints, grant funding cycles
+- **Industry R&D facilities** - Regulatory compliance, enterprise integration, advanced analytics
+- **Small formula development businesses** - IP protection, cost-effectiveness, rapid deployment
+- **Craft food & beverage producers** - Fermentation monitoring, batch tracking, food safety compliance
+
+### Core Use Cases
+- Experiment tracking and protocol management
+- Real-time sensor data monitoring (temperature, humidity, pressure, gas resistance)
+- **Equipment integration and control** - ESP32 sensors, bioreactors, environmental monitoring
+- **Programmatic data access** - Mobile apps, third-party integrations, automated analysis
+- Laboratory workflow automation
+- Regulatory compliance and audit trails
+- Scientific data export and analysis
+- **IoT device management** - Sensor calibration, equipment status monitoring
+
+## Technology Stack
+
+### Core Architecture
+- **Backend**: Python 3.12+ with FastAPI framework
+- **Web Interface**: Jinja2 templates with server-side HTML rendering
+- **API Interface**: REST endpoints with JSON responses, SOSA/SSN compliance
+- **Database**: PostgreSQL with TimescaleDB extension for time-series data
+- **ORM**: SQLAlchemy with async support
+- **Interactivity**: HTMX for web enhancement, WebSockets for real-time data
+- **Styling**: Semantic CSS with minimal framework dependencies
+- **Deployment**: Docker containers for consistent environments
+
+### Scientific Standards
+- **SOSA/SSN Ontology**: W3C Semantic Sensor Network standards for IoT integration
+- **Time-series optimization**: TimescaleDB for high-frequency sensor data
+- **Scientific units**: SI units and laboratory-standard measurements
+- **Data provenance**: Audit trails and calibration metadata preservation
+
+### Explicitly Avoided Technologies
+- React, Vue, Angular, or any client-side frameworks for web interface
+- Build tools (Webpack, Vite, Parcel) for frontend assets
+- TypeScript transpilation
+- Complex state management libraries
+- CSS-in-JS solutions
+- Heavy JavaScript dependencies
+
+## Key Principles
+
+### 1. Client-Appropriate Interfaces
+- **Web browsers**: HTML-first with progressive enhancement
+- **Programmatic clients**: JSON APIs with scientific data standards
+- **Content negotiation**: Same endpoints serve both formats based on Accept headers
+- **Shared business logic**: Consistent validation and processing regardless of client type
+
+### 2. Scientific Data Integrity
+- **UTC timestamps**: Microsecond precision with timezone handling
+- **Units and metadata**: Always include measurement units and quality indicators
+- **SOSA compliance**: Follow W3C semantic sensor standards for equipment data
+- **Audit trails**: Complete provenance tracking for regulatory compliance
+- **Equipment failure handling**: Graceful degradation when sensors go offline
+
+### 3. HTML First (Web Interface)
+- Every website feature must work with HTML forms and links
+- Use semantic elements: `<article>`, `<section>`, `<nav>`, `<form>`, `<table>`
+- Proper heading hierarchy (h1-h6) for document structure
+- Accessible form controls with labels and validation
+
+### 4. API First (Programmatic Interface)
+- **Time-series optimization**: Efficient bulk data ingestion and retrieval
+- **Asynchronous operations**: Non-blocking equipment communication
+- **Idempotent commands**: Safe retry mechanisms for equipment control
+- **Rate limiting**: Protection against sensor data flooding
+
+### 5. Progressive Enhancement
+- Base functionality in HTML/CSS for web clients
+- HTMX for dynamic web interactions
+- Minimal JavaScript only for features impossible otherwise
+- Graceful degradation when JavaScript fails
+
+### 6. Server Authority
+- Business logic lives on the server
+- Form and API input validation happens server-side
+- State management through database and sessions
+- Security enforced at the server level
+
+### 7. Performance by Default
+- Optimize for Time to First Byte (TTFB) for web pages
+- Sub-100ms response times for API sensor data endpoints
+- Use HTTP caching effectively
+- Compress responses and optimize images
+
+## Project Structure
+
+lims/
+├── backend/
+│   ├── app/
+│   │   ├── main.py                 # FastAPI application entry point
+│   │   ├── config.py               # Configuration management
+│   │   ├── database.py             # Database connection and session management
+│   │   ├── dependencies.py         # Dependency injection setup
+│   │   ├── exceptions.py           # Custom exception handlers
+│   │   ├── models/                 # SQLAlchemy ORM models
+│   │   │   ├── schemas/            # Pydantic validation schemas
+│   │   ├── services/               # Business logic layer
+│   │   ├── routers/                # API endpoint definitions
+│   │   │   └── websocket/          # WebSocket endpoints
+│   │   ├── middleware/             # Request/response middleware
+│   │   └── utils/                  # Utility functions
+│   │   ├── templates/              # Jinja2 templates here
+│   │   │   ├── base.html
+│   │   │   ├── components/
+│   │   │   ├── pages/
+│   │   │   │   ├── experiments/
+│   │   │   │   ├── sensors/
+│   │   │   │   └── dashboard/
+│   │   │   └── partials/           # HTMX partials
+│   │   ├── static/                 # Static assets here
+│   │   │   ├── css/
+│   │   │   │   ├── main.css
+│   │   │   │   └── components.css
+│   │   │   ├── js/
+│   │   │   │   ├── htmx.min.js
+│   │   │   │   └── app.js          # Minimal enhancement JS
+│   │   │   └── images/
+│   ├── tests/                      # Test suite
+│   │   ├── conftest.py             # Test configuration and fixtures
+│   │   ├── test_api/               # API endpoint tests
+│   │   ├── test_core/              # Core functionality tests
+│   │   └── test_integration/       # Integration tests
+├── database/
+│   ├── setup_db.py                 # Database initialization script
+│   ├── check_migrations.py         # Migration validation script
+│   ├── README.md                   # Database documentation
+│   └── migrations/  
+
+
+## Development Standards
+
+### Code Quality
+- **Readability over cleverness** - Code should be understood by any Python developer
+- **Explicit over implicit** - Clear, verbose naming over abbreviations
+- **Functional where possible** - Prefer pure functions and immutable data
+- **Type hints required** - All function signatures must include types
+- **Documentation strings** - All public functions need docstrings
+
+### Naming Conventions
+- **Python**: `snake_case` for variables, functions, modules
+- **SQL Tables**: `snake_case` with descriptive names
+- **HTML/CSS**: `kebab-case` for classes and IDs
+- **URLs**: `kebab-case` with RESTful patterns
+
+### Error Handling
+- **Fail gracefully** - Users should never see stack traces
+- **Log comprehensively** - Include context for laboratory troubleshooting
+- **Validate early** - Check inputs at the boundary
+- **Provide guidance** - Error messages should suggest solutions
+
+### Security Standards
+- **Input validation** - Sanitize all user inputs server-side
+- **CSRF protection** - All forms must include CSRF tokens
+- **SQL injection prevention** - Use SQLAlchemy ORM properly
+- **Authentication** - Role-based access control for laboratory functions
+- **Audit logging** - Track all data modifications for compliance
+
+## Performance Standards
+
+### Web Interface Response Times
+- **Page loads**: < 200ms for cached pages, < 500ms for dynamic
+- **Form submissions**: < 300ms for validation feedback
+- **Template rendering**: < 100ms for most pages
+
+### API Response Times
+- **Sensor data ingestion**: < 50ms for bulk uploads
+- **Real-time monitoring**: < 100ms for live sensor readings
+- **Equipment commands**: < 200ms for control operations
+- **Data queries**: < 50ms for simple operations, < 500ms for complex aggregations
+
+### Scientific Data Requirements
+- **Time-series ingestion**: Support 1000+ sensor readings per second
+- **Data retention**: Configurable retention policies for different data types
+- **Backup frequency**: Automated daily backups with point-in-time recovery
+- **Compliance reporting**: Generate audit reports within 60 seconds
+
+## Testing Strategy
+
+### Required Test Coverage
+- **Unit tests**: All business logic functions (>90% coverage)
+- **Integration tests**: Database operations and API endpoints
+- **Template tests**: Render validation and content verification
+- **End-to-end tests**: Critical user workflows
+- **Performance tests**: Load testing for sensor data ingestion
+
+### Test Organization
+- **Isolated tests** - Each test should be independent
+- **Data fixtures** - Consistent test data setup
+- **Mock external services** - No dependencies on real equipment
+- **Test environments** - Separate databases for testing
+
+## Documentation Requirements
+
+### Code Documentation
+- **API documentation** - Automatically generated from FastAPI
+- **Template documentation** - Comment complex Jinja2 logic
+- **Database schema** - Document all models and relationships
+- **Deployment guides** - Step-by-step setup instructions
+
+### User Documentation
+- **Laboratory workflows** - How to perform common tasks
+- **Equipment integration** - Setup guides for sensors and devices
+- **Troubleshooting** - Common issues and solutions
+- **Data export** - How to extract data for analysis
+
+## Deployment Standards
+
+### Environment Configuration
+- **Environment variables** - All configuration externalized
+- **Secret management** - Proper handling of API keys and passwords
+- **Health checks** - Monitoring endpoints for all services
+- **Graceful shutdown** - Proper cleanup of resources
+
+### Monitoring & Logging
+- **Application logs** - Structured logging with appropriate levels
+- **Performance metrics** - Response times and throughput monitoring
+- **Error tracking** - Automatic error reporting and alerting
+- **Audit trails** - Complete record of data modifications
+
+This architecture prioritizes reliability, maintainability, and user experience over developer convenience, making it ideal for scientific laboratory environments where data integrity and system stability are paramount while supporting both human users through intuitive web interfaces and programmatic clients through robust JSON APIs.
+
+
