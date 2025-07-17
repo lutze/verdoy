@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+
+{% block title %}Register - LIM OS{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1>Create Account</h1>
+            <p>Join the laboratory management platform</p>
+        </div>
+
+        <form action="/auth/register" method="post" class="auth-form" id="register-form">
+            <!-- CSRF protection -->
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+            
+            <div class="form-group">
+                <label for="name" class="form-label">Full Name</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    class="form-input" 
+                    required
+                    autocomplete="name"
+                    value="{{ name if name else '' }}"
+                    placeholder="Enter your full name"
+                >
+                <div class="form-error" id="name-error">
+                    {% if errors and errors.name %}{{ errors.name }}{% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="email" class="form-label">Email Address</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    class="form-input" 
+                    required
+                    autocomplete="email"
+                    value="{{ email if email else '' }}"
+                    placeholder="Enter your work email"
+                >
+                <div class="form-error" id="email-error">
+                    {% if errors and errors.email %}{{ errors.email }}{% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="organization_id" class="form-label">Organization</label>
+                <select 
+                    id="organization_id" 
+                    name="organization_id" 
+                    class="form-select"
+                    required
+                >
+                    <option value="">Select your organization</option>
+                    {% if organizations %}
+                        {% for org in organizations %}
+                        <option value="{{ org.id }}" 
+                                {% if organization_id and organization_id == org.id %}selected{% endif %}>
+                            {{ org.name }}
+                        </option>
+                        {% endfor %}
+                    {% endif %}
+                    <option value="create_new">+ Create New Organization</option>
+                </select>
+                <div class="form-error" id="organization-error">
+                    {% if errors and errors.organization_id %}{{ errors.organization_id }}{% endif %}
+                </div>
+            </div>
+
+            <!-- New organization name field (hidden by default) -->
+            <div class="form-group" id="new-org-group" style="display: none;">
+                <label for="new_organization_name" class="form-label">New Organization Name</label>
+                <input 
+                    type="text" 
+                    id="new_organization_name" 
+                    name="new_organization_name" 
+                    class="form-input" 
+                    value="{{ new_organization_name if new_organization_name else '' }}"
+                    placeholder="Enter organization name"
+                >
+                <div class="form-error" id="new-org-error">
+                    {% if errors and errors.new_organization_name %}{{ errors.new_organization_name }}{% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password" class="form-label">Password</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    class="form-input" 
+                    required
+                    autocomplete="new-password"
+                    minlength="8"
+                    placeholder="At least 8 characters"
+                >
+                <div class="form-error" id="password-error">
+                    {% if errors and errors.password %}{{ errors.password }}{% endif %}
+                </div>
+                <div class="form-hint">
+                    Password must be at least 8 characters long
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="confirm_password" class="form-label">Confirm Password</label>
+                <input 
+                    type="password" 
+                    id="confirm_password" 
+                    name="confirm_password" 
+                    class="form-input" 
+                    required
+                    autocomplete="new-password"
+                    placeholder="Re-enter your password"
+                >
+                <div class="form-error" id="confirm-password-error">
+                    {% if errors and errors.confirm_password %}{{ errors.confirm_password }}{% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="accept_terms" value="true" required>
+                    <span class="checkbox-text">
+                        I agree to the <a href="/legal/terms" target="_blank" class="link">Terms of Service</a> 
+                        and <a href="/legal/privacy" target="_blank" class="link">Privacy Policy</a>
+                    </span>
+                </label>
+                <div class="form-error" id="terms-error">
+                    {% if errors and errors.accept_terms %}{{ errors.accept_terms }}{% endif %}
+                </div>
+            </div>
+
+            {% if error %}
+            <div class="alert alert-error" role="alert">
+                <strong>Error:</strong> {{ error }}
+            </div>
+            {% endif %}
+
+            {% if message %}
+            <div class="alert alert-success" role="alert">
+                {{ message }}
+            </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary btn-full">
+                Create Account
+            </button>
+        </form>
+
+        <div class="auth-links">
+            <div class="auth-separator">
+                <span>Already have an account?</span>
+            </div>
+            <a href="/auth/login" class="btn btn-secondary btn-full">
+                Sign In
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Inherit auth styles from login page */
+.auth-container {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+}
+
+.auth-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    width: 100%;
+    max-width: 450px; /* Slightly wider for register form */
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-header h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+}
+
+.auth-header p {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.auth-form {
+    space-y: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.form-input, .form-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background-color: white;
+}
+
+.form-input:focus, .form-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-input:invalid {
+    border-color: #ef4444;
+}
+
+.form-error {
+    color: #ef4444;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    min-height: 1rem;
+}
+
+.form-hint {
+    color: #6b7280;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    cursor: pointer;
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+.checkbox-label input[type="checkbox"] {
+    margin-right: 0.5rem;
+    margin-top: 0.1rem;
+    flex-shrink: 0;
+}
+
+.checkbox-text {
+    color: #374151;
+}
+
+.alert {
+    padding: 0.75rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+}
+
+.alert-error {
+    background-color: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.alert-success {
+    background-color: #f0fdf4;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 500;
+    text-align: center;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #2563eb;
+}
+
+.btn-secondary {
+    background-color: #f9fafb;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.btn-secondary:hover {
+    background-color: #f3f4f6;
+}
+
+.btn-full {
+    width: 100%;
+}
+
+.auth-links {
+    margin-top: 1.5rem;
+    text-align: center;
+}
+
+.auth-separator {
+    margin: 1rem 0;
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.link {
+    color: #3b82f6;
+    text-decoration: none;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+/* Responsive design */
+@media (max-width: 640px) {
+    .auth-container {
+        padding: 1rem;
+    }
+    
+    .auth-card {
+        padding: 1.5rem;
+    }
+}
+</style>
+
+<script>
+// Progressive enhancement: Show/hide new organization field
+document.addEventListener('DOMContentLoaded', function() {
+    const orgSelect = document.getElementById('organization_id');
+    const newOrgGroup = document.getElementById('new-org-group');
+    const newOrgInput = document.getElementById('new_organization_name');
+    
+    orgSelect.addEventListener('change', function() {
+        if (this.value === 'create_new') {
+            newOrgGroup.style.display = 'block';
+            newOrgInput.required = true;
+        } else {
+            newOrgGroup.style.display = 'none';
+            newOrgInput.required = false;
+        }
+    });
+    
+    // Password confirmation validation
+    const password = document.getElementById('password');
+    const confirmPassword = document.getElementById('confirm_password');
+    const confirmError = document.getElementById('confirm-password-error');
+    
+    function validatePasswordMatch() {
+        if (confirmPassword.value && password.value !== confirmPassword.value) {
+            confirmPassword.setCustomValidity('Passwords do not match');
+            confirmError.textContent = 'Passwords do not match';
+        } else {
+            confirmPassword.setCustomValidity('');
+            confirmError.textContent = '';
+        }
+    }
+    
+    password.addEventListener('input', validatePasswordMatch);
+    confirmPassword.addEventListener('input', validatePasswordMatch);
+});
+</script>
+{% endblock %} 

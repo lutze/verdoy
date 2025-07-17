@@ -11,10 +11,7 @@
     {% block head %}{% endblock %}
 </head>
 <body>
-    <nav>
-        <!-- Navigation bar placeholder -->
-        {% block nav %}{% endblock %}
-    </nav>
+    {% include 'components/navbar.html' %}
     <main id="content">
         {% block content %}{% endblock %}
     </main>

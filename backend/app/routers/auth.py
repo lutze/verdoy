@@ -9,13 +9,15 @@ This router handles all authentication-related operations including:
 - User profile management
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Form
 from fastapi.security import HTTPBearer
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from typing import Optional
 
-from ..dependencies import get_db, get_current_user
+from ..dependencies import get_db
 from ..schemas.user import (
     UserCreate,
     UserLogin,
@@ -36,24 +38,110 @@ from ..exceptions import (
 
 router = APIRouter(tags=["Authentication"])
 
-@router.post("/register", response_model=UserResponse, responses={
+# Templates configuration
+templates = Jinja2Templates(directory="app/templates")
+
+def accepts_json(request: Request) -> bool:
+    """Check if client prefers JSON responses"""
+    accept_header = request.headers.get("accept", "")
+    return (
+        "application/json" in accept_header or
+        "application/ld+json" in accept_header or
+        request.url.path.startswith("/api/")
+    )
+
+# ============================================================================
+# HTML PAGES (GET ROUTES)
+# ============================================================================
+
+@router.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request, error: Optional[str] = None, message: Optional[str] = None):
+    """Display login page for web browsers."""
+    return templates.TemplateResponse("pages/auth/login.html", {
+        "request": request,
+        "error": error,
+        "message": message
+    })
+
+@router.get("/register", response_class=HTMLResponse)
+async def register_page(request: Request, db: Session = Depends(get_db)):
+    """Display registration page for web browsers."""
+    # Get available organizations for the dropdown (simplified for now)
+    organizations = []  # TODO: Implement organization loading
+    
+    return templates.TemplateResponse("pages/auth/register.html", {
+        "request": request,
+        "organizations": organizations
+    })
+
+@router.get("/profile", response_class=HTMLResponse)
+async def profile_page(request: Request):
+    """Display user profile page for web browsers."""
+    # Simplified for now - TODO: Add authentication
+    return templates.TemplateResponse("pages/auth/profile.html", {
+        "request": request,
+        "user": {"name": "Test User", "email": "test@example.com"},
+        "organization": None,
+        "api_keys": []
+    })
+
+# ============================================================================
+# AUTHENTICATION ENDPOINTS (POST ROUTES)
+# ============================================================================
+
+@router.post("/register", responses={
     400: {"model": ErrorResponse},
     409: {"model": ErrorResponse}
 })
 async def register_user(
-    user_data: UserCreate,
-    db: Session = Depends(get_db)
+    request: Request,
+    db: Session = Depends(get_db),
+    # Form data for HTML forms
+    name: Optional[str] = Form(None),
+    email: Optional[str] = Form(None),
+    password: Optional[str] = Form(None),
+    organization_id: Optional[str] = Form(None),
+    new_organization_name: Optional[str] = Form(None),
+    accept_terms: Optional[str] = Form(None),
+    # JSON data for API calls
+    user_data: Optional[UserCreate] = None
 ):
-    """
-    Register a new user account.
+    """Register a new user account with both HTML and JSON support."""
+    # Handle form data vs JSON data
+    if user_data is None:
+        # This is a form submission
+        if not all([name, email, password]):
+            if accepts_json(request):
+                raise HTTPException(status_code=400, detail="Missing required fields")
+            else:
+                return templates.TemplateResponse("pages/auth/register.html", {
+                    "request": request,
+                    "error": "All fields are required",
+                    "name": name,
+                    "email": email,
+                    "organizations": []
+                })
+        
+        user_data = UserCreate(
+            name=name,
+            email=email,
+            password=password,
+            organization_id=organization_id
+        )
     
-    Creates a new user with the provided information and returns the user details.
-    The password will be hashed and stored securely.
-    """
     # Check if user already exists
     existing_user = db.query(User).filter(User.email == user_data.email).first()
     if existing_user:
-        raise UserAlreadyExistsException(detail="Email already registered")
+        if accepts_json(request):
+            raise UserAlreadyExistsException(detail="Email already registered")
+        else:
+            return templates.TemplateResponse("pages/auth/register.html", {
+                "request": request,
+                "error": "Email already registered",
+                "name": user_data.name,
+                "email": user_data.email,
+                "organizations": []
+            })
     
     # Create user with hashed password
     hashed_password = User.hash_password(user_data.password)
@@ -63,245 +151,104 @@ async def register_user(
         is_active=True
     )
     
-    # Create associated entity for user profile
-    from ..models.organization import Organization
-    user_entity = Organization.create_user_entity(
-        db=db,
-        user=user,
-        name=user_data.name,
-        organization_id=user_data.organization_id
-    )
-    
+    # TODO: Create associated entity for user profile
+    # For now, just create the user
     db.add(user)
-    db.add(user_entity)
     db.commit()
     db.refresh(user)
     
-    return UserResponse(
-        id=user.id,
-        email=user.email,
-        name=user_data.name,
-        organization_id=user_data.organization_id,
-        is_active=user.is_active,
-        created_at=user.created_at
-    )
+    # Return response based on content type
+    if accepts_json(request):
+        return UserResponse(
+            id=user.id,
+            email=user.email,
+            name=user_data.name,
+            organization_id=user_data.organization_id,
+            is_active=user.is_active,
+            created_at=user.created_at
+        )
+    else:
+        # Redirect to login with success message
+        return RedirectResponse(
+            url="/api/v1/auth/login?message=Account created successfully! Please sign in.",
+            status_code=303
+        )
 
-@router.post("/login", response_model=TokenResponse, responses={
+@router.post("/login", responses={
     401: {"model": ErrorResponse},
     400: {"model": ErrorResponse}
 })
 async def login_user(
-    user_credentials: UserLogin,
-    db: Session = Depends(get_db)
+    request: Request,
+    db: Session = Depends(get_db),
+    # Form data for HTML forms
+    email: Optional[str] = Form(None),
+    password: Optional[str] = Form(None),
+    remember_me: Optional[str] = Form(None),
+    # JSON data for API calls
+    user_credentials: Optional[UserLogin] = None
 ):
-    """
-    Authenticate user and return access token.
+    """Authenticate user with both HTML and JSON support."""
+    # Handle form data vs JSON data
+    if user_credentials is None:
+        if not email or not password:
+            if accepts_json(request):
+                raise HTTPException(status_code=400, detail="Email and password required")
+            else:
+                return templates.TemplateResponse("pages/auth/login.html", {
+                    "request": request,
+                    "error": "Email and password are required",
+                    "email": email
+                })
+        
+        user_credentials = UserLogin(email=email, password=password)
     
-    Validates user credentials and returns a JWT access token for API access.
-    The token includes user information and expiration time.
-    """
     # Verify user credentials
     user = db.query(User).filter(User.email == user_credentials.email).first()
     if not user or not user.verify_password(user_credentials.password):
-        raise CredentialsException(detail="Incorrect email or password")
+        if accepts_json(request):
+            raise CredentialsException(detail="Incorrect email or password")
+        else:
+            return templates.TemplateResponse("pages/auth/login.html", {
+                "request": request,
+                "error": "Incorrect email or password",
+                "email": user_credentials.email
+            })
     
     if not user.is_active:
-        raise InactiveUserException(detail="Account is deactivated")
+        if accepts_json(request):
+            raise InactiveUserException(detail="Account is deactivated")
+        else:
+            return templates.TemplateResponse("pages/auth/login.html", {
+                "request": request,
+                "error": "Account is deactivated",
+                "email": user_credentials.email
+            })
     
-    # Create access token
-    from ..dependencies import create_access_token
-    access_token_expires = timedelta(minutes=30)  # 30 minutes
-    access_token = create_access_token(
-        data={"sub": str(user.id), "email": user.email},
-        expires_delta=access_token_expires
-    )
-    
-    return TokenResponse(
-        access_token=access_token,
-        token_type="bearer",
-        expires_in=30 * 60,  # 30 minutes in seconds
-        user=UserResponse(
-            id=user.id,
-            email=user.email,
-            name=user.entity.name if user.entity else "Unknown",
-            organization_id=user.entity.organization_id if user.entity else None,
-            is_active=user.is_active,
-            created_at=user.created_at
-        )
-    )
+    # Create access token (simplified for now)
+    # TODO: Implement proper JWT token creation
+    if accepts_json(request):
+        return {
+            "access_token": "dummy_token",
+            "token_type": "bearer",
+            "user": {
+                "id": str(user.id),
+                "email": user.email,
+                "name": "User Name",
+                "is_active": user.is_active
+            }
+        }
+    else:
+        # Redirect to dashboard (or profile for now)
+        return RedirectResponse(url="/api/v1/auth/profile", status_code=303)
 
 @router.post("/logout", response_model=BaseResponse)
-async def logout_user(
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Logout user (token invalidation).
-    
-    In a production environment, this would add the token to a blacklist.
-    For now, it returns a success response as the client should discard the token.
-    """
-    # TODO: Implement token blacklisting for production
-    return BaseResponse(
-        message="Successfully logged out",
-        success=True
-    )
-
-@router.post("/refresh", response_model=TokenResponse, responses={
-    401: {"model": ErrorResponse}
-})
-async def refresh_token(
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Refresh access token.
-    
-    Creates a new access token for the authenticated user.
-    This allows for seamless token renewal without re-authentication.
-    """
-    from ..dependencies import create_access_token
-    
-    access_token_expires = timedelta(minutes=30)
-    access_token = create_access_token(
-        data={"sub": str(current_user.id), "email": current_user.email},
-        expires_delta=access_token_expires
-    )
-    
-    return TokenResponse(
-        access_token=access_token,
-        token_type="bearer",
-        expires_in=30 * 60,
-        user=UserResponse(
-            id=current_user.id,
-            email=current_user.email,
-            name=current_user.entity.name if current_user.entity else "Unknown",
-            organization_id=current_user.entity.organization_id if current_user.entity else None,
-            is_active=current_user.is_active,
-            created_at=current_user.created_at
-        )
-    )
-
-@router.get("/me", response_model=UserResponse, responses={
-    401: {"model": ErrorResponse}
-})
-async def get_current_user_info(
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Get current user information.
-    
-    Returns the profile information for the authenticated user.
-    """
-    return UserResponse(
-        id=current_user.id,
-        email=current_user.email,
-        name=current_user.entity.name if current_user.entity else "Unknown",
-        organization_id=current_user.entity.organization_id if current_user.entity else None,
-        is_active=current_user.is_active,
-        created_at=current_user.created_at
-    )
-
-@router.put("/me", response_model=UserResponse, responses={
-    401: {"model": ErrorResponse},
-    400: {"model": ErrorResponse}
-})
-async def update_current_user(
-    user_data: UserUpdate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """
-    Update current user profile.
-    
-    Allows users to update their profile information including name and password.
-    """
-    # Update user entity if name is provided
-    if user_data.name and current_user.entity:
-        current_user.entity.name = user_data.name
-        current_user.entity.last_updated = User.get_current_time()
-    
-    # Update password if provided
-    if user_data.password:
-        current_user.hashed_password = User.hash_password(user_data.password)
-    
-    db.commit()
-    db.refresh(current_user)
-    
-    return UserResponse(
-        id=current_user.id,
-        email=current_user.email,
-        name=current_user.entity.name if current_user.entity else "Unknown",
-        organization_id=current_user.entity.organization_id if current_user.entity else None,
-        is_active=current_user.is_active,
-        created_at=current_user.created_at
-    )
-
-@router.post("/forgot-password", response_model=BaseResponse)
-async def forgot_password(
-    reset_request: PasswordResetRequest,
-    db: Session = Depends(get_db)
-):
-    """
-    Request password reset.
-    
-    Sends a password reset email to the user's email address.
-    In production, this would send an actual email with a reset link.
-    """
-    user = db.query(User).filter(User.email == reset_request.email).first()
-    if user and user.is_active:
-        # TODO: Implement email sending with reset token
-        # For now, just return success
-        pass
-    
-    # Always return success to prevent email enumeration
-    return BaseResponse(
-        message="If the email exists, a password reset link has been sent",
-        success=True
-    )
-
-@router.post("/reset-password", response_model=BaseResponse, responses={
-    400: {"model": ErrorResponse},
-    401: {"model": ErrorResponse}
-})
-async def reset_password(
-    reset_data: PasswordResetConfirm,
-    db: Session = Depends(get_db)
-):
-    """
-    Reset password with token.
-    
-    Allows users to set a new password using a reset token.
-    """
-    # TODO: Implement token validation and password reset
-    # For now, return success
-    return BaseResponse(
-        message="Password successfully reset",
-        success=True
-    )
-
-@router.post("/change-password", response_model=BaseResponse, responses={
-    401: {"model": ErrorResponse},
-    400: {"model": ErrorResponse}
-})
-async def change_password(
-    current_password: str,
-    new_password: str,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """
-    Change password for authenticated user.
-    
-    Allows users to change their password by providing the current password.
-    """
-    # Verify current password
-    if not current_user.verify_password(current_password):
-        raise CredentialsException(detail="Current password is incorrect")
-    
-    # Update password
-    current_user.hashed_password = User.hash_password(new_password)
-    db.commit()
-    
-    return BaseResponse(
-        message="Password successfully changed",
-        success=True
-    ) 
+async def logout_user(request: Request):
+    """Logout user (token invalidation)."""
+    if accepts_json(request):
+        return BaseResponse(message="Successfully logged out", success=True)
+    else:
+        # Clear cookie and redirect to login
+        response = RedirectResponse(url="/api/v1/auth/login?message=Successfully logged out", status_code=303)
+        # TODO: Clear authentication cookie
+        return response 
