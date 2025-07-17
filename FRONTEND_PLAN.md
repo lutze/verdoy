@@ -156,4 +156,40 @@ backend/app/
 
 ---
 
+## 7. Frontend Smoke Testing Strategy
+
+To ensure all frontend pages continue to load and function correctly after future changes, we will:
+- Add **Playwright smoke tests** for each Core Pages & Components section as they are implemented.
+- These tests will verify that key HTML pages render, forms are present, and navigation works as expected.
+- Playwright tests will be run as part of CI and before major releases.
+
+### Playwright Smoke Test Coverage
+
+#### Authentication Pages (COMPLETED)
+- [ ] Login page loads and form is visible (`/api/v1/auth/login`)
+- [ ] Registration page loads and form is visible (`/api/v1/auth/register`)
+- [ ] Profile page loads and user info is visible (`/api/v1/auth/profile`)
+- [ ] Navigation bar renders correct links for guest and authenticated users
+- [ ] Submitting login form with invalid credentials shows error
+- [ ] Submitting registration form with missing fields shows error
+
+#### Dashboard (NEXT)
+- [ ] Dashboard page loads and displays organization cards
+- [ ] Activity feed and stats are visible
+
+#### Organization Management (FUTURE)
+- [ ] Organization list page loads
+- [ ] Create organization form is visible
+- [ ] Member management UI loads
+
+#### Project Management (FUTURE)
+- [ ] Project list and detail pages load
+- [ ] Create project form is visible
+
+#### ... (repeat for each section)
+
+---
+
+**All new Core Pages & Components must include Playwright smoke tests to ensure robust frontend quality.**
+
 **This plan should be reviewed and approved before frontend code is generated.** 
