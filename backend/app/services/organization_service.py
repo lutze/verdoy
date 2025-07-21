@@ -79,8 +79,21 @@ class OrganizationService(BaseService[Organization]):
                 name=org_data.name,
                 description=org_data.description,
                 is_active=True,
-                settings=org_data.settings or {},
-                billing_info=org_data.billing_info or {}
+                properties={
+                    'organization_type': org_data.organization_type.value if hasattr(org_data.organization_type, 'value') else str(org_data.organization_type),
+                    'contact_email': getattr(org_data, 'contact_email', None),
+                    'contact_phone': getattr(org_data, 'contact_phone', None),
+                    'website': getattr(org_data, 'website', None),
+                    'address': getattr(org_data, 'address', None),
+                    'city': getattr(org_data, 'city', None),
+                    'state': getattr(org_data, 'state', None),
+                    'country': getattr(org_data, 'country', None),
+                    'postal_code': getattr(org_data, 'postal_code', None),
+                    'timezone': getattr(org_data, 'timezone', 'UTC'),
+                    'member_count': 0,
+                    'device_count': 0,
+                    **(org_data.settings or {})
+                }
             )
             
             # Save to database

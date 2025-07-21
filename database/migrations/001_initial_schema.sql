@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS entities (
     properties JSONB NOT NULL DEFAULT '{}',
     status VARCHAR(50) DEFAULT 'active',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    last_updated TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- Relationships table: Graph structure for entity connections

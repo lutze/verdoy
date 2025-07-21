@@ -9,6 +9,7 @@ This router handles all authentication-related operations including:
 - User profile management
 """
 
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Form
 from fastapi.security import HTTPBearer
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -16,6 +17,8 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 from ..dependencies import get_db
 from ..schemas.user import (
@@ -51,39 +54,45 @@ def accepts_json(request: Request) -> bool:
     )
 
 # ============================================================================
-# HTML PAGES (GET ROUTES)
+# DUAL-PURPOSE ROUTES (HTML + JSON)
 # ============================================================================
 
-@router.get("/login", response_class=HTMLResponse)
+@router.get("/login", response_class=HTMLResponse, include_in_schema=False)
 async def login_page(request: Request, error: Optional[str] = None, message: Optional[str] = None):
-    """Display login page for web browsers."""
-    return templates.TemplateResponse("pages/auth/login.html", {
-        "request": request,
-        "error": error,
-        "message": message
-    })
+    """Display login page for web browsers or return login info for API clients."""
+    if accepts_json(request):
+        return {"login_url": "/api/v1/auth/login", "method": "POST"}
+    else:
+        return templates.TemplateResponse("pages/auth/login.html", {
+            "request": request,
+            "error": error,
+            "message": message
+        })
 
-@router.get("/register", response_class=HTMLResponse)
+@router.get("/register", response_class=HTMLResponse, include_in_schema=False)
 async def register_page(request: Request, db: Session = Depends(get_db)):
-    """Display registration page for web browsers."""
-    # Get available organizations for the dropdown (simplified for now)
-    organizations = []  # TODO: Implement organization loading
-    
-    return templates.TemplateResponse("pages/auth/register.html", {
-        "request": request,
-        "organizations": organizations
-    })
+    """Display registration page for web browsers or return registration info for API clients."""
+    if accepts_json(request):
+        return {"register_url": "/api/v1/auth/register", "method": "POST"}
+    else:
+        organizations = []  # TODO: Implement organization loading
+        return templates.TemplateResponse("pages/auth/register.html", {
+            "request": request,
+            "organizations": organizations
+        })
 
-@router.get("/profile", response_class=HTMLResponse)
+@router.get("/profile", response_class=HTMLResponse, include_in_schema=False)
 async def profile_page(request: Request):
-    """Display user profile page for web browsers."""
-    # Simplified for now - TODO: Add authentication
-    return templates.TemplateResponse("pages/auth/profile.html", {
-        "request": request,
-        "user": {"name": "Test User", "email": "test@example.com"},
-        "organization": None,
-        "api_keys": []
-    })
+    """Display user profile page for web browsers or return profile data for API clients."""
+    if accepts_json(request):
+        return {"user": {"name": "Test User", "email": "test@example.com"}, "organization": None, "api_keys": []}
+    else:
+        return templates.TemplateResponse("pages/auth/profile.html", {
+            "request": request,
+            "user": {"name": "Test User", "email": "test@example.com"},
+            "organization": None,
+            "api_keys": []
+        })
 
 # ============================================================================
 # AUTHENTICATION ENDPOINTS (POST ROUTES)
@@ -102,38 +111,139 @@ async def register_user(
     password: Optional[str] = Form(None),
     organization_id: Optional[str] = Form(None),
     new_organization_name: Optional[str] = Form(None),
-    accept_terms: Optional[str] = Form(None),
-    # JSON data for API calls
-    user_data: Optional[UserCreate] = None
+    accept_terms: Optional[str] = Form(None)
 ):
     """Register a new user account with both HTML and JSON support."""
-    # Handle form data vs JSON data
-    if user_data is None:
-        # This is a form submission
-        if not all([name, email, password]):
-            if accepts_json(request):
-                raise HTTPException(status_code=400, detail="Missing required fields")
-            else:
-                return templates.TemplateResponse("pages/auth/register.html", {
-                    "request": request,
-                    "error": "All fields are required",
-                    "name": name,
-                    "email": email,
-                    "organizations": []
-                })
-        
-        user_data = UserCreate(
-            name=name,
-            email=email,
-            password=password,
-            organization_id=organization_id
-        )
+    from ..services.auth_service import AuthService
     
-    # Check if user already exists
-    existing_user = db.query(User).filter(User.email == user_data.email).first()
-    if existing_user:
+    # Check if this is a JSON request
+    if accepts_json(request):
+        # Parse JSON body manually for API calls
+        try:
+            body = await request.json()
+            user_data = UserCreate(**body)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid JSON data")
+    else:
+        # Handle form data
+        if not all([name, email, password]):
+            return templates.TemplateResponse("pages/auth/register.html", {
+                "request": request,
+                "error": "All fields are required",
+                "name": name,
+                "email": email,
+                "organizations": []
+            })
+        
+        # Handle "create_new" organization case
+        if organization_id == "create_new":
+            user_data = UserCreate(
+                name=name,
+                email=email,
+                password=password,
+                organization_id=None
+            )
+        else:
+            # Convert string to UUID if provided
+            org_id = None
+            if organization_id and organization_id != "create_new":
+                try:
+                    import uuid
+                    org_id = uuid.UUID(organization_id)
+                except ValueError:
+                    return templates.TemplateResponse("pages/auth/register.html", {
+                        "request": request,
+                        "error": "Invalid organization ID",
+                        "name": name,
+                        "email": email,
+                        "organizations": []
+                    })
+            
+            user_data = UserCreate(
+                name=name,
+                email=email,
+                password=password,
+                organization_id=org_id
+            )
+    
+    # Use AuthService for proper user registration
+    auth_service = AuthService(db)
+    
+    try:
+        # Always create user without organization first for a more robust flow
+        user_creation_data = UserCreate(
+            name=user_data.name,
+            email=user_data.email,
+            password=user_data.password,
+            organization_id=None  # Create user without organization initially
+        )
+        
+        # Register user through service layer
+        user = auth_service.register_user(user_creation_data)
+        logger.info(f"User created successfully: {user.email}")
+        
+        # Handle organization creation/assignment AFTER user creation
+        final_organization_id = None
+        
+        if organization_id == "create_new" and new_organization_name:
+            # Create new organization and assign user to it
+            from ..services.organization_service import OrganizationService
+            from ..schemas.organization import OrganizationCreate
+            
+            org_service = OrganizationService(db)
+            org_data = OrganizationCreate(
+                name=new_organization_name,
+                description=f"Organization created by {user_data.name}",
+                organization_type="small_business"
+            )
+            
+            try:
+                organization = org_service.create_organization(org_data, user.id)
+                
+                # Update user's entity with the new organization
+                if user.entity:
+                    user.entity.organization_id = organization.id
+                    db.commit()
+                    final_organization_id = organization.id
+                    
+                logger.info(f"Created organization '{organization.name}' and assigned user {user.email}")
+                
+            except Exception as e:
+                # If organization creation fails, log error but don't fail user creation
+                logger.error(f"Failed to create organization for user {user.email}: {e}")
+                # User creation still succeeded, just without the custom organization
+                
+        elif user_data.organization_id:
+            # Assign user to existing organization
+            if user.entity:
+                user.entity.organization_id = user_data.organization_id
+                db.commit()
+                final_organization_id = user_data.organization_id
+                logger.info(f"Assigned user {user.email} to existing organization {user_data.organization_id}")
+        
+        # Return response based on content type
         if accepts_json(request):
-            raise UserAlreadyExistsException(detail="Email already registered")
+            return UserResponse(
+                id=user.id,
+                email=user.email,
+                name=user_data.name,
+                organization_id=final_organization_id,
+                is_active=user.is_active,
+                is_superuser=user.is_superuser,
+                entity_id=user.entity.id if user.entity else user.id,
+                created_at=user.created_at,
+                updated_at=user.updated_at
+            )
+        else:
+            # Redirect to login with success message
+            return RedirectResponse(
+                url="/app/login?message=Account created successfully! Please sign in.",
+                status_code=303
+            )
+            
+    except UserAlreadyExistsException as e:
+        if accepts_json(request):
+            raise HTTPException(status_code=409, detail=str(e))
         else:
             return templates.TemplateResponse("pages/auth/register.html", {
                 "request": request,
@@ -142,37 +252,18 @@ async def register_user(
                 "email": user_data.email,
                 "organizations": []
             })
-    
-    # Create user with hashed password
-    hashed_password = User.hash_password(user_data.password)
-    user = User(
-        email=user_data.email,
-        hashed_password=hashed_password,
-        is_active=True
-    )
-    
-    # TODO: Create associated entity for user profile
-    # For now, just create the user
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    
-    # Return response based on content type
-    if accepts_json(request):
-        return UserResponse(
-            id=user.id,
-            email=user.email,
-            name=user_data.name,
-            organization_id=user_data.organization_id,
-            is_active=user.is_active,
-            created_at=user.created_at
-        )
-    else:
-        # Redirect to login with success message
-        return RedirectResponse(
-            url="/api/v1/auth/login?message=Account created successfully! Please sign in.",
-            status_code=303
-        )
+    except Exception as e:
+        logger.error(f"Error during user registration: {e}")
+        if accepts_json(request):
+            raise HTTPException(status_code=500, detail="Registration failed")
+        else:
+            return templates.TemplateResponse("pages/auth/register.html", {
+                "request": request,
+                "error": "Registration failed. Please try again.",
+                "name": user_data.name,
+                "email": user_data.email,
+                "organizations": []
+            })
 
 @router.post("/login", responses={
     401: {"model": ErrorResponse},
@@ -184,28 +275,32 @@ async def login_user(
     # Form data for HTML forms
     email: Optional[str] = Form(None),
     password: Optional[str] = Form(None),
-    remember_me: Optional[str] = Form(None),
-    # JSON data for API calls
-    user_credentials: Optional[UserLogin] = None
+    remember_me: Optional[str] = Form(None)
 ):
     """Authenticate user with both HTML and JSON support."""
-    # Handle form data vs JSON data
-    if user_credentials is None:
+    
+    # Check if this is a JSON request
+    if accepts_json(request):
+        # Parse JSON body manually for API calls
+        try:
+            body = await request.json()
+            user_credentials = UserLogin(**body)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid JSON data")
+    else:
+        # Handle form data
         if not email or not password:
-            if accepts_json(request):
-                raise HTTPException(status_code=400, detail="Email and password required")
-            else:
-                return templates.TemplateResponse("pages/auth/login.html", {
-                    "request": request,
-                    "error": "Email and password are required",
-                    "email": email
-                })
+            return templates.TemplateResponse("pages/auth/login.html", {
+                "request": request,
+                "error": "Email and password are required",
+                "email": email
+            })
         
         user_credentials = UserLogin(email=email, password=password)
     
     # Verify user credentials
     user = db.query(User).filter(User.email == user_credentials.email).first()
-    if not user or not user.verify_password(user_credentials.password):
+    if not user or not user.check_password(user_credentials.password):
         if accepts_json(request):
             raise CredentialsException(detail="Incorrect email or password")
         else:
@@ -231,16 +326,17 @@ async def login_user(
         return {
             "access_token": "dummy_token",
             "token_type": "bearer",
+            "expires_in": 3600,  # 1 hour in seconds
             "user": {
                 "id": str(user.id),
                 "email": user.email,
-                "name": "User Name",
+                "name": user.entity.name if user.entity else "Unknown User",
                 "is_active": user.is_active
             }
         }
     else:
         # Redirect to dashboard (or profile for now)
-        return RedirectResponse(url="/api/v1/auth/profile", status_code=303)
+        return RedirectResponse(url="/app/profile", status_code=303)
 
 @router.post("/logout", response_model=BaseResponse)
 async def logout_user(request: Request):
@@ -249,6 +345,6 @@ async def logout_user(request: Request):
         return BaseResponse(message="Successfully logged out", success=True)
     else:
         # Clear cookie and redirect to login
-        response = RedirectResponse(url="/api/v1/auth/login?message=Successfully logged out", status_code=303)
+        response = RedirectResponse(url="/app/login?message=Successfully logged out", status_code=303)
         # TODO: Clear authentication cookie
         return response 

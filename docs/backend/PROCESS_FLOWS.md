@@ -336,22 +336,29 @@ Entity (base table)
 
 ## Implementation Notes
 
-### Database Constraints
-- `users.entity_id` must reference existing `entities.id`
-- `entities.organization_id` can be NULL (for standalone users/organizations)
-- `entities.organization_id` must reference existing `entities.id` when not NULL
+### Test User for Development & CI
+- A default test user is always created via migration (`test@example.com` / `testpassword123`).
+- The password hash is generated using the backend's bcrypt environment to ensure compatibility.
+- This user is guaranteed to work after every database rebuild and is used for Playwright/CI login tests.
+- The test user is created in the `006_add_users_table.sql` migration, after the users table exists.
 
-### Security Considerations
-- All passwords must be hashed using bcrypt
-- JWT tokens should have appropriate expiration times
-- Organization membership should be validated on all resource access
-- Audit logging should track all user and organization changes
+### Password Hashing
+- All passwords are hashed using bcrypt (12 rounds) via passlib in the backend container.
+- Never store plain text passwords or hashes generated outside the backend environment.
 
-### Performance Considerations
-- Index on `entities.organization_id` for fast organization queries
-- Index on `users.email` for fast authentication
-- Consider caching for frequently accessed permission checks
-- Use database transactions for multi-step operations
+### Registration & Login Flow
+- Registration and login are robust and tested end-to-end.
+- Registration creates both an Entity and a User, with proper foreign key relationships.
+- Login verifies the password using the User model's `check_password` method.
+- Post-login and logout redirects use `/auth/profile` and `/auth/login` (no `/api/v1/` prefix).
+
+### Migration Order
+- The test user is created only after the users table exists (in `006_add_users_table.sql`).
+- If you add new migrations, ensure the test user creation remains after the users table.
+
+### Testing
+- Playwright and API tests use the test user for login and registration flows.
+- The test user is always available for local development and CI.
 
 ---
 

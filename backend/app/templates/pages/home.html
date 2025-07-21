@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Home | LIM OS{% endblock %}
+
+{% block content %}
+<section class="home-hero">
+    <h1>Welcome to LIM OS</h1>
+    <p class="lead">The Laboratory Information Management Operating System for modern R&D and scientific labs.</p>
+    <nav class="home-nav">
+        <ul>
+            <li><a href="/app/dashboard">Dashboard</a></li>
+            <li><a href="/app/admin/organization/">Organizations</a></li>
+            <li><a href="/app/projects">Projects</a></li>
+            <li><a href="/app/processes">Processes</a></li>
+            <li><a href="/app/experiments">Experiments</a></li>
+            <li><a href="/app/bioreactors">Bioreactors</a></li>
+            <li><a href="/app/admin/profile/">Profile</a></li>
+        </ul>
+    </nav>
+</section>
+
+<style>
+.home-hero {
+    max-width: 600px;
+    margin: 2rem auto;
+    text-align: center;
+    padding: 2rem 1rem;
+}
+.home-hero h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+}
+.home-hero .lead {
+    font-size: 1.25rem;
+    color: #374151;
+    margin-bottom: 2rem;
+}
+.home-nav ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+}
+.home-nav a {
+    display: block;
+    padding: 0.75rem 1.5rem;
+    background: #3b82f6;
+    color: #fff;
+    border-radius: 0.375rem;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+.home-nav a:hover {
+    background: #2563eb;
+}
+</style>
+{% endblock %} 

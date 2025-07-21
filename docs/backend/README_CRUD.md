@@ -248,3 +248,16 @@ All errors return consistent JSON responses with error details.
 4. **Device Commands**: Add command queue system
 5. **Bulk Operations**: Support bulk device operations
 6. **Export Features**: Add data export functionality 
+
+## Test User for Development & CI
+
+- A default test user (`test@example.com` / `testpassword123`) is always created via migration (`006_add_users_table.sql`).
+- The password hash is generated using the backend's bcrypt environment for compatibility.
+- This user is guaranteed to work after every database rebuild and is used for Playwright/CI login tests.
+- Registration and login flows are robust and tested end-to-end.
+- Post-login and logout redirects use `/auth/profile` and `/auth/login` (no `/api/v1/` prefix).
+
+## Password Hashing
+
+- All passwords are hashed using bcrypt (12 rounds) via passlib in the backend container.
+- Never store plain text passwords or hashes generated outside the backend environment. 

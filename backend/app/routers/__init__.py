@@ -17,6 +17,7 @@ This package contains all API route handlers organized by domain:
 """
 
 from .auth import router as auth_router
+from .dashboard import router as dashboard_router
 from .devices import router as devices_router
 from .readings import router as readings_router
 from .commands import router as commands_router
@@ -35,6 +36,7 @@ from .websocket.alerts import router as alerts_ws_router
 
 __all__ = [
     "auth_router",
+    "dashboard_router",
     "devices_router", 
     "readings_router",
     "commands_router",

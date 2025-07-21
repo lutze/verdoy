@@ -75,4 +75,50 @@ BEGIN
     UPDATE entities 
     SET organization_id = default_org_id 
     WHERE organization_id IS NULL AND entity_type != 'organization';
+END $$;
+
+-- Create a default test user for development and testing
+DO $$
+DECLARE
+    user_entity_id UUID;
+    test_user_id UUID;
+BEGIN
+    -- Create user entity if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM entities WHERE entity_type = 'user' AND name = 'Test User') THEN
+        INSERT INTO entities (id, entity_type, name, description, properties, is_active) VALUES
+        (
+            uuid_generate_v4(),
+            'user',
+            'Test User',
+            'Default test user for development and testing',
+            '{
+                "email": "test@example.com",
+                "user_type": "standard",
+                "role": "admin",
+                "department": "Development",
+                "created_by": "system"
+            }',
+            true
+        ) RETURNING id INTO user_entity_id;
+    ELSE
+        SELECT id INTO user_entity_id FROM entities WHERE entity_type = 'user' AND name = 'Test User';
+    END IF;
+
+    -- Create user record if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM users WHERE email = 'test@example.com') THEN
+        INSERT INTO users (id, entity_id, email, hashed_password, is_active, is_superuser, created_at, updated_at) VALUES
+        (
+            uuid_generate_v4(),
+            user_entity_id,
+            'test@example.com',
+            '$2b$12$2KKaRCpDxQcm2p99qfGoCerZaHWaNd3/cKiT7QvsyNQ.jslRWV5da', -- password: "testpassword123"
+            true,
+            false,
+            NOW(),
+            NOW()
+        );
+    END IF;
+    
+    -- Log the test user creation
+    RAISE NOTICE 'Test user created: test@example.com with password: testpassword123';
 END $$; 

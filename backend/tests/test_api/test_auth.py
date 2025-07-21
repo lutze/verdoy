@@ -67,7 +67,8 @@ class TestAuthEndpoints:
     def test_login_success(self, client: TestClient, test_user_data: dict):
         """Test successful user login endpoint."""
         # Arrange
-        client.post("/api/v1/auth/register", json=test_user_data)
+        register_response = client.post("/api/v1/auth/register", json=test_user_data)
+        print(f"Register response: {register_response.status_code}, {register_response.text}")
         
         login_data = {
             "email": test_user_data["email"],
@@ -76,6 +77,7 @@ class TestAuthEndpoints:
         
         # Act
         response = client.post("/api/v1/auth/login", json=login_data)
+        print(f"Login response: {response.status_code}, {response.text}")
         
         # Assert
         assert response.status_code == 200

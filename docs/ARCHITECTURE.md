@@ -566,6 +566,34 @@ CREATE TABLE relationships (
 
 ---
 
+## Routing Conventions (as of 18 July 2025)
+
+- **Web (HTML) pages:**
+  - Use "pretty" URLs with no `/api/v1` prefix.
+  - Example routes:
+    - `/auth/login` (login page)
+    - `/auth/register` (registration page)
+    - `/dashboard` (user dashboard)
+    - `/dashboard/activity` (activity feed partial)
+    - `/dashboard/stats` (dashboard stats partial)
+  - These endpoints return HTML (Jinja2 templates) and are intended for browser users.
+  - They are registered in FastAPI with prefixes like `/auth` or `/dashboard`, or no prefix at all.
+
+- **API (JSON) endpoints:**
+  - Use the `/api/v1` prefix for all programmatic (JSON) endpoints.
+  - Example routes:
+    - `/api/v1/devices` (device management API)
+    - `/api/v1/readings` (sensor data API)
+    - `/api/v1/commands` (device command API)
+  - These endpoints return JSON and are intended for programmatic clients (IoT devices, scripts, etc.).
+  - They are registered in FastAPI with the prefix from `settings.api_prefix` (default `/api/v1`).
+
+- **Rationale:**
+  - This separation keeps browser-facing pages clean and user-friendly, while maintaining a clear, versioned API for programmatic access.
+  - Web endpoints are hidden from API docs, while API endpoints are fully documented.
+
+---
+
 ## 📋 Next Steps
 
 ### Documentation Priorities

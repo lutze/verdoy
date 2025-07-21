@@ -30,15 +30,13 @@ class Entity(BaseModel):
     
     __tablename__ = "entities"
     
-    id = Column(PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    # Entity-specific fields (inherits id, created_at, updated_at, is_active from BaseModel)
     entity_type = Column(String(100), nullable=False, index=True)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     properties = Column(JSONType, nullable=False, default={})
     status = Column(String(50), default="active")
     organization_id = Column(PostgresUUID(as_uuid=True), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    last_updated = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Bi-directional one-to-one relationship to User (for user entities)
     user = relationship("User", back_populates="entity", uselist=False, foreign_keys="User.entity_id")  # Only applies if this entity is a user
@@ -79,7 +77,7 @@ class Entity(BaseModel):
         if not self.properties:
             self.properties = {}
         self.properties.update(kwargs)
-        self.last_updated = datetime.utcnow()
+        self.updated_at = datetime.utcnow()
     
     def to_dict(self):
         """
@@ -88,17 +86,16 @@ class Entity(BaseModel):
         Returns:
             Dictionary representation of the model
         """
-        result = {
-            'id': str(self.id),
+        # Use BaseModel's to_dict and add entity-specific fields
+        result = super().to_dict()
+        result.update({
             'entity_type': self.entity_type,
             'name': self.name,
             'description': self.description,
             'properties': self.properties,
             'status': self.status,
-            'organization_id': str(self.organization_id) if self.organization_id else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'last_updated': self.last_updated.isoformat() if self.last_updated else None
-        }
+            'organization_id': str(self.organization_id) if self.organization_id else None
+        })
         return result
     
     def __repr__(self):

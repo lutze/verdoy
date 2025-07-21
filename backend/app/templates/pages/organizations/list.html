@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Organizations</h1>
+            <p class="text-gray-600 mt-2">Manage your organizations and teams</p>
+        </div>
+        <a href="/api/v1/organizations/create" 
+           class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+            </svg>
+            Create Organization
+        </a>
+    </div>
+
+    <!-- Organizations Grid -->
+    {% if organizations %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for org in organizations %}
+        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200">
+            <!-- Organization Header -->
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">{{ org.name }}</h3>
+                        {% if org.description %}
+                        <p class="text-gray-600 text-sm mb-3">{{ org.description }}</p>
+                        {% endif %}
+                        <div class="flex items-center space-x-4 text-sm text-gray-500">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                       {% if org.status == 'active' %}bg-green-100 text-green-800
+                                       {% elif org.status == 'suspended' %}bg-yellow-100 text-yellow-800
+                                       {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ org.status|title }}
+                            </span>
+                            <span class="capitalize">{{ org.organization_type|replace('_', ' ') }}</span>
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Organization Stats -->
+            <div class="p-6">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-gray-900">{{ org.member_count|default(0) }}</div>
+                        <div class="text-xs text-gray-500">Members</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-gray-900">{{ org.device_count|default(0) }}</div>
+                        <div class="text-xs text-gray-500">Devices</div>
+                    </div>
+                </div>
+
+                <!-- Contact Info -->
+                {% if org.contact_email or org.website %}
+                <div class="space-y-2 mb-4">
+                    {% if org.contact_email %}
+                    <div class="flex items-center text-sm text-gray-600">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        <a href="mailto:{{ org.contact_email }}" class="hover:text-blue-600">{{ org.contact_email }}</a>
+                    </div>
+                    {% endif %}
+                    {% if org.website %}
+                    <div class="flex items-center text-sm text-gray-600">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"/>
+                        </svg>
+                        <a href="{{ org.website }}" target="_blank" class="hover:text-blue-600">{{ org.website }}</a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Actions -->
+                <div class="flex space-x-2">
+                    <a href="/api/v1/organizations/{{ org.id }}" 
+                       class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-3 rounded-md text-sm font-medium transition-colors">
+                        View Details
+                    </a>
+                    <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-md transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="text-center py-12">
+        <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+            </svg>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">No organizations yet</h3>
+        <p class="text-gray-600 mb-6">Create your first organization to get started with team collaboration and device management.</p>
+        <a href="/api/v1/organizations/create" 
+           class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">
+            Create Organization
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

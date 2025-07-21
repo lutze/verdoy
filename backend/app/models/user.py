@@ -65,6 +65,18 @@ class User(BaseModel):
         """
         return pwd_context.verify(plain_password, hashed_password)
     
+    def check_password(self, plain_password: str) -> bool:
+        """
+        Verify a password against this user's hashed password.
+        
+        Args:
+            plain_password: Plain text password to verify
+            
+        Returns:
+            True if password matches, False otherwise
+        """
+        return self.verify_password(plain_password, self.hashed_password)
+    
     @classmethod
     def get_by_email(cls, db, email: str):
         """

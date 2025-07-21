@@ -1,0 +1,32 @@
+<div class="activity-feed">
+    {% if activities %}
+        <ul class="activity-list">
+            {% for activity in activities %}
+            <li class="activity-item activity-{{ activity.type }}">
+                <div class="activity-icon">
+                    {% if activity.type == 'experiment_started' %}🧪
+                    {% elif activity.type == 'experiment_completed' %}✅
+                    {% elif activity.type == 'bioreactor_online' %}🟢
+                    {% elif activity.type == 'bioreactor_offline' %}🔴
+                    {% elif activity.type == 'data_collected' %}📊
+                    {% elif activity.type == 'user_joined' %}👤
+                    {% elif activity.type == 'bioreactor_enrolled' %}🔬
+                    {% else %}📝
+                    {% endif %}
+                </div>
+                <div class="activity-content">
+                    <span class="activity-message">{{ activity.message }}</span>
+                    {% if activity.org %}
+                    <span class="activity-org">{{ activity.org }}</span>
+                    {% endif %}
+                </div>
+                <span class="activity-time">{{ activity.time }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <div class="no-activity">
+            <p>No recent activity</p>
+        </div>
+    {% endif %}
+</div> 

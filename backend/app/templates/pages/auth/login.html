@@ -10,7 +10,7 @@
             <p>Access your laboratory management system</p>
         </div>
 
-        <form action="/auth/login" method="post" class="auth-form" id="login-form">
+        <form action="/app/login" method="post" class="auth-form" id="login-form">
             <!-- CSRF protection -->
             <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
             
@@ -70,11 +70,11 @@
         </form>
 
         <div class="auth-links">
-            <a href="/auth/forgot-password" class="link">Forgot your password?</a>
+            <a href="/app/forgot-password" class="link">Forgot your password?</a>
             <div class="auth-separator">
                 <span>Don't have an account?</span>
             </div>
-            <a href="/auth/register" class="btn btn-secondary btn-full">
+            <a href="/app/register" class="btn btn-secondary btn-full">
                 Create Account
             </a>
         </div>

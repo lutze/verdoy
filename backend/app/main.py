@@ -57,6 +57,7 @@ from app.middleware import (
 from app.routers import (
     # Core functionality routers
     auth_router,
+    dashboard_router,
     devices_router,
     readings_router,
     commands_router,
@@ -234,20 +235,15 @@ def create_app() -> FastAPI:
         return templates.TemplateResponse("base.html", {"request": request, "year": 2024})
     
     # Add root endpoint
-    @app.get("/", tags=["root"])
-    def read_root():
+    @app.get("/app", response_class=HTMLResponse, include_in_schema=False)
+    async def home(request: Request):
         """
-        Root endpoint providing API information and status.
+        Render the base home page for the frontend.
         """
-        return {
-            "message": "LMS Core API",
-            "version": settings.version,
-            "environment": settings.environment,
-            "status": "operational",
-            "timestamp": datetime.utcnow().isoformat(),
-            "docs": f"{settings.docs_url}",
-            "redoc": f"{settings.redoc_url}"
-        }
+        return templates.TemplateResponse(
+            "pages/home.html",
+            {"request": request}
+        )
     
     return app
 
@@ -358,22 +354,31 @@ def register_routers(app: FastAPI) -> None:
         app: FastAPI application instance
     """
     
-    # Core functionality routers
+    # Web (HTML) routers - pretty URLs, no /api/v1 prefix
+    app.include_router(
+        auth_router,
+        prefix="/app"
+    )
+    app.include_router(
+        dashboard_router
+    )
+    app.include_router(
+        organizations_router
+    )
+
+    # API routers (JSON endpoints)
     app.include_router(
         auth_router,
         prefix=f"{settings.api_prefix}/auth"
     )
-    
     app.include_router(
         devices_router,
         prefix=f"{settings.api_prefix}/devices"
     )
-    
     app.include_router(
         readings_router,
         prefix=f"{settings.api_prefix}/readings"
     )
-    
     app.include_router(
         commands_router,
         prefix=f"{settings.api_prefix}/commands"

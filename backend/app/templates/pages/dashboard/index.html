@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - LIM OS{% endblock %}
+
+{% block content %}
+<main class="dashboard">
+    <!-- Page Header -->
+    <header class="page-header">
+        <div class="container">
+            <h1>Dashboard</h1>
+            <p class="subtitle">Welcome back, {{ dashboard.user.name or dashboard.user.email }}</p>
+        </div>
+    </header>
+
+    <!-- Summary Statistics -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="stats-grid" 
+                 hx-get="/api/v1/dashboard/stats" 
+                 hx-trigger="every 30s"
+                 hx-swap="innerHTML">
+                {% include "partials/dashboard_stats.html" %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Organizations Grid -->
+    <section class="organizations-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Your Organizations</h2>
+                <a href="/api/v1/organizations" class="btn btn-secondary">View All</a>
+            </div>
+            
+            <div class="organizations-grid">
+                {% for org in dashboard.organizations %}
+                <article class="org-card">
+                    <div class="org-header">
+                        <h3>{{ org.name }}</h3>
+                        <span class="org-status {% if org.online_bioreactors > 0 %}online{% else %}offline{% endif %}">
+                            {{ org.online_bioreactors }} online
+                        </span>
+                    </div>
+                    
+                    <p class="org-description">{{ org.description }}</p>
+                    
+                    <div class="org-stats">
+                        <div class="stat">
+                            <span class="stat-value">{{ org.active_experiments }}</span>
+                            <span class="stat-label">Active Experiments</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">{{ org.member_count }}</span>
+                            <span class="stat-label">Members</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">{{ org.online_bioreactors }}</span>
+                            <span class="stat-label">Online Bioreactors</span>
+                        </div>
+                    </div>
+                    
+                    <div class="org-actions">
+                        <a href="/api/v1/organizations/{{ org.id }}" class="btn btn-primary">View Details</a>
+                        <a href="/api/v1/organizations/{{ org.id }}/experiments" class="btn btn-secondary">Experiments</a>
+                    </div>
+                    
+                    {% if org.recent_activity %}
+                    <div class="org-activity">
+                        <h4>Recent Activity</h4>
+                        <ul class="activity-list">
+                            {% for activity in org.recent_activity[:3] %}
+                            <li class="activity-item activity-{{ activity.type }}">
+                                <span class="activity-message">{{ activity.message }}</span>
+                                <span class="activity-time">{{ activity.time }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </article>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Recent Activity Feed -->
+    <section class="activity-section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Recent Activity</h2>
+                <button class="btn btn-secondary" 
+                        hx-get="/api/v1/dashboard/activity" 
+                        hx-target="#activity-feed"
+                        hx-swap="innerHTML">
+                    Refresh
+                </button>
+            </div>
+            
+            <div id="activity-feed" 
+                 hx-get="/api/v1/dashboard/activity" 
+                 hx-trigger="every 60s"
+                 hx-swap="innerHTML">
+                {% include "partials/activity_feed.html" %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Actions -->
+    <section class="quick-actions">
+        <div class="container">
+            <h2>Quick Actions</h2>
+            <div class="actions-grid">
+                <a href="/api/v1/organizations" class="action-card">
+                    <div class="action-icon">🏢</div>
+                    <h3>Manage Organizations</h3>
+                    <p>View and manage your organizations</p>
+                </a>
+                
+                <a href="/api/v1/devices" class="action-card">
+                    <div class="action-icon">🔬</div>
+                    <h3>Bioreactor Management</h3>
+                    <p>Enroll and monitor bioreactors</p>
+                </a>
+                
+                <a href="/api/v1/experiments" class="action-card">
+                    <div class="action-icon">🧪</div>
+                    <h3>Experiments</h3>
+                    <p>Create and monitor experiments</p>
+                </a>
+                
+                <a href="/api/v1/processes" class="action-card">
+                    <div class="action-icon">⚙️</div>
+                    <h3>Process Designer</h3>
+                    <p>Design experiment processes</p>
+                </a>
+                
+                <a href="/api/v1/analytics" class="action-card">
+                    <div class="action-icon">📊</div>
+                    <h3>Analytics</h3>
+                    <p>View data analytics and reports</p>
+                </a>
+                
+                <a href="/api/v1/alerts" class="action-card">
+                    <div class="action-icon">🔔</div>
+                    <h3>Alerts</h3>
+                    <p>Manage alerts and notifications</p>
+                </a>
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %} 

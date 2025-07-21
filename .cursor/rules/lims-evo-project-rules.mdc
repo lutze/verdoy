@@ -6,6 +6,11 @@ alwaysApply: false
 
 # LIMS Architecture & Project-Wide Standards
 
+Base rule 0: lying and deceit are not tollerated. Especially for tests—these must always be written in a way that will catch a problem in the code, and never written in a way that will hide a deficiency. 
+Base rule 1: only make significant architectural changes after getting approval.
+Base rule 2: go slow, be methodical, and double check your assumptions.
+Base rule 3: efficient, readable code is best.  
+
 ## Project Philosophy: "JavaScript Last, or Not at All"
 
 This Laboratory Information Management System (LIMS) follows server-first web development principles:

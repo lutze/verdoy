@@ -1,0 +1,47 @@
+<div class="stat-card">
+    <div class="stat-icon">🏢</div>
+    <div class="stat-content">
+        <span class="stat-value">{{ stats.total_organizations }}</span>
+        <span class="stat-label">Organizations</span>
+    </div>
+</div>
+
+<div class="stat-card">
+    <div class="stat-icon">🧪</div>
+    <div class="stat-content">
+        <span class="stat-value">{{ stats.total_experiments }}</span>
+        <span class="stat-label">Total Experiments</span>
+    </div>
+</div>
+
+<div class="stat-card">
+    <div class="stat-icon">🔬</div>
+    <div class="stat-content">
+        <span class="stat-value">{{ stats.total_bioreactors }}</span>
+        <span class="stat-label">Bioreactors</span>
+    </div>
+</div>
+
+<div class="stat-card">
+    <div class="stat-icon">🟢</div>
+    <div class="stat-content">
+        <span class="stat-value">{{ stats.online_bioreactors }}</span>
+        <span class="stat-label">Online</span>
+    </div>
+</div>
+
+<div class="stat-card">
+    <div class="stat-icon">📊</div>
+    <div class="stat-content">
+        <span class="stat-value">{{ stats.data_points_today | number_format }}</span>
+        <span class="stat-label">Data Points Today</span>
+    </div>
+</div>
+
+<div class="stat-card">
+    <div class="stat-icon">⚡</div>
+    <div class="stat-content">
+        <span class="stat-value">{{ stats.active_experiments }}</span>
+        <span class="stat-label">Active Experiments</span>
+    </div>
+</div> 
