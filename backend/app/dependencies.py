@@ -6,7 +6,7 @@ authentication, and other common dependencies used across the application.
 """
 
 from typing import Generator, Optional
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request, Cookie
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
@@ -34,48 +34,69 @@ from .services import (
 )
 
 # Security scheme for JWT tokens
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)  # Set auto_error=False to allow session fallback
 
 device_security = HTTPBearer(auto_error=True)
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    session_token: Optional[str] = Cookie(None, alias="session_token"),
     db: Session = Depends(get_db)
-) -> dict:
+):
     """
-    Get current authenticated user from JWT token.
+    Get current authenticated user from JWT token or session cookie.
+    
+    Supports both Bearer token authentication (for API clients) and 
+    session cookie authentication (for web browsers).
     
     Args:
-        credentials: HTTP authorization credentials
+        request: FastAPI request object
+        credentials: HTTP authorization credentials (Bearer token)
+        session_token: Session token from HTTP-only cookie
         db: Database session
         
     Returns:
-        User data from token
+        User object from database
         
     Raises:
-        CredentialsException: If token is invalid
+        CredentialsException: If token is invalid or missing
         TokenExpiredException: If token has expired
     """
+    token = None
+    
+    # Try Bearer token first (for API clients)
+    if credentials and credentials.credentials:
+        token = credentials.credentials
+    # Fall back to session cookie (for web browsers)
+    elif session_token:
+        token = session_token
+    
+    if not token:
+        raise CredentialsException()
+    
     try:
-        payload = decode_access_token(credentials.credentials)
+        payload = decode_access_token(token)
         user_id: str = payload.get("sub")
         if user_id is None:
             raise CredentialsException()
         
-        # TODO: Add user validation from database
-        # user = crud.user.get(db, id=user_id)
-        # if user is None:
-        #     raise CredentialsException()
+        # Validate user exists in database
+        from .models.user import User
+        user = db.query(User).filter(User.id == user_id).first()
+        if user is None:
+            raise CredentialsException()
         
-        return payload
+        # Return user object instead of just payload
+        return user
     except JWTError:
         raise CredentialsException()
 
 
 def get_current_active_user(
-    current_user: dict = Depends(get_current_user)
-) -> dict:
+    current_user = Depends(get_current_user)
+):
     """
     Get current active user.
     
@@ -88,18 +109,17 @@ def get_current_active_user(
     Raises:
         HTTPException: If user is inactive
     """
-    # TODO: Add user status validation
-    # if not current_user.is_active:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_400_BAD_REQUEST,
-    #         detail="Inactive user"
-    #     )
+    if not current_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Inactive user"
+        )
     return current_user
 
 
 def get_current_admin_user(
-    current_user: dict = Depends(get_current_user)
-) -> dict:
+    current_user = Depends(get_current_user)
+):
     """
     Get current admin user.
     
@@ -112,34 +132,37 @@ def get_current_admin_user(
     Raises:
         HTTPException: If user is not admin
     """
-    # TODO: Add admin role validation
-    # if not current_user.is_admin:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_403_FORBIDDEN,
-    #         detail="Not enough permissions"
-    #     )
+    if not current_user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
     return current_user
 
 
 def get_optional_user(
+    request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    session_token: Optional[str] = Cookie(None, alias="session_token"),
     db: Session = Depends(get_db)
 ) -> Optional[dict]:
     """
     Get optional user (for endpoints that work with or without authentication).
     
     Args:
+        request: FastAPI request object
         credentials: Optional HTTP authorization credentials
+        session_token: Session token from HTTP-only cookie
         db: Database session
         
     Returns:
         User data if authenticated, None otherwise
     """
-    if not credentials:
+    if not credentials and not session_token:
         return None
     
     try:
-        return get_current_user(credentials, db)
+        return get_current_user(request, credentials, session_token, db)
     except (CredentialsException, TokenExpiredException):
         return None
 

@@ -86,6 +86,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Import shared templates configuration
+from .templates_config import templates
+
 # Application lifespan management
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -155,8 +158,6 @@ async def lifespan(app: FastAPI):
         
     except Exception as e:
         logger.error(f"Shutdown error: {e}")
-
-templates = Jinja2Templates(directory="app/templates")
 
 def create_app() -> FastAPI:
     """

@@ -38,7 +38,18 @@ class JSONType(TypeDecorator):
         """Convert JSON string back to Python dict/list."""
         if value is None:
             return None
-        return json.loads(value)
+        
+        # PostgreSQL/TimescaleDB automatically parses JSONB to dict/list
+        # SQLite returns JSON as string that needs parsing
+        if isinstance(value, (dict, list)):
+            # Already parsed (PostgreSQL/TimescaleDB)
+            return value
+        elif isinstance(value, (str, bytes)):
+            # String that needs parsing (SQLite)
+            return json.loads(value)
+        else:
+            # Fallback: return as-is
+            return value
 
 
 # Configure engine based on database type

@@ -13,9 +13,8 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Form
 from fastapi.security import HTTPBearer
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from datetime import timedelta
+from datetime import timedelta, datetime
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -38,11 +37,9 @@ from ..exceptions import (
     InactiveUserException,
     InvalidTokenException
 )
+from ..templates_config import templates
 
 router = APIRouter(tags=["Authentication"])
-
-# Templates configuration
-templates = Jinja2Templates(directory="app/templates")
 
 def accepts_json(request: Request) -> bool:
     """Check if client prefers JSON responses"""
@@ -320,13 +317,30 @@ async def login_user(
                 "email": user_credentials.email
             })
     
-    # Create access token (simplified for now)
-    # TODO: Implement proper JWT token creation
+    # Create proper JWT access token
+    from ..utils.auth_utils import create_access_token
+    from datetime import timedelta
+    
+    # Set token expiration based on remember_me
+    if remember_me == "true":
+        expires_delta = timedelta(days=30)  # 30 days if remember me is checked
+    else:
+        expires_delta = timedelta(hours=1)  # 1 hour default
+    
+    access_token = create_access_token(
+        data={"sub": str(user.id), "email": user.email},
+        expires_delta=expires_delta
+    )
+    
+    # Update last login
+    user.last_login = datetime.utcnow()
+    db.commit()
+    
     if accepts_json(request):
         return {
-            "access_token": "dummy_token",
+            "access_token": access_token,
             "token_type": "bearer",
-            "expires_in": 3600,  # 1 hour in seconds
+            "expires_in": int(expires_delta.total_seconds()),
             "user": {
                 "id": str(user.id),
                 "email": user.email,
@@ -335,8 +349,20 @@ async def login_user(
             }
         }
     else:
-        # Redirect to dashboard (or profile for now)
-        return RedirectResponse(url="/app/profile", status_code=303)
+        # For web browsers: set session cookie and redirect to dashboard
+        response = RedirectResponse(url="/app/dashboard", status_code=303)
+        
+        # Set HTTP-only session cookie
+        response.set_cookie(
+            key="session_token",
+            value=access_token,
+            max_age=int(expires_delta.total_seconds()),
+            httponly=True,  # Prevent XSS attacks
+            secure=True if request.url.scheme == "https" else False,  # HTTPS only in production
+            samesite="lax"  # CSRF protection
+        )
+        
+        return response
 
 @router.post("/logout", response_model=BaseResponse)
 async def logout_user(request: Request):
@@ -344,7 +370,15 @@ async def logout_user(request: Request):
     if accepts_json(request):
         return BaseResponse(message="Successfully logged out", success=True)
     else:
-        # Clear cookie and redirect to login
+        # Clear session cookie and redirect to login
         response = RedirectResponse(url="/app/login?message=Successfully logged out", status_code=303)
-        # TODO: Clear authentication cookie
+        
+        # Clear the session cookie
+        response.delete_cookie(
+            key="session_token",
+            httponly=True,
+            secure=True if request.url.scheme == "https" else False,
+            samesite="lax"
+        )
+        
         return response 

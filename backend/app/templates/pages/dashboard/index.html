@@ -16,10 +16,12 @@
     <section class="stats-section">
         <div class="container">
             <div class="stats-grid" 
-                 hx-get="/api/v1/dashboard/stats" 
+                 hx-get="/app/dashboard/stats" 
                  hx-trigger="every 30s"
                  hx-swap="innerHTML">
-                {% include "partials/dashboard_stats.html" %}
+                {% with stats = dashboard.summary_stats %}
+                    {% include "partials/dashboard_stats.html" %}
+                {% endwith %}
             </div>
         </div>
     </section>

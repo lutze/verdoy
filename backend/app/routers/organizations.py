@@ -18,10 +18,7 @@ from ..schemas.base import BaseResponse, ErrorResponse
 from ..models.user import User
 from ..services.organization_service import OrganizationService
 from ..schemas.organization import OrganizationCreate, OrganizationUpdate
-from fastapi.templating import Jinja2Templates
-
-# Templates configuration
-templates = Jinja2Templates(directory="app/templates")
+from ..templates_config import templates
 
 router = APIRouter(tags=["Organizations"])
 

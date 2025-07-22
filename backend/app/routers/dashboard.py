@@ -10,18 +10,15 @@ This router handles:
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from typing import Optional
 
 from ..dependencies import get_db, get_current_user
 from ..schemas.base import BaseResponse, ErrorResponse
 from ..models.user import User
+from ..templates_config import templates
 
 router = APIRouter(tags=["Dashboard"])
-
-# Templates configuration
-templates = Jinja2Templates(directory="app/templates")
 
 def accepts_json(request: Request) -> bool:
     """Check if client prefers JSON responses"""
@@ -48,7 +45,12 @@ async def dashboard_page(
     
     # Mock dashboard data
     dashboard_data = {
-        "user": current_user,
+        "user": {
+            "id": str(current_user.id),
+            "email": current_user.email,
+            "name": current_user.entity.name if current_user.entity else "Unknown User",
+            "is_active": current_user.is_active
+        },
         "organizations": [
             {
                 "id": "1",
@@ -162,7 +164,8 @@ async def get_dashboard_data(
         "user": {
             "id": str(current_user.id),
             "email": current_user.email,
-            "name": current_user.name if hasattr(current_user, 'name') else "User"
+            "name": current_user.entity.name if current_user.entity else "Unknown User",
+            "is_active": current_user.is_active
         },
         "organizations": [
             {
