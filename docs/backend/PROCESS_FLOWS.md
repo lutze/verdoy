@@ -142,14 +142,31 @@ Organization creation process that requires at least one existing user to be the
 ## Process Flow 3: User Authentication
 
 ### Flow Description
-User login process that validates credentials and returns authentication tokens.
+User login process that validates credentials and returns authentication tokens or sets session cookies based on client type.
+
+### Dual Authentication System
+The system supports both programmatic API clients and web browsers:
+- **API Clients**: Receive JWT tokens in JSON response
+- **Web Browsers**: Receive HTTP-only session cookies and redirects
 
 ### Steps
 1. **Validate Input**
    - Email format validation
    - Password presence validation
 
-2. **Find User**
+2. **Determine Client Type**
+   ```python
+   def accepts_json(request: Request) -> bool:
+       """Check if client prefers JSON responses"""
+       accept_header = request.headers.get("accept", "")
+       return (
+           "application/json" in accept_header or
+           "application/ld+json" in accept_header or
+           request.url.path.startswith("/api/")
+       )
+   ```
+
+3. **Find User**
    ```python
    # Query user by email
    user = db.query(User).filter(User.email == email).first()
@@ -157,53 +174,127 @@ User login process that validates credentials and returns authentication tokens.
        raise AuthenticationException("Invalid credentials")
    ```
 
-3. **Verify Password**
+4. **Verify Password**
    ```python
-   # Verify password hash
-   if not User.verify_password(password, user.hashed_password):
+   # Verify password hash using User model method
+   if not user.check_password(password):
        raise AuthenticationException("Invalid credentials")
    ```
 
-4. **Check User Status**
+5. **Check User Status**
    ```python
    # Verify user is active
    if not user.is_active:
        raise AuthenticationException("Account is deactivated")
    ```
 
-5. **Generate Tokens**
+6. **Generate JWT Token**
    ```python
-   # Create access token
+   # Set token expiration based on remember_me
+   if remember_me == "true":
+       expires_delta = timedelta(days=30)  # 30 days if remember me is checked
+   else:
+       expires_delta = timedelta(hours=1)  # 1 hour default
+   
    access_token = create_access_token(
-       data={"sub": str(user.id), "email": user.email}
+       data={"sub": str(user.id), "email": user.email},
+       expires_delta=expires_delta
    )
    
-   # Create refresh token
-   refresh_token = create_refresh_token(
-       data={"sub": str(user.id)}
-   )
+   # Update last login
+   user.last_login = datetime.utcnow()
+   db.commit()
    ```
 
-6. **Return Authentication Result**
+7. **Return Authentication Result (Client-Specific)**
+   
+   **For API Clients (JSON Response):**
    ```python
    return {
        "access_token": access_token,
-       "refresh_token": refresh_token,
        "token_type": "bearer",
+       "expires_in": int(expires_delta.total_seconds()),
        "user": {
            "id": str(user.id),
            "email": user.email,
-           "name": user.entity.name,
-           "organization_id": str(user.entity.organization_id) if user.entity.organization_id else None,
-           "is_superuser": user.is_superuser
+           "name": user.entity.name if user.entity else "Unknown User",
+           "is_active": user.is_active
        }
    }
    ```
+   
+   **For Web Browsers (Session Cookie + Redirect):**
+   ```python
+   # Create redirect response to dashboard
+   response = RedirectResponse(url="/app/dashboard", status_code=303)
+   
+   # Set HTTP-only session cookie
+   response.set_cookie(
+       key="session_token",
+       value=access_token,
+       max_age=int(expires_delta.total_seconds()),
+       httponly=True,  # Prevent XSS attacks
+       secure=True if request.url.scheme == "https" else False,  # HTTPS only in production
+       samesite="lax"  # CSRF protection
+   )
+   
+   return response
+   ```
+
+### Authentication Validation (Unified Dependency)
+```python
+def get_current_user(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    session_token: Optional[str] = Cookie(None, alias="session_token"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get current authenticated user from JWT token or session cookie.
+    
+    Supports both Bearer token authentication (for API clients) and 
+    session cookie authentication (for web browsers).
+    """
+    token = None
+    
+    # Try Bearer token first (for API clients)
+    if credentials and credentials.credentials:
+        token = credentials.credentials
+    # Fall back to session cookie (for web browsers)
+    elif session_token:
+        token = session_token
+    
+    if not token:
+        raise CredentialsException()
+    
+    try:
+        payload = decode_access_token(token)
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise CredentialsException()
+        
+        # Validate user exists in database
+        user = db.query(User).filter(User.id == user_id).first()
+        if user is None:
+            raise CredentialsException()
+        
+        # Return user object
+        return user
+    except JWTError:
+        raise CredentialsException()
+```
 
 ### Error Handling
-- **Invalid Credentials**: Return 401 Unauthorized
-- **Account Deactivated**: Return 401 Unauthorized
+- **Invalid Credentials**: Return 401 Unauthorized (JSON) or render login page with error (HTML)
+- **Account Deactivated**: Return 401 Unauthorized (JSON) or render login page with error (HTML)
 - **Token Generation Error**: Return 500 Internal Server Error
+
+### Security Features
+- **HTTP-Only Cookies**: Prevent XSS attacks on session tokens
+- **Secure Flag**: HTTPS-only cookies in production (auto-detected)
+- **SameSite Protection**: CSRF attack prevention
+- **Remember Me**: Configurable token expiration (1 hour vs 30 days)
+- **Unified Validation**: Same JWT validation for both Bearer tokens and session cookies
 
 ---
 

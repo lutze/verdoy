@@ -348,31 +348,77 @@ CREATE TABLE relationships (
 
 ## 🔒 Security Architecture
 
-### Authentication & Authorization
+### Dual Authentication System
+
+The LMS Core platform implements a sophisticated dual authentication system that supports both programmatic API clients and web browsers:
 
 ```
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   Client    │    │   API       │    │  JWT        │    │  Database   │
-│             │    │  Gateway    │    │  Service    │    │             │
+│  Web        │    │   API       │    │  JWT        │    │  Database   │
+│  Browser    │    │  Backend    │    │  Service    │    │             │
 └─────┬───────┘    └─────┬───────┘    └─────┬───────┘    └─────┬───────┘
       │                  │                  │                  │
-      │ 1. Login         │                  │                  │
+      │ 1. Login Form    │                  │                  │
       │─────────────────►│                  │                  │
       │                  │                  │                  │
-      │                  │ 2. Validate      │                  │
+      │                  │ 2. Validate User │                  │
       │                  │─────────────────►│                  │
       │                  │                  │                  │
-      │                  │ 3. Check User    │                  │
+      │                  │ 3. Generate JWT  │                  │
       │                  │─────────────────►│                  │
       │                  │                  │                  │
-      │                  │ 4. User Data     │                  │
-      │                  │◄─────────────────│                  │
-      │                  │                  │                  │
-      │                  │ 5. Generate JWT  │                  │
-      │                  │─────────────────►│                  │
-      │                  │                  │                  │
-      │ 6. JWT Token     │                  │                  │
+      │ 4. Set Session   │                  │                  │
+      │    Cookie +      │                  │                  │
+      │    Redirect      │                  │                  │
       │◄─────────────────│                  │                  │
+```
+
+### Authentication Methods
+
+#### 1. **Session-Based Authentication (Web Browsers)**
+- **HTTP-Only Cookies**: Secure session tokens stored in HTTP-only cookies
+- **Security Flags**: 
+  - `httponly=True` (prevents XSS attacks)
+  - `secure=True` for HTTPS (auto-detected)
+  - `samesite="lax"` (CSRF protection)
+- **Remember Me**: 1 hour vs 30 days expiration based on user preference
+- **Automatic Renewal**: Session tokens are JWT tokens with automatic validation
+
+#### 2. **Bearer Token Authentication (API Clients)**
+- **JWT Tokens**: Standard Authorization: Bearer header format
+- **Device API Keys**: Specialized authentication for IoT devices
+- **Programmatic Access**: For scripts, mobile apps, and integrations
+
+### Authentication Flow Implementation
+
+```python
+# Unified authentication dependency
+def get_current_user(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    session_token: Optional[str] = Cookie(None, alias="session_token"),
+    db: Session = Depends(get_db)
+):
+    """
+    Supports both Bearer token authentication (API clients) and 
+    session cookie authentication (web browsers).
+    """
+    token = None
+    
+    # Try Bearer token first (for API clients)
+    if credentials and credentials.credentials:
+        token = credentials.credentials
+    # Fall back to session cookie (for web browsers)
+    elif session_token:
+        token = session_token
+    
+    if not token:
+        raise CredentialsException()
+    
+    # Validate JWT token and return User object
+    payload = decode_access_token(token)
+    user = db.query(User).filter(User.id == payload.get("sub")).first()
+    return user
 ```
 
 ### Multi-Tenant Data Isolation
@@ -385,6 +431,8 @@ CREATE TABLE relationships (
 │  Devices: [device1, device2, device3]                      │
 │  Data: [readings1, readings2, readings3]                    │
 │  Alerts: [alert1, alert2]                                   │
+│  Session Access: HTTP-only cookies for web users           │
+│  API Access: JWT tokens for programmatic clients           │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
@@ -394,6 +442,8 @@ CREATE TABLE relationships (
 │  Devices: [device4, device5]                               │
 │  Data: [readings4, readings5]                              │
 │  Alerts: [alert3]                                          │
+│  Session Access: Separate secure cookies                   │
+│  API Access: Organization-scoped JWT tokens                │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -406,22 +456,61 @@ CREATE TABLE relationships (
    - Input sanitization
 
 2. **Authentication Security**
-   - JWT token validation
-   - Password hashing (bcrypt)
-   - Token expiration
-   - Refresh token rotation
+   - **Dual JWT validation**: Both Bearer tokens and session cookies use same JWT system
+   - **Password hashing**: bcrypt with 12 rounds via passlib
+   - **Token expiration**: Configurable expiration with refresh capability
+   - **Session security**: HTTP-only, secure, SameSite cookie protection
 
 3. **Authorization Security**
-   - Role-based access control
-   - Organization-based data isolation
-   - Resource-level permissions
-   - API key validation for devices
+   - **Role-based access control**: User roles and permissions
+   - **Organization-based isolation**: Multi-tenant data access control
+   - **Resource-level permissions**: Granular access to devices and data
+   - **Cross-authentication support**: Same endpoints serve both web and API clients
 
 4. **Data Security**
-   - Database connection encryption
-   - Sensitive data encryption
-   - Audit logging
-   - Data backup and recovery
+   - **Database connection encryption**: Secure PostgreSQL/TimescaleDB connections
+   - **Sensitive data encryption**: Secure storage of credentials and keys
+   - **Audit logging**: Security event tracking
+   - **Backup and recovery**: Data protection and disaster recovery
+
+### Template System Security
+
+The platform implements a shared Jinja2 template system with security considerations:
+
+```python
+# Centralized template configuration with security filters
+def get_templates():
+    templates = Jinja2Templates(directory="app/templates")
+    
+    # Custom filters for safe data display
+    def number_format(value):
+        """Format numbers with commas for better readability."""
+        if isinstance(value, (int, float)):
+            return f"{value:,}"
+        return value
+    
+    templates.env.filters["number_format"] = number_format
+    return templates
+```
+
+### Database Compatibility Layer
+
+Cross-database JSON handling ensures security across different environments:
+
+```python
+class JSONType(TypeDecorator):
+    """Secure JSON handling for PostgreSQL and SQLite."""
+    
+    def process_result_value(self, value, dialect):
+        # PostgreSQL/TimescaleDB automatically parses JSONB to dict/list
+        # SQLite returns JSON as string that needs parsing
+        if isinstance(value, (dict, list)):
+            return value  # Already parsed (PostgreSQL)
+        elif isinstance(value, (str, bytes)):
+            return json.loads(value)  # Parse string (SQLite)
+        else:
+            return value  # Safe fallback
+```
 
 ---
 
