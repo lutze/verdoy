@@ -36,6 +36,7 @@ from app.schemas.device import DeviceCreate
 from app.services.auth_service import AuthService
 from app.services.device_service import DeviceService
 from app.services.reading_service import ReadingService
+from app.services.project_service import ProjectService
 
 # Test database configuration
 TEST_DATABASE_URL = "sqlite:///./test.db"
@@ -93,6 +94,15 @@ def test_app():
     app.include_router(commands_router, prefix="/api/v1/commands")
     app.include_router(devices_router, prefix="/api/v1/devices")
     app.include_router(readings_router, prefix="/api/v1/readings")
+    
+    # Import and include new routers
+    from app.routers.organizations import router as organizations_router
+    from app.routers.projects import router as projects_router
+    
+    app.include_router(organizations_router, prefix="/api/v1/organizations")
+    app.include_router(projects_router, prefix="/api/v1/projects")
+    app.include_router(organizations_router)  # HTML routes
+    app.include_router(projects_router)  # HTML routes
     
     return app
 
@@ -235,4 +245,9 @@ def sample_readings(reading_service, test_device) -> list:
         reading = reading_service.create_reading(reading_data)
         readings.append(reading)
     
-    return readings 
+    return readings
+
+@pytest.fixture  
+def project_service(db_session) -> ProjectService:
+    """Create ProjectService instance for testing."""
+    return ProjectService(db_session) 

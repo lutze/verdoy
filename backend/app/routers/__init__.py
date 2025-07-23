@@ -24,6 +24,7 @@ from .commands import router as commands_router
 from .analytics import router as analytics_router
 from .alerts import router as alerts_router
 from .organizations import router as organizations_router
+from .projects import router as projects_router
 from .billing import router as billing_router
 from .system import router as system_router
 from .admin import router as admin_router
@@ -43,6 +44,7 @@ __all__ = [
     "analytics_router",
     "alerts_router",
     "organizations_router",
+    "projects_router",
     "billing_router",
     "system_router",
     "admin_router",

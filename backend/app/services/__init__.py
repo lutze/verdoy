@@ -31,6 +31,7 @@ from .command_service import CommandService
 from .analytics_service import AnalyticsService
 from .alert_service import AlertService
 from .organization_service import OrganizationService
+from .project_service import ProjectService
 from .billing_service import BillingService
 from .cache_service import CacheService
 from .notification_service import NotificationService
@@ -46,6 +47,7 @@ __all__ = [
     "AnalyticsService",
     "AlertService",
     "OrganizationService",
+    "ProjectService",
     "BillingService",
     "CacheService",
     "NotificationService",

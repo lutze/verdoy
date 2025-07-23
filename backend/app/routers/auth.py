@@ -78,9 +78,9 @@ async def register_page(request: Request, db: Session = Depends(get_db)):
             "organizations": organizations
         })
 
-@router.get("/profile", response_class=HTMLResponse, include_in_schema=False)
+# Remove the old /profile route and replace it with the new /app/admin/profile route
+@router.get("/admin/profile", response_class=HTMLResponse, include_in_schema=False)
 async def profile_page(request: Request):
-    """Display user profile page for web browsers or return profile data for API clients."""
     if accepts_json(request):
         return {"user": {"name": "Test User", "email": "test@example.com"}, "organization": None, "api_keys": []}
     else:

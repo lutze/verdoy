@@ -37,6 +37,14 @@ class Organization(Entity):
     # Relationships - these are handled through the Entity base class
     # Users, devices, etc. are accessed through the entities relationship
     
+    # Add reverse relationship to Project
+    projects = relationship(
+        "Project",
+        primaryjoin="Organization.id==Project.organization_id",
+        foreign_keys="Project.organization_id",
+        back_populates=None  # No back_populates since Project.organization does not use it
+    )
+    
     @classmethod
     def get_by_name(cls, db, name: str):
         """

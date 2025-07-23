@@ -18,6 +18,7 @@ class DeviceStatus(str, Enum):
     """Device status enumeration."""
     ONLINE = "online"
     OFFLINE = "offline"
+    REGISTERED = "registered"
     MAINTENANCE = "maintenance"
     ERROR = "error"
 
@@ -33,11 +34,12 @@ class EntityType(str, Enum):
 class DeviceCreate(BaseModel):
     """Schema for device creation."""
     name: str = Field(..., description="Device name")
-    entity_type: EntityType = Field(EntityType.DEVICE_ESP32, description="Device type")
+    serial_number: str = Field(..., description="Device serial number")
+    device_type: str = Field(..., description="Device type")
+    model: str = Field(..., description="Device model")
     description: Optional[str] = Field(None, description="Device description")
     location: Optional[str] = Field(None, description="Device location")
     firmware_version: str = Field(..., description="Firmware version")
-    hardware_model: str = Field(..., description="Hardware model")
     mac_address: str = Field(..., description="MAC address")
     sensors: List[Dict[str, Any]] = Field(default_factory=list, description="Sensor configurations")
     reading_interval: int = Field(300, ge=60, description="Reading interval in seconds")

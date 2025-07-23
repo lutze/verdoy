@@ -66,6 +66,7 @@ from app.routers import (
     analytics_router,
     alerts_router,
     organizations_router,
+    projects_router,
     billing_router,
     
     # System routers
@@ -366,6 +367,9 @@ def register_routers(app: FastAPI) -> None:
     app.include_router(
         organizations_router
     )
+    app.include_router(
+        projects_router
+    )
 
     # API routers (JSON endpoints)
     app.include_router(
@@ -399,6 +403,11 @@ def register_routers(app: FastAPI) -> None:
     app.include_router(
         organizations_router,
         prefix=f"{settings.api_prefix}/organizations"
+    )
+    
+    app.include_router(
+        projects_router,
+        prefix=f"{settings.api_prefix}/projects"
     )
     
     app.include_router(

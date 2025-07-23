@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-4xl">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center mb-4">
+            <a href="/app/projects" class="text-blue-600 hover:text-blue-700 mr-4">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <h1 class="text-3xl font-bold text-gray-900">Create Project</h1>
+        </div>
+        <p class="text-gray-600">Set up a new research project for your team.</p>
+    </div>
+
+    <!-- Error Message -->
+    {% if error %}
+    <div class="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-red-700">{{ error }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Project Form -->
+    <form action="/app/projects/create" method="post" class="space-y-8">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+        
+        <!-- Basic Information -->
+        <div class="bg-white rounded-lg shadow border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">Basic Information</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="md:col-span-2">
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                        Project Name <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" 
+                           id="name" 
+                           name="name" 
+                           value="{{ form_data.name if form_data else '' }}"
+                           required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <p class="mt-1 text-sm text-gray-500">The display name for your project</p>
+                </div>
+                
+                <div class="md:col-span-2">
+                    <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea id="description" 
+                              name="description" 
+                              rows="3"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">{{ form_data.description if form_data else '' }}</textarea>
+                    <p class="mt-1 text-sm text-gray-500">Brief description of your project</p>
+                </div>
+                
+                <div>
+                    <label for="organization_id" class="block text-sm font-medium text-gray-700 mb-2">
+                        Organization <span class="text-red-500">*</span>
+                    </label>
+                    <select id="organization_id" 
+                            name="organization_id"
+                            required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Select Organization</option>
+                        {% for org in organizations %}
+                        <option value="{{ org.id }}" 
+                                {% if (form_data and form_data.organization_id == str(org.id)) or (selected_organization_id and selected_organization_id == org.id) %}selected{% endif %}>
+                            {{ org.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="priority" class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                    <select id="priority" 
+                            name="priority"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        {% set current_priority = form_data.priority if form_data else 'medium' %}
+                        <option value="low" {% if current_priority == 'low' %}selected{% endif %}>Low</option>
+                        <option value="medium" {% if current_priority == 'medium' %}selected{% endif %}>Medium</option>
+                        <option value="high" {% if current_priority == 'high' %}selected{% endif %}>High</option>
+                        <option value="critical" {% if current_priority == 'critical' %}selected{% endif %}>Critical</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="bg-white rounded-lg shadow border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">Timeline</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                    <input type="date" 
+                           id="start_date" 
+                           name="start_date" 
+                           value="{{ form_data.start_date if form_data else '' }}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                    <input type="date" 
+                           id="end_date" 
+                           name="end_date" 
+                           value="{{ form_data.end_date if form_data else '' }}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <label for="expected_completion" class="block text-sm font-medium text-gray-700 mb-2">Expected Completion</label>
+                    <input type="date" 
+                           id="expected_completion" 
+                           name="expected_completion" 
+                           value="{{ form_data.expected_completion if form_data else '' }}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Details -->
+        <div class="bg-white rounded-lg shadow border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">Additional Details</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="budget" class="block text-sm font-medium text-gray-700 mb-2">Budget</label>
+                    <input type="text" 
+                           id="budget" 
+                           name="budget" 
+                           value="{{ form_data.budget if form_data else '' }}"
+                           placeholder="e.g., $50,000"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <label for="tags" class="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+                    <input type="text" 
+                           id="tags" 
+                           name="tags" 
+                           value="{{ form_data.tags if form_data else '' }}"
+                           placeholder="e.g., optimization, pH, yield"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <p class="mt-1 text-sm text-gray-500">Comma-separated tags</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
+            <a href="/app/projects" 
+               class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md font-medium transition-colors">
+                Cancel
+            </a>
+            <button type="submit" 
+                    class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors">
+                Create Project
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %} 

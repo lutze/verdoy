@@ -31,7 +31,7 @@
         <div class="container">
             <div class="section-header">
                 <h2>Your Organizations</h2>
-                <a href="/api/v1/organizations" class="btn btn-secondary">View All</a>
+                <a href="/app/admin/organization/" class="btn btn-secondary">View All</a>
             </div>
             
             <div class="organizations-grid">
@@ -62,8 +62,8 @@
                     </div>
                     
                     <div class="org-actions">
-                        <a href="/api/v1/organizations/{{ org.id }}" class="btn btn-primary">View Details</a>
-                        <a href="/api/v1/organizations/{{ org.id }}/experiments" class="btn btn-secondary">Experiments</a>
+                        <a href="/app/admin/organization/{{ org.id }}" class="btn btn-primary">View Details</a>
+                        <span class="btn btn-secondary btn-disabled" title="Coming soon">Experiments</span>
                     </div>
                     
                     {% if org.recent_activity %}
@@ -112,41 +112,47 @@
         <div class="container">
             <h2>Quick Actions</h2>
             <div class="actions-grid">
-                <a href="/api/v1/organizations" class="action-card">
+                <a href="/app/admin/organization/" class="action-card">
                     <div class="action-icon">🏢</div>
                     <h3>Manage Organizations</h3>
                     <p>View and manage your organizations</p>
                 </a>
                 
-                <a href="/api/v1/devices" class="action-card">
+                <a href="/app/projects" class="action-card">
+                    <div class="action-icon">📋</div>
+                    <h3>Projects</h3>
+                    <p>Create and manage research projects</p>
+                </a>
+                
+                <span class="action-card action-disabled" title="Coming soon">
                     <div class="action-icon">🔬</div>
                     <h3>Bioreactor Management</h3>
                     <p>Enroll and monitor bioreactors</p>
-                </a>
+                </span>
                 
-                <a href="/api/v1/experiments" class="action-card">
+                <span class="action-card action-disabled" title="Coming soon">
                     <div class="action-icon">🧪</div>
                     <h3>Experiments</h3>
                     <p>Create and monitor experiments</p>
-                </a>
+                </span>
                 
-                <a href="/api/v1/processes" class="action-card">
+                <span class="action-card action-disabled" title="Coming soon">
                     <div class="action-icon">⚙️</div>
                     <h3>Process Designer</h3>
                     <p>Design experiment processes</p>
-                </a>
+                </span>
                 
-                <a href="/api/v1/analytics" class="action-card">
+                <span class="action-card action-disabled" title="Coming soon">
                     <div class="action-icon">📊</div>
                     <h3>Analytics</h3>
                     <p>View data analytics and reports</p>
-                </a>
+                </span>
                 
-                <a href="/api/v1/alerts" class="action-card">
+                <span class="action-card action-disabled" title="Coming soon">
                     <div class="action-icon">🔔</div>
                     <h3>Alerts</h3>
                     <p>Manage alerts and notifications</p>
-                </a>
+                </span>
             </div>
         </div>
     </section>

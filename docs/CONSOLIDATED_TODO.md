@@ -143,6 +143,13 @@ Based on comparison between `API plan.md` and current `backend/app` implementati
 - ✅ **Custom Filters**: Added number_format filter for proper numeric display in templates
 - ✅ **Template Data Flow**: Fixed dashboard stats data passing with proper Jinja2 context variables
 
+### ✅ **RESOLVED** - Validation & Schema Alignment (Fixed July 2025)
+- ✅ **SQLAlchemy Reserved Name**: Fixed `metadata` field conflict by renaming to `project_metadata` throughout codebase
+- ✅ **Entity-Based Architecture**: Aligned DeviceCreate schema with Entity-based Device model using JSONB properties
+- ✅ **Database Schema Integration**: Added `projects` table with proper Entity inheritance and foreign key references
+- ✅ **Cross-Database JSON Queries**: Implemented database-agnostic JSON operations using SQLAlchemy text() queries
+- ✅ **Backend Test Infrastructure**: Fixed pytest imports with `pythonpath = .` configuration
+
 ### 1. Test Infrastructure & Data Validation (REMAINING)
 - [ ] **Fix test database table creation** - Ensure `events` table is created in test setup
 - [ ] **Update test fixtures** to match current schema requirements (DeviceCreate, UserCreate schemas)

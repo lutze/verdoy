@@ -514,6 +514,180 @@ class JSONType(TypeDecorator):
 
 ---
 
+## 🔄 Recent Architectural Improvements (July 2025)
+
+### Entity-Based Model Architecture
+
+The LMS Core platform has been enhanced with a robust Entity-based inheritance system that provides flexibility while maintaining data integrity:
+
+#### **Single-Table Inheritance Pattern**
+```sql
+-- All entities stored in one table with polymorphic identity
+CREATE TABLE entities (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    entity_type VARCHAR(100) NOT NULL,  -- 'user', 'device.esp32', 'organization', 'project'
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    organization_id UUID REFERENCES entities(id),
+    properties JSONB NOT NULL DEFAULT '{}',  -- Type-specific data
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    last_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Type-specific tables reference entities table
+CREATE TABLE projects (
+    id UUID PRIMARY KEY REFERENCES entities(id) ON DELETE CASCADE,
+    organization_id UUID NOT NULL REFERENCES entities(id),
+    project_lead_id UUID REFERENCES entities(id),
+    status VARCHAR(50) DEFAULT 'active',
+    -- Project-specific fields
+);
+```
+
+#### **Property-Based Flexibility**
+```python
+# Device-specific properties stored in JSONB
+device_properties = {
+    "serial_number": "TEST12345",
+    "device_type": "esp32",
+    "model": "ESP32-WROOM-32",
+    "firmware_version": "1.0.0",
+    "mac_address": "AA:BB:CC:DD:EE:FF",
+    "location": "Lab A",
+    "sensors": [...],
+    "reading_interval": 300
+}
+
+# Type-safe property access
+device.get_property("serial_number")
+device.set_property("firmware_version", "1.1.0")
+```
+
+### Cross-Database Compatibility Layer
+
+#### **JSON Type Abstraction**
+```python
+class JSONType(TypeDecorator):
+    """
+    Cross-database JSON handling for PostgreSQL and SQLite.
+    
+    - PostgreSQL: Uses JSONB with automatic parsing
+    - SQLite: Uses TEXT with manual JSON parsing
+    """
+    impl = Text
+    
+    def load_dialect_impl(self, dialect):
+        if dialect.name == 'postgresql':
+            return dialect.type_descriptor(JSONB())
+        else:
+            return dialect.type_descriptor(Text())
+    
+    def process_result_value(self, value, dialect):
+        if isinstance(value, (dict, list)):
+            return value  # Already parsed (PostgreSQL)
+        elif isinstance(value, (str, bytes)):
+            return json.loads(value)  # Parse string (SQLite)
+        else:
+            return value
+```
+
+#### **Database-Agnostic Queries**
+```python
+# Works with both PostgreSQL and SQLite
+def get_device_by_serial(self, serial_number: str) -> Optional[Device]:
+    try:
+        from sqlalchemy import text
+        return self.db.query(Device).filter(
+            Device.entity_type == "device.esp32",
+            text("properties->>'serial_number' = :serial_number")
+        ).params(serial_number=serial_number).first()
+    except Exception as e:
+        logger.error(f"Error getting device by serial: {e}")
+        return None
+```
+
+### Schema-Service Alignment
+
+#### **Validation System Integration**
+```python
+# Pydantic schemas aligned with Entity-based models
+class DeviceCreate(BaseModel):
+    name: str = Field(..., description="Device name")
+    serial_number: str = Field(..., description="Device serial number")
+    device_type: str = Field(..., description="Device type")  # Matches service expectations
+    model: str = Field(..., description="Device model")       # Consistent naming
+    
+# Service stores data in Entity properties
+device = Device(
+    name=device_data.name,
+    description=device_data.description,
+    organization_id=organization_id,
+    properties={
+        "serial_number": device_data.serial_number,
+        "device_type": device_data.device_type,
+        "model": device_data.model,
+        # ... other properties
+    }
+)
+```
+
+### Testing Infrastructure Enhancements
+
+#### **Cross-Environment Testing**
+```python
+# pytest.ini configuration for consistent imports
+[pytest]
+pythonpath = .
+
+# Test fixtures support both database engines
+@pytest.fixture
+def test_device_data() -> Dict[str, Any]:
+    return {
+        "name": f"Test Device {unique_id}",
+        "serial_number": f"TEST{unique_id.upper()}",
+        "device_type": "esp32",  # Aligned with service expectations
+        "model": "ESP32-WROOM-32",
+        # ... test data that works with Entity-based models
+    }
+```
+
+#### **Schema Validation Testing**
+- Automated tests verify Pydantic schema compatibility with SQLAlchemy models
+- Service layer tests ensure proper Entity-based property storage
+- Database queries tested against both PostgreSQL and SQLite engines
+
+### Key Architectural Benefits
+
+1. **Flexibility**: JSONB properties allow schema evolution without migrations
+2. **Consistency**: Single-table inheritance ensures uniform entity handling
+3. **Performance**: Proper indexing on entity_type and organization_id
+4. **Compatibility**: Works seamlessly across different database engines
+5. **Type Safety**: Pydantic validation with SQLAlchemy model integration
+6. **Testability**: Cross-database testing with consistent behavior
+
+### Migration Pattern
+
+```python
+# Entity-based models support both creation patterns
+# 1. Direct entity creation
+entity = Entity(
+    entity_type="device.esp32",
+    name="My Device",
+    properties={"serial_number": "12345"}
+)
+
+# 2. Type-specific model creation (inherits from Entity)
+device = Device(
+    name="My Device",
+    organization_id=org_id,
+    properties={"serial_number": "12345"}
+)
+```
+
+This architectural evolution provides a robust foundation for future development while maintaining backward compatibility and ensuring consistent behavior across different environments.
+
+---
+
 ## 🚀 Deployment Architecture
 
 ### Container Architecture

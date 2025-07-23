@@ -7,7 +7,7 @@
     <!-- Header -->
     <div class="mb-8">
         <div class="flex items-center mb-4">
-            <a href="/api/v1/organizations" class="text-blue-600 hover:text-blue-700 mr-4">
+            <a href="/app/admin/organization/" class="text-blue-600 hover:text-blue-700 mr-4">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                 </svg>
@@ -25,8 +25,13 @@
                            {% else %}bg-gray-100 text-gray-800{% endif %}">
                     {{ organization.status|title }}
                 </span>
-                <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                <a href="/app/admin/organization/{{ organization.id }}/edit" 
+                   class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
                     Edit
+                </a>
+                <button onclick="confirmDelete()" 
+                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                    Delete
                 </button>
             </div>
         </div>
@@ -412,5 +417,22 @@ function showTab(tabName) {
         selectedLink.classList.add('border-blue-500', 'text-blue-600');
     }
 }
+
+// Confirm organization deletion
+function confirmDelete() {
+    const orgName = "{{ organization.name }}";
+    const confirmation = prompt(`To delete this organization, please type "delete" to confirm.\n\nWarning: This will permanently delete "${orgName}" and all associated data.`);
+    
+    if (confirmation && confirmation.toLowerCase() === 'delete') {
+        document.getElementById('deleteForm').submit();
+    }
+}
 </script>
+
+<!-- Hidden delete form -->
+<form id="deleteForm" action="/app/admin/organization/{{ organization.id }}/delete" method="post" style="display: none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+    <input type="hidden" name="confirm" value="delete">
+</form>
+
 {% endblock %} 

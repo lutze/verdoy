@@ -10,7 +10,7 @@
             <h1 class="text-3xl font-bold text-gray-900">Organizations</h1>
             <p class="text-gray-600 mt-2">Manage your organizations and teams</p>
         </div>
-        <a href="/api/v1/organizations/create" 
+        <a href="/app/admin/organization/create" 
            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
             <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
@@ -92,7 +92,7 @@
 
                 <!-- Actions -->
                 <div class="flex space-x-2">
-                    <a href="/api/v1/organizations/{{ org.id }}" 
+                    <a href="/app/admin/organization/{{ org.id }}" 
                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-3 rounded-md text-sm font-medium transition-colors">
                         View Details
                     </a>
@@ -118,7 +118,7 @@
         </div>
         <h3 class="text-xl font-semibold text-gray-900 mb-2">No organizations yet</h3>
         <p class="text-gray-600 mb-6">Create your first organization to get started with team collaboration and device management.</p>
-        <a href="/api/v1/organizations/create" 
+        <a href="/app/admin/organization/create" 
            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">
             Create Organization
         </a>

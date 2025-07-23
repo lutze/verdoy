@@ -86,3 +86,30 @@ CREATE TABLE IF NOT EXISTS process_instances (
     parameters JSONB DEFAULT '{}',
     results JSONB DEFAULT '{}'
 );
+
+-- Projects table: Project-specific fields, inheriting from entities
+CREATE TABLE IF NOT EXISTS projects (
+    id UUID PRIMARY KEY REFERENCES entities(id) ON DELETE CASCADE, -- Inherits from entities
+    organization_id UUID NOT NULL REFERENCES entities(id), -- Organization entity
+    project_lead_id UUID REFERENCES entities(id), -- User entity as project lead
+    status VARCHAR(50) DEFAULT 'active',
+    priority VARCHAR(20) DEFAULT 'medium',
+    start_date DATE,
+    end_date DATE,
+    expected_completion DATE,
+    actual_completion DATE,
+    budget VARCHAR(100),
+    progress_percentage INTEGER DEFAULT 0,
+    tags JSONB DEFAULT '[]', -- List of tags
+    project_metadata JSONB DEFAULT '{}', -- Project-specific metadata
+    settings JSONB DEFAULT '{}', -- Project-specific settings
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT fk_project_organization FOREIGN KEY (organization_id) REFERENCES entities(id),
+    CONSTRAINT fk_project_lead FOREIGN KEY (project_lead_id) REFERENCES entities(id)
+);
+
+-- Indexes for project queries
+CREATE INDEX IF NOT EXISTS idx_projects_organization ON projects(organization_id);
+CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
+CREATE INDEX IF NOT EXISTS idx_projects_lead ON projects(project_lead_id);

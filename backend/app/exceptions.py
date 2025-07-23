@@ -256,6 +256,15 @@ class OrganizationNotFoundException(HTTPException):
         )
 
 
+class ProjectNotFoundException(HTTPException):
+    """Exception raised when a project is not found."""
+    def __init__(self, detail: str = "Project not found"):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=detail
+        )
+
+
 class ReadingNotFoundException(HTTPException):
     """Exception raised when a reading is not found."""
     def __init__(self, detail: str = "Reading not found"):

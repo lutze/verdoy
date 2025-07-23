@@ -77,13 +77,21 @@ class DeviceService(BaseService[Device]):
             # Create device entity
             device = Device(
                 name=device_data.name,
-                serial_number=device_data.serial_number,
-                device_type=device_data.device_type,
-                model=device_data.model,
-                firmware_version=device_data.firmware_version,
+                description=device_data.description,
                 organization_id=organization_id,
-                status=DeviceStatus.REGISTERED,
-                is_active=True
+                properties={
+                    "serial_number": device_data.serial_number,
+                    "device_type": device_data.device_type,
+                    "model": device_data.model,
+                    "firmware_version": device_data.firmware_version,
+                    "mac_address": device_data.mac_address,
+                    "location": device_data.location,
+                    "status": DeviceStatus.REGISTERED,
+                    "sensors": device_data.sensors,
+                    "reading_interval": device_data.reading_interval,
+                    "alert_thresholds": device_data.alert_thresholds or {},
+                    "is_active": True
+                }
             )
             
             # Save to database
@@ -93,16 +101,16 @@ class DeviceService(BaseService[Device]):
             
             # Audit log
             self.audit_log("device_registered", device.id, {
-                "serial_number": device.serial_number,
+                "serial_number": device.get_property("serial_number"),
                 "name": device.name,
-                "device_type": device.device_type,
+                "device_type": device.get_property("device_type"),
                 "organization_id": str(organization_id)
             })
             
             # Performance monitoring
             self.performance_monitor("device_registration", start_time)
             
-            logger.info(f"Device registered successfully: {device.serial_number}")
+            logger.info(f"Device registered successfully: {device.get_property('serial_number')}")
             return device
             
         except IntegrityError as e:
@@ -349,7 +357,11 @@ class DeviceService(BaseService[Device]):
             Device if found, None otherwise
         """
         try:
-            return self.db.query(Device).filter(Device.serial_number == serial_number).first()
+            from sqlalchemy import text
+            return self.db.query(Device).filter(
+                Device.entity_type == "device.esp32",
+                text("properties->>'serial_number' = :serial_number")
+            ).params(serial_number=serial_number).first()
         except Exception as e:
             logger.error(f"Error getting device by serial: {e}")
             return None
@@ -365,7 +377,11 @@ class DeviceService(BaseService[Device]):
             True if device exists, False otherwise
         """
         try:
-            return self.db.query(Device).filter(Device.serial_number == serial_number).first() is not None
+            from sqlalchemy import text
+            return self.db.query(Device).filter(
+                Device.entity_type == "device.esp32",
+                text("properties->>'serial_number' = :serial_number")
+            ).params(serial_number=serial_number).first() is not None
         except Exception as e:
             logger.error(f"Error checking device existence by serial: {e}")
             return False

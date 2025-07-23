@@ -229,4 +229,170 @@ async def get_organization_api(
         success=True,
         data={"organization": organization},
         message="Organization retrieved successfully"
+    )
+
+@router.get("/app/admin/organization/{org_id}/edit", response_class=HTMLResponse, include_in_schema=False)
+async def edit_organization_page(
+    request: Request,
+    org_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Edit organization page for web interface."""
+    try:
+        org_service = OrganizationService(db)
+        organization = org_service.get_by_id_or_raise(org_id)
+        
+        return templates.TemplateResponse(
+            "pages/organizations/edit.html",
+            {
+                "request": request,
+                "user": current_user,
+                "organization": organization,
+                "page_title": f"Edit Organization: {organization.name}"
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="Organization not found")
+
+@router.post("/app/admin/organization/{org_id}/edit", response_class=HTMLResponse, include_in_schema=False)
+async def edit_organization_page_submit(
+    request: Request,
+    org_id: UUID,
+    name: str = Form(...),
+    description: Optional[str] = Form(None),
+    organization_type: str = Form("small_business"),
+    website: Optional[str] = Form(None),
+    contact_email: Optional[str] = Form(None),
+    contact_phone: Optional[str] = Form(None),
+    address: Optional[str] = Form(None),
+    city: Optional[str] = Form(None),
+    state: Optional[str] = Form(None),
+    country: Optional[str] = Form(None),
+    postal_code: Optional[str] = Form(None),
+    timezone: str = Form("UTC"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Edit organization form submission for web interface."""
+    try:
+        # Create organization update data
+        org_data = OrganizationUpdate(
+            name=name,
+            description=description,
+            organization_type=organization_type,
+            website=website,
+            contact_email=contact_email,
+            contact_phone=contact_phone,
+            address=address,
+            city=city,
+            state=state,
+            country=country,
+            postal_code=postal_code,
+            timezone=timezone
+        )
+        
+        # Update organization
+        org_service = OrganizationService(db)
+        organization = org_service.update(org_id, org_data)
+        
+        # Redirect to organization detail page
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(
+            url=f"/app/admin/organization/{organization.id}",
+            status_code=303
+        )
+        
+    except Exception as e:
+        # Return form with error
+        org_service = OrganizationService(db)
+        organization = org_service.get_by_id_or_raise(org_id)
+        
+        return templates.TemplateResponse(
+            "pages/organizations/edit.html",
+            {
+                "request": request,
+                "user": current_user,
+                "organization": organization,
+                "page_title": f"Edit Organization: {organization.name}",
+                "error": str(e),
+                "form_data": {
+                    "name": name,
+                    "description": description,
+                    "organization_type": organization_type,
+                    "website": website,
+                    "contact_email": contact_email,
+                    "contact_phone": contact_phone,
+                    "address": address,
+                    "city": city,
+                    "state": state,
+                    "country": country,
+                    "postal_code": postal_code,
+                    "timezone": timezone
+                }
+            }
+        )
+
+@router.put("/api/v1/organizations/{org_id}", response_model=BaseResponse)
+async def update_organization_api(
+    org_id: UUID,
+    org_data: OrganizationUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update organization for API clients."""
+    org_service = OrganizationService(db)
+    organization = org_service.update(org_id, org_data)
+    
+    return BaseResponse(
+        success=True,
+        data={"organization": organization},
+        message="Organization updated successfully"
+    )
+
+@router.post("/app/admin/organization/{org_id}/delete", response_class=HTMLResponse, include_in_schema=False)
+async def delete_organization_page(
+    request: Request,
+    org_id: UUID,
+    confirm: str = Form(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete organization for web interface."""
+    try:
+        if confirm.lower() != "delete":
+            raise HTTPException(status_code=400, detail="Please type 'delete' to confirm")
+        
+        org_service = OrganizationService(db)
+        org_service.deactivate_organization(org_id)
+        
+        # Redirect to organizations list
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(
+            url="/app/admin/organization/?message=Organization+deleted+successfully",
+            status_code=303
+        )
+        
+    except Exception as e:
+        # Redirect back with error
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(
+            url=f"/app/admin/organization/{org_id}?error={str(e)}",
+            status_code=303
+        )
+
+@router.delete("/api/v1/organizations/{org_id}", response_model=BaseResponse)
+async def delete_organization_api(
+    org_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete organization for API clients."""
+    org_service = OrganizationService(db)
+    org_service.deactivate_organization(org_id)
+    
+    return BaseResponse(
+        success=True,
+        data={"organization_id": str(org_id)},
+        message="Organization deleted successfully"
     ) 

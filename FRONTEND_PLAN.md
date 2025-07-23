@@ -255,3 +255,76 @@ To ensure all frontend pages continue to load and function correctly after futur
           ...
       ```
 - **Review all new routers for compliance before merging.** 
+
+---
+
+## 📝 July 2025 Development Progress & Next Steps
+
+### 1. Progress Summary
+- **Navigation Consistency:** All navigation links (navbar, dashboard quick actions) now use correct `/app/` routes. Projects and Organizations are accessible and consistent.
+- **Organization Management:** Full CRUD (Create, Read, Update, Delete/Archive) for organizations, with both HTML and JSON API endpoints. Templates for list, create, edit, and detail pages are in place.
+- **Project Management:**
+  - **Backend:** New `Project` model, Pydantic schemas, and `ProjectService` for business logic.
+  - **API:** CRUD endpoints for projects, with both HTML and JSON support.
+  - **Frontend:** Templates for project list, create, and detail pages. Navigation and dashboard quick actions updated.
+- **Content Negotiation:** All new endpoints support both HTML and JSON responses, following project rules.
+- **Testing Infrastructure:**
+  - **Backend:** Added/updated pytest-based tests for organizations and projects (API and service layer).
+  - **Frontend:** Added Playwright smoke tests for project and organization management, covering navigation, forms, accessibility, and progressive enhancement.
+
+### 2. Testing & Quality Assurance
+- **Backend Tests:**
+  - Comprehensive tests for organization and project CRUD, validation, and error handling.
+  - Service layer tests for `ProjectService` (creation, validation, statistics, status transitions, etc.).
+- **Frontend Tests:**
+  - Playwright tests for project and organization pages, including navigation, form validation, accessibility, and no-JS mode.
+  - Tests follow the documented [Frontend Testing Strategy](docs/testing/FRONTEND_TESTING_STRATEGY.md).
+
+### 3. Bug Discovery & Resolution
+- **SQLAlchemy Reserved Name:** The `Project` model used the attribute `metadata`, which is reserved in SQLAlchemy's Declarative API. This caused backend test failures. **RESOLVED** - Renamed to `project_metadata` throughout all code and tests.
+- **Device Validation Issues:** Backend tests failing due to Pydantic validation errors in DeviceCreate schema and Entity-based Device model architecture mismatches. **RESOLVED** - Fixed schema alignment, JSON property handling, and Entity-based device creation.
+- **Database Schema Alignment:** Fixed foreign key references and Entity-based architecture integration for Project model. **RESOLVED** - Updated Project model to properly reference `entities.id` and fixed SQLAlchemy relationships.
+
+### 4. Next Steps
+- **Run Full Test Suites:** With validation issues resolved, run comprehensive backend (pytest) and frontend (Playwright) test suites to ensure all systems are working.
+- **Database Migration Testing:** Verify new `projects` table schema works correctly with Entity-based architecture.
+- **Feature & UX Enhancements:** Polish project detail/edit templates, add project archive UI, implement member management, and expand HTMX-based dynamic updates.
+- **Documentation & Review:** Update documentation for new endpoints, templates, and business logic. Review code for adherence to project rules.
+- **Continue with Next Milestones:** Begin work on the next planned features: experiment management, process designer, bioreactor management, etc., as outlined above.
+
+--- 
+
+---
+
+## 🟦 NEXT STEPS: Implementation Checklist
+
+### 1. Navigation Refactor & Base Home Page
+
+**Goal:** Ensure all navigation links are consistent, `/app`-based, and the home page is a clear, accessible entry point.
+
+#### Implementation Checklist
+
+1. **Navigation Review & Refactor**
+   - [ ] Audit all navigation links in templates/components for consistency
+   - [ ] Update all links to use `/app`-based URLs (dashboard, orgs, projects, profile, etc.)
+   - [ ] Ensure user dropdown and mobile nav use correct routes
+   - [ ] Remove/redirect any legacy or duplicate routes
+
+2. **Base Home Page Polish**
+   - [ ] Review and refine `/app` home page content and layout
+   - [ ] Ensure all major sections are linked from the home page
+   - [ ] Add welcome message, app description, and quick links
+   - [ ] Ensure accessibility (semantic HTML, keyboard navigation)
+   - [ ] Test mobile/responsive layout
+
+3. **Testing**
+   - [ ] Add/expand Playwright smoke tests for home page and navigation
+   - [ ] Test navigation links for both guest and authenticated users
+   - [ ] Add no-JS mode test for home page
+   - [ ] Check accessibility landmarks in tests
+
+4. **Documentation**
+   - [ ] Update this checklist in FRONTEND_PLAN.md as tasks are completed
+   - [ ] Document any new conventions or patterns discovered during refactor
+
+--- 
