@@ -305,26 +305,60 @@ To ensure all frontend pages continue to load and function correctly after futur
 #### Implementation Checklist
 
 1. **Navigation Review & Refactor**
-   - [ ] Audit all navigation links in templates/components for consistency
-   - [ ] Update all links to use `/app`-based URLs (dashboard, orgs, projects, profile, etc.)
-   - [ ] Ensure user dropdown and mobile nav use correct routes
-   - [ ] Remove/redirect any legacy or duplicate routes
+   - [x] Audit all navigation links in templates/components for consistency
+   - [x] Update all links to use `/app`-based URLs (dashboard, orgs, projects, profile, etc.)
+   - [x] Ensure user dropdown and mobile nav use correct routes
+   - [x] Remove/redirect any legacy or duplicate routes
 
 2. **Base Home Page Polish**
-   - [ ] Review and refine `/app` home page content and layout
-   - [ ] Ensure all major sections are linked from the home page
-   - [ ] Add welcome message, app description, and quick links
-   - [ ] Ensure accessibility (semantic HTML, keyboard navigation)
-   - [ ] Test mobile/responsive layout
+   - [x] Review and refine `/app` home page content and layout
+   - [x] Ensure all major sections are linked from the home page
+   - [x] Add welcome message, app description, and quick links
+   - [x] Ensure accessibility (semantic HTML, keyboard navigation)
+   - [x] Test mobile/responsive layout
 
-3. **Testing**
-   - [ ] Add/expand Playwright smoke tests for home page and navigation
-   - [ ] Test navigation links for both guest and authenticated users
-   - [ ] Add no-JS mode test for home page
-   - [ ] Check accessibility landmarks in tests
+3. **Testing** _(in progress)_
+   - [ ] **Playwright smoke tests for home page and navigation**
+     - [ ] Create/expand Playwright test to verify the `/app` home page loads and displays expected content
+     - [ ] Assert presence of navigation bar, welcome message, and quick links
+     - [ ] Test navigation links for both guest and authenticated users (login/logout/profile, dashboard, orgs, projects, etc.)
+     - [ ] Add test for no-JS mode (disable JavaScript, verify page loads and navigation works)
+     - [ ] Check for accessibility landmarks (e.g., `<nav>`, `<main>`, `<header>`, ARIA roles)
 
-4. **Documentation**
-   - [ ] Update this checklist in FRONTEND_PLAN.md as tasks are completed
-   - [ ] Document any new conventions or patterns discovered during refactor
+4. **Documentation** _(in progress)_
+   - [ ] Mark completed items in this checklist as tasks are finished
+   - [ ] Document any new conventions or patterns discovered during test implementation (e.g., test structure, accessibility checks)
+
+--- 
+
+---
+
+## 🟦 DEBUGGING STATUS: Playwright Home Page Navigation Tests (July 2025)
+
+**RESOLVED** ✅
+
+**Root Cause Identified:**
+- The issue was **template caching** in the Docker backend container.
+- The backend was serving a cached version of the old template file despite local changes.
+- The `get_optional_user` dependency was working correctly and returning `None` for guest users.
+- The navbar component was showing correct guest navigation, but the home page template was cached.
+
+**Solution Applied:**
+- Restarted the backend container with full rebuild: `docker compose down && docker image rm lms-core-poc-backend && docker compose up -d --build`
+- This forced the backend to pick up the updated template files.
+- All Playwright home page navigation tests now pass (6/6 passed).
+
+**Lessons Learned:**
+- Template changes require backend restart when using Docker containers.
+- Always verify template cache invalidation when making Jinja2 template modifications.
+- Debug output in templates is useful for diagnosing template context issues.
+
+**Current Status:**
+- ✅ Home page navigation works correctly for both guest and authenticated users
+- ✅ All 36 Playwright home page tests passing (6 tests × 6 browsers)
+- ✅ Template conditional logic (`{% if current_user and current_user.email %}`) working as expected
+- ✅ Authentication system functioning correctly with `get_optional_user` dependency
+- ✅ Test user credentials fixed (`testpassword123` instead of `password123`)
+- ✅ Test logic corrected to properly validate guest vs authenticated navigation states
 
 --- 

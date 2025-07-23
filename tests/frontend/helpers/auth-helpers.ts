@@ -13,7 +13,7 @@ export interface TestUser {
 export const TEST_USERS = {
   valid: {
     email: 'test@example.com',
-    password: 'password123',
+    password: 'testpassword123',
     name: 'Test User'
   },
   invalid: {

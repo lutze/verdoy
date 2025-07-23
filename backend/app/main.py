@@ -25,7 +25,7 @@ from datetime import datetime
 from contextlib import asynccontextmanager
 from typing import Optional
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -79,6 +79,9 @@ from app.routers import (
     device_status_ws_router,
     alerts_ws_router,
 )
+
+# Import user dependency
+from app.dependencies import get_optional_user
 
 # Configure logging
 logging.basicConfig(
@@ -238,13 +241,13 @@ def create_app() -> FastAPI:
     
     # Add root endpoint
     @app.get("/app", response_class=HTMLResponse, include_in_schema=False)
-    async def home(request: Request):
+    async def home(request: Request, current_user=Depends(get_optional_user)):
         """
         Render the base home page for the frontend.
         """
         return templates.TemplateResponse(
             "pages/home.html",
-            {"request": request}
+            {"request": request, "current_user": current_user}
         )
     
     return app
