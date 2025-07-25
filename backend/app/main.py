@@ -82,6 +82,7 @@ from app.routers.web.web_auth import router as web_auth_router
 from app.routers.web.web_dashboard import router as web_dashboard_router
 from app.routers.web.web_projects import router as web_projects_router
 from app.routers.web.web_organizations import router as web_organizations_router
+from app.routers.web_landing import router as web_landing_router
 
 # Import user dependency
 from app.dependencies import get_optional_user
@@ -361,6 +362,7 @@ def register_routers(app: FastAPI) -> None:
         app: FastAPI application instance
     """
     # Web (HTML) routers - pretty URLs, no /api/v1 prefix
+    app.include_router(web_landing_router)
     app.include_router(web_auth_router)
     app.include_router(web_dashboard_router)
     app.include_router(web_projects_router)
