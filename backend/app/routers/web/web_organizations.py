@@ -72,6 +72,68 @@ async def organization_create_page(
         }
     )
 
+@router.post("/create", response_class=HTMLResponse, include_in_schema=False)
+async def organization_create(
+    request: Request,
+    name: str = Form(...),
+    organization_type: str = Form("small_business"),
+    description: Optional[str] = Form(None),
+    contact_email: Optional[str] = Form(None),
+    contact_phone: Optional[str] = Form(None),
+    website: Optional[str] = Form(None),
+    address: Optional[str] = Form(None),
+    city: Optional[str] = Form(None),
+    state: Optional[str] = Form(None),
+    country: Optional[str] = Form(None),
+    postal_code: Optional[str] = Form(None),
+    timezone: str = Form("UTC"),
+    current_user: User = Depends(get_web_user),
+    db: Session = Depends(get_db)
+):
+    """Create a new organization."""
+    org_service = OrganizationService(db)
+    try:
+        organization = org_service.create_organization(
+            name=name,
+            organization_type=organization_type,
+            description=description,
+            contact_email=contact_email,
+            contact_phone=contact_phone,
+            website=website,
+            address=address,
+            city=city,
+            state=state,
+            country=country,
+            postal_code=postal_code,
+            timezone=timezone,
+            created_by=current_user.id
+        )
+        return RedirectResponse(url=f"/app/admin/organization/{organization.id}", status_code=302)
+    except Exception as e:
+        return templates.TemplateResponse(
+            "pages/organizations/create.html",
+            {
+                "request": request,
+                "current_user": current_user,
+                "page_title": "Create Organization",
+                "error": str(e),
+                "form_data": {
+                    "name": name,
+                    "organization_type": organization_type,
+                    "description": description,
+                    "contact_email": contact_email,
+                    "contact_phone": contact_phone,
+                    "website": website,
+                    "address": address,
+                    "city": city,
+                    "state": state,
+                    "country": country,
+                    "postal_code": postal_code,
+                    "timezone": timezone
+                }
+            }
+        )
+
 @router.get("/{organization_id}/edit", response_class=HTMLResponse, include_in_schema=False)
 async def organization_edit_page(
     request: Request,
@@ -81,12 +143,82 @@ async def organization_edit_page(
 ):
     org_service = OrganizationService(db)
     organization = org_service.get_by_id(organization_id)
+    if not organization:
+        raise HTTPException(status_code=404, detail="Organization not found")
     return templates.TemplateResponse(
         "pages/organizations/edit.html",
         {
             "request": request,
             "organization": organization,
             "current_user": current_user,
-            "page_title": f"Edit {organization.name if organization else 'Organization'}"
+            "page_title": f"Edit {organization.name}"
         }
-    ) 
+    )
+
+@router.post("/{organization_id}/edit", response_class=HTMLResponse, include_in_schema=False)
+async def organization_update(
+    request: Request,
+    organization_id: UUID,
+    name: str = Form(...),
+    organization_type: str = Form("small_business"),
+    description: Optional[str] = Form(None),
+    contact_email: Optional[str] = Form(None),
+    contact_phone: Optional[str] = Form(None),
+    website: Optional[str] = Form(None),
+    address: Optional[str] = Form(None),
+    city: Optional[str] = Form(None),
+    state: Optional[str] = Form(None),
+    country: Optional[str] = Form(None),
+    postal_code: Optional[str] = Form(None),
+    timezone: str = Form("UTC"),
+    current_user: User = Depends(get_web_user),
+    db: Session = Depends(get_db)
+):
+    """Update an existing organization."""
+    org_service = OrganizationService(db)
+    organization = org_service.get_by_id(organization_id)
+    if not organization:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    
+    try:
+        updated_organization = org_service.update_organization(
+            organization_id=organization_id,
+            name=name,
+            organization_type=organization_type,
+            description=description,
+            contact_email=contact_email,
+            contact_phone=contact_phone,
+            website=website,
+            address=address,
+            city=city,
+            state=state,
+            country=country,
+            postal_code=postal_code,
+            timezone=timezone
+        )
+        return RedirectResponse(url=f"/app/admin/organization/{organization_id}", status_code=302)
+    except Exception as e:
+        return templates.TemplateResponse(
+            "pages/organizations/edit.html",
+            {
+                "request": request,
+                "organization": organization,
+                "current_user": current_user,
+                "page_title": f"Edit {organization.name}",
+                "error": str(e),
+                "form_data": {
+                    "name": name,
+                    "organization_type": organization_type,
+                    "description": description,
+                    "contact_email": contact_email,
+                    "contact_phone": contact_phone,
+                    "website": website,
+                    "address": address,
+                    "city": city,
+                    "state": state,
+                    "country": country,
+                    "postal_code": postal_code,
+                    "timezone": timezone
+                }
+            }
+        ) 

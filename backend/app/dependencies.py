@@ -415,7 +415,7 @@ def get_api_user(
         CredentialsException: If token is invalid, missing, or session cookie is used
     """
     if not credentials or not credentials.credentials:
-        raise CredentialsException(detail="Bearer token required for API endpoints")
+        raise CredentialsException()
     token = credentials.credentials
     try:
         payload = decode_access_token(token)
@@ -449,9 +449,9 @@ def get_web_user(
     # Reject Bearer tokens for web endpoints
     auth_header = request.headers.get("authorization")
     if auth_header and auth_header.lower().startswith("bearer"):
-        raise CredentialsException(detail="Bearer token not allowed for web endpoints")
+        raise CredentialsException()
     if not session_token:
-        raise CredentialsException(detail="Session cookie required for web endpoints")
+        raise CredentialsException()
     try:
         payload = decode_access_token(session_token)
         user_id: str = payload.get("sub")

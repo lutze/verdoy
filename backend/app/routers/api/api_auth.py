@@ -74,7 +74,7 @@ async def api_login_user(
 
     user = db.query(User).filter(User.email == user_credentials.email).first()
     if not user or not user.check_password(user_credentials.password):
-        raise CredentialsException(detail="Incorrect email or password")
+        raise CredentialsException()
     if not user.is_active:
         raise InactiveUserException(detail="Account is deactivated")
 

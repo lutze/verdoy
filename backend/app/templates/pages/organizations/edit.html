@@ -4,206 +4,613 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-8 max-w-4xl">
-    <!-- Header -->
-    <div class="mb-8">
-        <div class="flex items-center mb-4">
-            <a href="/app/admin/organization/{{ organization.id }}" class="text-blue-600 hover:text-blue-700 mr-4">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                </svg>
-            </a>
-            <h1 class="text-3xl font-bold text-gray-900">Edit Organization</h1>
+    <!-- Page Header with Scientific Gradient -->
+    <div class="page-header scientific-accent mb-8">
+        <div class="page-header-content">
+            <div class="header-left">
+                <div class="breadcrumb">
+                    <a href="/app/admin/organization/" class="breadcrumb-link">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                        Organizations
+                    </a>
+                    <span class="breadcrumb-separator">/</span>
+                    <a href="/app/admin/organization/{{ organization.id }}" class="breadcrumb-link">
+                        {{ organization.name }}
+                    </a>
+                </div>
+                <h1 class="page-title">Edit Organization</h1>
+                <p class="page-subtitle">Update your organization details and settings</p>
+            </div>
         </div>
-        <p class="text-gray-600">Update your organization information and settings.</p>
     </div>
 
     <!-- Error Message -->
     {% if error %}
-    <div class="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
-        <div class="flex">
-            <div class="flex-shrink-0">
-                <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-            </div>
-            <div class="ml-3">
-                <p class="text-sm text-red-700">{{ error }}</p>
-            </div>
+    <div class="alert alert-error mb-6">
+        <div class="alert-icon">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+        </div>
+        <div class="alert-content">
+            <h3 class="alert-title">Error</h3>
+            <p class="alert-message">{{ error }}</p>
         </div>
     </div>
     {% endif %}
 
-    <!-- Organization Form -->
-    <form action="/app/admin/organization/{{ organization.id }}/edit" method="post" class="space-y-8">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
-        
-        <!-- Basic Information -->
-        <div class="bg-white rounded-lg shadow border border-gray-200 p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-6">Basic Information</h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="md:col-span-2">
-                    <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
-                        Organization Name <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" 
-                           id="name" 
-                           name="name" 
-                           value="{{ form_data.name if form_data else organization.name }}"
-                           required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    <p class="mt-1 text-sm text-gray-500">The display name for your organization</p>
+    <!-- Organization Edit Form -->
+    <form method="POST" class="form-container">
+        <div class="form-sections">
+            <!-- Basic Information -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon">🏢</div>
+                    <div>
+                        <h3 class="section-title">Basic Information</h3>
+                        <p class="section-description">Core details about your organization</p>
+                    </div>
                 </div>
-                
-                <div class="md:col-span-2">
-                    <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                    <textarea id="description" 
-                              name="description" 
-                              rows="3"
-                              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">{{ form_data.description if form_data else organization.description }}</textarea>
-                    <p class="mt-1 text-sm text-gray-500">Brief description of your organization</p>
-                </div>
-                
-                <div>
-                    <label for="organization_type" class="block text-sm font-medium text-gray-700 mb-2">Organization Type</label>
-                    <select id="organization_type" 
-                            name="organization_type"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                        {% set current_type = form_data.organization_type if form_data else (organization.properties.organization_type if organization.properties else 'small_business') %}
-                        <option value="small_business" {% if current_type == 'small_business' %}selected{% endif %}>Small Business</option>
-                        <option value="enterprise" {% if current_type == 'enterprise' %}selected{% endif %}>Enterprise</option>
-                        <option value="academic" {% if current_type == 'academic' %}selected{% endif %}>Academic Institution</option>
-                        <option value="research" {% if current_type == 'research' %}selected{% endif %}>Research Organization</option>
-                        <option value="government" {% if current_type == 'government' %}selected{% endif %}>Government</option>
-                        <option value="nonprofit" {% if current_type == 'nonprofit' %}selected{% endif %}>Non-Profit</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="website" class="block text-sm font-medium text-gray-700 mb-2">Website</label>
-                    <input type="url" 
-                           id="website" 
-                           name="website" 
-                           value="{{ form_data.website if form_data else (organization.properties.website if organization.properties else '') }}"
-                           placeholder="https://example.com"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="name" class="form-label">Organization Name *</label>
+                        <input type="text" 
+                               id="name" 
+                               name="name" 
+                               value="{{ form_data.name if form_data else organization.name }}"
+                               required
+                               class="form-input"
+                               placeholder="Enter organization name">
+                    </div>
+                    <div class="form-group">
+                        <label for="organization_type" class="form-label">Organization Type</label>
+                        <select id="organization_type" 
+                                name="organization_type"
+                                class="form-select">
+                            <option value="small_business" {% if (form_data and form_data.organization_type == 'small_business') or organization.organization_type == 'small_business' %}selected{% endif %}>Small Business</option>
+                            <option value="enterprise" {% if (form_data and form_data.organization_type == 'enterprise') or organization.organization_type == 'enterprise' %}selected{% endif %}>Enterprise</option>
+                            <option value="startup" {% if (form_data and form_data.organization_type == 'startup') or organization.organization_type == 'startup' %}selected{% endif %}>Startup</option>
+                            <option value="educational" {% if (form_data and form_data.organization_type == 'educational') or organization.organization_type == 'educational' %}selected{% endif %}>Educational</option>
+                            <option value="government" {% if (form_data and form_data.organization_type == 'government') or organization.organization_type == 'government' %}selected{% endif %}>Government</option>
+                            <option value="non_profit" {% if (form_data and form_data.organization_type == 'non_profit') or organization.organization_type == 'non_profit' %}selected{% endif %}>Non-Profit</option>
+                            <option value="individual" {% if (form_data and form_data.organization_type == 'individual') or organization.organization_type == 'individual' %}selected{% endif %}>Individual</option>
+                        </select>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea id="description" 
+                                  name="description" 
+                                  rows="3"
+                                  class="form-textarea"
+                                  placeholder="Describe your organization">{{ form_data.description if form_data else organization.description or '' }}</textarea>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Contact Information -->
-        <div class="bg-white rounded-lg shadow border border-gray-200 p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-6">Contact Information</h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label for="contact_email" class="block text-sm font-medium text-gray-700 mb-2">Contact Email</label>
-                    <input type="email" 
-                           id="contact_email" 
-                           name="contact_email" 
-                           value="{{ form_data.contact_email if form_data else (organization.properties.contact_email if organization.properties else '') }}"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            <!-- Contact Information -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon">📧</div>
+                    <div>
+                        <h3 class="section-title">Contact Information</h3>
+                        <p class="section-description">How to reach your organization</p>
+                    </div>
                 </div>
-                
-                <div>
-                    <label for="contact_phone" class="block text-sm font-medium text-gray-700 mb-2">Contact Phone</label>
-                    <input type="tel" 
-                           id="contact_phone" 
-                           name="contact_phone" 
-                           value="{{ form_data.contact_phone if form_data else (organization.properties.contact_phone if organization.properties else '') }}"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="contact_email" class="form-label">Contact Email</label>
+                        <input type="email" 
+                               id="contact_email" 
+                               name="contact_email" 
+                               value="{{ form_data.contact_email if form_data else organization.contact_email or '' }}"
+                               class="form-input"
+                               placeholder="contact@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact_phone" class="form-label">Contact Phone</label>
+                        <input type="tel" 
+                               id="contact_phone" 
+                               name="contact_phone" 
+                               value="{{ form_data.contact_phone if form_data else organization.contact_phone or '' }}"
+                               class="form-input"
+                               placeholder="+1 (555) 123-4567">
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="website" class="form-label">Website</label>
+                        <input type="url" 
+                               id="website" 
+                               name="website" 
+                               value="{{ form_data.website if form_data else organization.website or '' }}"
+                               class="form-input"
+                               placeholder="https://example.com">
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Address Information -->
-        <div class="bg-white rounded-lg shadow border border-gray-200 p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-6">Address</h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="md:col-span-2">
-                    <label for="address" class="block text-sm font-medium text-gray-700 mb-2">Street Address</label>
-                    <input type="text" 
-                           id="address" 
-                           name="address" 
-                           value="{{ form_data.address if form_data else (organization.properties.address if organization.properties else '') }}"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            <!-- Address Information -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon">📍</div>
+                    <div>
+                        <h3 class="section-title">Address Information</h3>
+                        <p class="section-description">Physical location of your organization</p>
+                    </div>
                 </div>
-                
-                <div>
-                    <label for="city" class="block text-sm font-medium text-gray-700 mb-2">City</label>
-                    <input type="text" 
-                           id="city" 
-                           name="city" 
-                           value="{{ form_data.city if form_data else (organization.properties.city if organization.properties else '') }}"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                
-                <div>
-                    <label for="state" class="block text-sm font-medium text-gray-700 mb-2">State/Province</label>
-                    <input type="text" 
-                           id="state" 
-                           name="state" 
-                           value="{{ form_data.state if form_data else (organization.properties.state if organization.properties else '') }}"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                
-                <div>
-                    <label for="country" class="block text-sm font-medium text-gray-700 mb-2">Country</label>
-                    <input type="text" 
-                           id="country" 
-                           name="country" 
-                           value="{{ form_data.country if form_data else (organization.properties.country if organization.properties else '') }}"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                
-                <div>
-                    <label for="postal_code" class="block text-sm font-medium text-gray-700 mb-2">Postal Code</label>
-                    <input type="text" 
-                           id="postal_code" 
-                           name="postal_code" 
-                           value="{{ form_data.postal_code if form_data else (organization.properties.postal_code if organization.properties else '') }}"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label for="address" class="form-label">Address</label>
+                        <input type="text" 
+                               id="address" 
+                               name="address" 
+                               value="{{ form_data.address if form_data else organization.address or '' }}"
+                               class="form-input"
+                               placeholder="123 Main Street">
+                    </div>
+                    <div class="form-group">
+                        <label for="city" class="form-label">City</label>
+                        <input type="text" 
+                               id="city" 
+                               name="city" 
+                               value="{{ form_data.city if form_data else organization.city or '' }}"
+                               class="form-input"
+                               placeholder="City">
+                    </div>
+                    <div class="form-group">
+                        <label for="state" class="form-label">State/Province</label>
+                        <input type="text" 
+                               id="state" 
+                               name="state" 
+                               value="{{ form_data.state if form_data else organization.state or '' }}"
+                               class="form-input"
+                               placeholder="State">
+                    </div>
+                    <div class="form-group">
+                        <label for="country" class="form-label">Country</label>
+                        <input type="text" 
+                               id="country" 
+                               name="country" 
+                               value="{{ form_data.country if form_data else organization.country or '' }}"
+                               class="form-input"
+                               placeholder="Country">
+                    </div>
+                    <div class="form-group">
+                        <label for="postal_code" class="form-label">Postal Code</label>
+                        <input type="text" 
+                               id="postal_code" 
+                               name="postal_code" 
+                               value="{{ form_data.postal_code if form_data else organization.postal_code or '' }}"
+                               class="form-input"
+                               placeholder="12345">
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Settings -->
-        <div class="bg-white rounded-lg shadow border border-gray-200 p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-6">Settings</h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label for="timezone" class="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
-                    <select id="timezone" 
-                            name="timezone"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                        {% set current_timezone = form_data.timezone if form_data else (organization.properties.timezone if organization.properties else 'UTC') %}
-                        <option value="UTC" {% if current_timezone == 'UTC' %}selected{% endif %}>UTC</option>
-                        <option value="America/New_York" {% if current_timezone == 'America/New_York' %}selected{% endif %}>Eastern Time</option>
-                        <option value="America/Chicago" {% if current_timezone == 'America/Chicago' %}selected{% endif %}>Central Time</option>
-                        <option value="America/Denver" {% if current_timezone == 'America/Denver' %}selected{% endif %}>Mountain Time</option>
-                        <option value="America/Los_Angeles" {% if current_timezone == 'America/Los_Angeles' %}selected{% endif %}>Pacific Time</option>
-                        <option value="Europe/London" {% if current_timezone == 'Europe/London' %}selected{% endif %}>London</option>
-                        <option value="Europe/Paris" {% if current_timezone == 'Europe/Paris' %}selected{% endif %}>Paris</option>
-                        <option value="Asia/Tokyo" {% if current_timezone == 'Asia/Tokyo' %}selected{% endif %}>Tokyo</option>
-                        <option value="Australia/Sydney" {% if current_timezone == 'Australia/Sydney' %}selected{% endif %}>Sydney</option>
-                    </select>
+            <!-- Settings -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon">⚙️</div>
+                    <div>
+                        <h3 class="section-title">Settings</h3>
+                        <p class="section-description">Configure your organization preferences</p>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="timezone" class="form-label">Timezone</label>
+                        <select id="timezone" 
+                                name="timezone"
+                                class="form-select">
+                            <option value="UTC" {% if (form_data and form_data.timezone == 'UTC') or organization.timezone == 'UTC' %}selected{% endif %}>UTC</option>
+                            <option value="America/New_York" {% if (form_data and form_data.timezone == 'America/New_York') or organization.timezone == 'America/New_York' %}selected{% endif %}>Eastern Time</option>
+                            <option value="America/Chicago" {% if (form_data and form_data.timezone == 'America/Chicago') or organization.timezone == 'America/Chicago' %}selected{% endif %}>Central Time</option>
+                            <option value="America/Denver" {% if (form_data and form_data.timezone == 'America/Denver') or organization.timezone == 'America/Denver' %}selected{% endif %}>Mountain Time</option>
+                            <option value="America/Los_Angeles" {% if (form_data and form_data.timezone == 'America/Los_Angeles') or organization.timezone == 'America/Los_Angeles' %}selected{% endif %}>Pacific Time</option>
+                            <option value="Europe/London" {% if (form_data and form_data.timezone == 'Europe/London') or organization.timezone == 'Europe/London' %}selected{% endif %}>London</option>
+                            <option value="Europe/Paris" {% if (form_data and form_data.timezone == 'Europe/Paris') or organization.timezone == 'Europe/Paris' %}selected{% endif %}>Paris</option>
+                            <option value="Asia/Tokyo" {% if (form_data and form_data.timezone == 'Asia/Tokyo') or organization.timezone == 'Asia/Tokyo' %}selected{% endif %}>Tokyo</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Organization Status -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon">📊</div>
+                    <div>
+                        <h3 class="section-title">Organization Status</h3>
+                        <p class="section-description">Current organization information</p>
+                    </div>
+                </div>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <span class="status-label">Status</span>
+                        <span class="status-value {% if organization.is_active %}active{% else %}inactive{% endif %}">
+                            {{ 'Active' if organization.is_active else 'Inactive' }}
+                        </span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Created</span>
+                        <span class="status-value">{{ organization.created_at.strftime('%Y-%m-%d') if organization.created_at else 'Unknown' }}</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Last Updated</span>
+                        <span class="status-value">{{ organization.last_updated.strftime('%Y-%m-%d') if organization.last_updated else 'Never' }}</span>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Form Actions -->
-        <div class="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
-            <a href="/app/admin/organization/{{ organization.id }}" 
-               class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md font-medium transition-colors">
+        <div class="form-actions">
+            <a href="/app/admin/organization/{{ organization.id }}" class="btn btn-secondary">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
                 Cancel
             </a>
-            <button type="submit" 
-                    class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors">
+            <button type="submit" class="btn btn-primary">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
                 Update Organization
             </button>
         </div>
     </form>
 </div>
+
+<style>
+/* Page Header Styles */
+.page-header {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: var(--radius-xl);
+    position: relative;
+    overflow: hidden;
+    padding: var(--space-8);
+}
+
+.page-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(50%, -50%);
+}
+
+.page-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 10;
+}
+
+.header-left {
+    flex: 1;
+}
+
+.breadcrumb {
+    margin-bottom: var(--space-2);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.breadcrumb-link {
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+    transition: color var(--transition-normal);
+}
+
+.breadcrumb-link:hover {
+    color: var(--text-inverse);
+}
+
+.breadcrumb-separator {
+    color: rgba(255,255,255,0.6);
+    font-size: var(--font-size-sm);
+}
+
+.page-title {
+    color: var(--text-inverse);
+    font-size: var(--font-size-4xl);
+    font-weight: 700;
+    margin-bottom: var(--space-2);
+}
+
+.page-subtitle {
+    color: rgba(255,255,255,0.9);
+    font-size: var(--font-size-lg);
+    font-weight: 400;
+}
+
+/* Alert Styles */
+.alert {
+    display: flex;
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    gap: var(--space-3);
+}
+
+.alert-error {
+    background: var(--danger-light);
+    border: 1px solid var(--danger);
+    color: var(--danger);
+}
+
+.alert-icon {
+    flex-shrink: 0;
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-title {
+    font-weight: 600;
+    margin-bottom: var(--space-1);
+}
+
+.alert-message {
+    font-size: var(--font-size-sm);
+}
+
+/* Form Container */
+.form-container {
+    background: var(--bg-primary);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.form-sections {
+    padding: var(--space-8);
+}
+
+.form-section {
+    margin-bottom: var(--space-8);
+    padding-bottom: var(--space-8);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.form-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+
+.section-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: var(--radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-2xl);
+    color: var(--text-inverse);
+}
+
+.section-title {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-1);
+}
+
+.section-description {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+/* Form Grid */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--space-6);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    background: var(--bg-primary);
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    transition: all var(--transition-normal);
+    color: var(--text-primary);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(106, 255, 147, 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+    color: var(--text-tertiary);
+}
+
+/* Status Grid */
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-4);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+}
+
+.status-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.status-label {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.status-value {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.status-value.active {
+    color: var(--success);
+}
+
+.status-value.inactive {
+    color: var(--danger);
+}
+
+/* Button Styles */
+.btn {
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-lg);
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-family);
+    text-decoration: none;
+    font-size: var(--font-size-base);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: var(--text-inverse);
+    border: 1px solid rgba(255,255,255,0.3);
+    backdrop-filter: blur(10px);
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-light);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-tertiary);
+    transform: translateY(-1px);
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-4);
+    padding: var(--space-6) var(--space-8);
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-light);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-header-content {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-4);
+    }
+    
+    .breadcrumb {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .form-sections {
+        padding: var(--space-6);
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-3);
+    }
+    
+    .status-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+    
+    .btn {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: var(--space-4);
+    }
+    
+    .page-title {
+        font-size: var(--font-size-3xl);
+    }
+    
+    .section-title {
+        font-size: var(--font-size-lg);
+    }
+}
+</style>
 {% endblock %} 

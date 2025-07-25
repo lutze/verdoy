@@ -4,125 +4,681 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-8">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-900">Organizations</h1>
-            <p class="text-gray-600 mt-2">Manage your organizations and teams</p>
+    <!-- Page Header with Scientific Gradient -->
+    <div class="page-header scientific-accent mb-8">
+        <div class="page-header-content">
+            <div>
+                <h1 class="page-title">Organizations</h1>
+                <p class="page-subtitle">Manage your research organizations and teams</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary">
+                    📊 Analytics
+                </button>
+                <a href="/app/admin/organization/create" class="btn btn-primary">
+                    ➕ New Organization
+                </a>
+            </div>
         </div>
-        <a href="/app/admin/organization/create" 
-           class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-            </svg>
-            Create Organization
-        </a>
     </div>
 
-    <!-- Organizations Grid -->
-    {% if organizations %}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for org in organizations %}
-        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200">
-            <!-- Organization Header -->
-            <div class="p-6 border-b border-gray-100">
-                <div class="flex items-start justify-between">
-                    <div class="flex-1">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-2">{{ org.name }}</h3>
-                        {% if org.description %}
-                        <p class="text-gray-600 text-sm mb-3">{{ org.description }}</p>
-                        {% endif %}
-                        <div class="flex items-center space-x-4 text-sm text-gray-500">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                       {% if org.status == 'active' %}bg-green-100 text-green-800
-                                       {% elif org.status == 'suspended' %}bg-yellow-100 text-yellow-800
-                                       {% else %}bg-gray-100 text-gray-800{% endif %}">
+    <!-- Controls Section -->
+    <div class="controls-section mb-8">
+        <div class="search-filters">
+            <div class="search-box">
+                <div class="search-icon">🔍</div>
+                <input type="text" class="search-input" placeholder="Search organizations...">
+            </div>
+            <select class="filter-select">
+                <option>All Organizations</option>
+                <option>Active Only</option>
+                <option>Inactive Only</option>
+            </select>
+            <select class="filter-select">
+                <option>All Types</option>
+                <option>Research Labs</option>
+                <option>Universities</option>
+                <option>Companies</option>
+            </select>
+        </div>
+        <div class="view-toggles">
+            <button class="view-toggle active" data-view="hierarchy">📋</button>
+            <button class="view-toggle" data-view="grid">🏢</button>
+            <button class="view-toggle" data-view="list">📊</button>
+        </div>
+    </div>
+
+    <!-- Organization Hierarchy View -->
+    <div id="hierarchy-view" class="org-hierarchy">
+        {% if organizations %}
+            {% for org in organizations %}
+            <div class="org-node">
+                <div class="org-content">
+                    <div class="org-indent">
+                        <button class="expand-toggle" data-org-id="{{ org.id }}">▼</button>
+                    </div>
+                    <div class="org-icon {% if org.organization_type == 'enterprise' %}primary{% elif org.organization_type == 'educational' %}secondary{% else %}tertiary{% endif %}">
+                        {% if org.organization_type == 'enterprise' %}🏢
+                        {% elif org.organization_type == 'educational' %}🎓
+                        {% elif org.organization_type == 'small_business' %}🏭
+                        {% else %}🏢{% endif %}
+                    </div>
+                    <div class="org-info">
+                        <h3 class="org-name">{{ org.name }}</h3>
+                        <p class="org-description">{{ org.description or 'Research organization focused on biotechnology innovation' }}</p>
+                        <div class="org-stats">
+                            <div class="stat">
+                                <span>👥</span>
+                                <span class="stat-number">{{ org.member_count|default(0) }}</span>
+                                <span>Members</span>
+                            </div>
+                            <div class="stat">
+                                <span>🧪</span>
+                                <span class="stat-number">{{ org.device_count|default(0) }}</span>
+                                <span>Devices</span>
+                            </div>
+                            <div class="stat">
+                                <span>📁</span>
+                                <span class="stat-number">0</span>
+                                <span>Projects</span>
+                            </div>
+                            <div class="stat">
+                                <span>⚗️</span>
+                                <span class="stat-number">0</span>
+                                <span>Bioreactors</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="org-status">
+                        <div class="status-indicator {% if org.status == 'active' %}status-online{% else %}status-offline{% endif %}">
+                            ● {{ org.device_count|default(0) }} Online
+                        </div>
+                        <div class="org-actions">
+                            <a href="/app/admin/organization/{{ org.id }}" class="action-btn" title="View Details">👁️</a>
+                            <a href="/app/admin/organization/{{ org.id }}/edit" class="action-btn" title="Edit">✏️</a>
+                            <button class="action-btn" title="Members">👥</button>
+                            <button class="action-btn" title="Settings">⚙️</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <div class="empty-icon">
+                <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                </svg>
+            </div>
+            <h3 class="empty-title">No organizations yet</h3>
+            <p class="empty-description">Create your first organization to get started with team collaboration and device management.</p>
+            <a href="/app/admin/organization/create" class="btn btn-primary">
+                Create Organization
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Grid View (Hidden by default) -->
+    <div id="grid-view" class="org-grid hidden">
+        {% if organizations %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for org in organizations %}
+            <div class="org-card">
+                <div class="org-card-header">
+                    <div class="org-card-icon {% if org.organization_type == 'enterprise' %}primary{% elif org.organization_type == 'educational' %}secondary{% else %}tertiary{% endif %}">
+                        {% if org.organization_type == 'enterprise' %}🏢
+                        {% elif org.organization_type == 'educational' %}🎓
+                        {% elif org.organization_type == 'small_business' %}🏭
+                        {% else %}🏢{% endif %}
+                    </div>
+                    <div class="org-card-info">
+                        <h3 class="org-card-name">{{ org.name }}</h3>
+                        <p class="org-card-description">{{ org.description or 'Research organization' }}</p>
+                        <div class="org-card-status">
+                            <span class="status-badge {% if org.status == 'active' %}active{% else %}inactive{% endif %}">
                                 {{ org.status|title }}
                             </span>
-                            <span class="capitalize">{{ org.organization_type|replace('_', ' ') }}</span>
-                        </div>
-                    </div>
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                            </svg>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Organization Stats -->
-            <div class="p-6">
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-gray-900">{{ org.member_count|default(0) }}</div>
-                        <div class="text-xs text-gray-500">Members</div>
+                <div class="org-card-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Members</span>
+                        <span class="stat-value">{{ org.member_count|default(0) }}</span>
                     </div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-gray-900">{{ org.device_count|default(0) }}</div>
-                        <div class="text-xs text-gray-500">Devices</div>
+                    <div class="stat-item">
+                        <span class="stat-label">Devices</span>
+                        <span class="stat-value">{{ org.device_count|default(0) }}</span>
                     </div>
                 </div>
-
-                <!-- Contact Info -->
-                {% if org.contact_email or org.website %}
-                <div class="space-y-2 mb-4">
-                    {% if org.contact_email %}
-                    <div class="flex items-center text-sm text-gray-600">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                  d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                        </svg>
-                        <a href="mailto:{{ org.contact_email }}" class="hover:text-blue-600">{{ org.contact_email }}</a>
-                    </div>
-                    {% endif %}
-                    {% if org.website %}
-                    <div class="flex items-center text-sm text-gray-600">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                  d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"/>
-                        </svg>
-                        <a href="{{ org.website }}" target="_blank" class="hover:text-blue-600">{{ org.website }}</a>
-                    </div>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                <!-- Actions -->
-                <div class="flex space-x-2">
-                    <a href="/app/admin/organization/{{ org.id }}" 
-                       class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-3 rounded-md text-sm font-medium transition-colors">
-                        View Details
-                    </a>
-                    <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-md transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                  d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
-                        </svg>
-                    </button>
+                <div class="org-card-actions">
+                    <a href="/app/admin/organization/{{ org.id }}" class="btn btn-primary btn-sm">View Details</a>
+                    <button class="btn btn-secondary btn-sm">Settings</button>
                 </div>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
+        {% endif %}
     </div>
-    {% else %}
-    <!-- Empty State -->
-    <div class="text-center py-12">
-        <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-            </svg>
-        </div>
-        <h3 class="text-xl font-semibold text-gray-900 mb-2">No organizations yet</h3>
-        <p class="text-gray-600 mb-6">Create your first organization to get started with team collaboration and device management.</p>
-        <a href="/app/admin/organization/create" 
-           class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">
-            Create Organization
-        </a>
-    </div>
-    {% endif %}
 </div>
+
+<style>
+/* Page Header Styles */
+.page-header {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: var(--radius-xl);
+    position: relative;
+    overflow: hidden;
+    padding: var(--space-8);
+}
+
+.page-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(50%, -50%);
+}
+
+.page-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 10;
+}
+
+.page-title {
+    color: var(--text-inverse);
+    font-size: var(--font-size-4xl);
+    font-weight: 700;
+    margin-bottom: var(--space-2);
+}
+
+.page-subtitle {
+    color: rgba(255,255,255,0.9);
+    font-size: var(--font-size-lg);
+    font-weight: 400;
+}
+
+.header-actions {
+    display: flex;
+    gap: var(--space-4);
+}
+
+/* Button Styles */
+.btn {
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-lg);
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-family);
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: rgba(255,255,255,0.2);
+    color: var(--text-inverse);
+    border: 1px solid rgba(255,255,255,0.3);
+    backdrop-filter: blur(10px);
+}
+
+.btn-primary:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-secondary);
+    transform: translateY(-1px);
+}
+
+.btn-sm {
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--font-size-sm);
+}
+
+/* Controls Section */
+.controls-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-6);
+    background: var(--bg-primary);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+}
+
+.search-filters {
+    display: flex;
+    gap: var(--space-4);
+    align-items: center;
+}
+
+.search-box {
+    position: relative;
+}
+
+.search-input {
+    padding: var(--space-3) var(--space-4) var(--space-3) var(--space-10);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    width: 300px;
+    font-family: var(--font-family);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(106, 255, 147, 0.1);
+}
+
+.search-icon {
+    position: absolute;
+    left: var(--space-3);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+}
+
+.filter-select {
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    background: var(--bg-primary);
+    font-family: var(--font-family);
+}
+
+.view-toggles {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.view-toggle {
+    padding: var(--space-2);
+    border: 1px solid var(--border-light);
+    background: var(--bg-primary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.view-toggle.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--text-inverse);
+}
+
+.view-toggle:hover {
+    border-color: var(--primary);
+}
+
+/* Organization Hierarchy */
+.org-hierarchy {
+    background: var(--bg-primary);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.org-node {
+    border-bottom: 1px solid var(--border-light);
+    transition: all var(--transition-normal);
+}
+
+.org-node:hover {
+    background: var(--bg-secondary);
+}
+
+.org-content {
+    display: flex;
+    align-items: center;
+    padding: var(--space-6);
+    gap: var(--space-4);
+}
+
+.org-indent {
+    width: 24px;
+    display: flex;
+    justify-content: center;
+}
+
+.expand-toggle {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: var(--space-1);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-normal);
+}
+
+.expand-toggle:hover {
+    background: var(--bg-tertiary);
+}
+
+.org-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-2xl);
+    flex-shrink: 0;
+}
+
+.org-icon.primary {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+}
+
+.org-icon.secondary {
+    background: linear-gradient(135deg, var(--info), var(--info-light));
+}
+
+.org-icon.tertiary {
+    background: linear-gradient(135deg, var(--warning), var(--warning-light));
+}
+
+.org-info {
+    flex: 1;
+}
+
+.org-name {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-1);
+}
+
+.org-description {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-2);
+}
+
+.org-stats {
+    display: flex;
+    gap: var(--space-6);
+}
+
+.stat {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+}
+
+.stat-number {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.org-status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.status-indicator {
+    padding: var(--space-1) var(--space-3);
+    border-radius: 20px;
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+}
+
+.status-online {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.status-offline {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+.org-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.action-btn {
+    padding: var(--space-2);
+    border: 1px solid var(--border-light);
+    background: var(--bg-primary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    color: var(--text-secondary);
+    text-decoration: none;
+}
+
+.action-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: var(--space-16);
+}
+
+.empty-icon {
+    width: 96px;
+    height: 96px;
+    background: var(--bg-tertiary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--space-6);
+    color: var(--text-tertiary);
+}
+
+.empty-title {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.empty-description {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-6);
+}
+
+/* Grid View */
+.org-grid {
+    display: none;
+}
+
+.org-grid.active {
+    display: block;
+}
+
+.org-card {
+    background: var(--bg-primary);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    padding: var(--space-6);
+    transition: all var(--transition-normal);
+}
+
+.org-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.org-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.org-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-2xl);
+}
+
+.org-card-name {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-1);
+}
+
+.org-card-description {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-2);
+}
+
+.status-badge {
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+}
+
+.status-badge.active {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.status-badge.inactive {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+.org-card-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-label {
+    display: block;
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-1);
+}
+
+.stat-value {
+    display: block;
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.org-card-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-header-content {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-4);
+    }
+    
+    .controls-section {
+        flex-direction: column;
+        gap: var(--space-4);
+    }
+    
+    .search-filters {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .search-input {
+        width: 200px;
+    }
+    
+    .org-stats {
+        flex-wrap: wrap;
+    }
+    
+    .org-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+    }
+    
+    .org-status {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+</style>
+
+<script>
+// View toggle functionality
+document.querySelectorAll('.view-toggle').forEach(toggle => {
+    toggle.addEventListener('click', (e) => {
+        const view = e.target.dataset.view;
+        
+        // Update active toggle
+        document.querySelectorAll('.view-toggle').forEach(t => t.classList.remove('active'));
+        e.target.classList.add('active');
+        
+        // Show/hide views
+        document.querySelectorAll('#hierarchy-view, #grid-view').forEach(view => {
+            view.classList.add('hidden');
+        });
+        
+        if (view === 'hierarchy') {
+            document.getElementById('hierarchy-view').classList.remove('hidden');
+        } else if (view === 'grid') {
+            document.getElementById('grid-view').classList.remove('hidden');
+        }
+    });
+});
+
+// Organization expansion toggle
+document.querySelectorAll('.expand-toggle').forEach(toggle => {
+    toggle.addEventListener('click', (e) => {
+        const button = e.target;
+        if (button.textContent === '▼') {
+            button.textContent = '▶';
+        } else {
+            button.textContent = '▼';
+        }
+        // Here you would implement the actual expand/collapse logic
+    });
+});
+</script>
 {% endblock %} 

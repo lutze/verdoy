@@ -345,6 +345,59 @@ class OrganizationService(BaseService[Organization]):
             logger.error(f"Error updating organization settings: {e}")
             raise ServiceException("Failed to update organization settings")
     
+    def update_organization(self, organization_id: UUID, **kwargs) -> Organization:
+        """
+        Update organization details.
+        
+        Args:
+            organization_id: Organization ID
+            **kwargs: Organization fields to update
+            
+        Returns:
+            The updated organization
+            
+        Raises:
+            OrganizationNotFoundException: If organization not found
+            ServiceException: If update fails
+        """
+        try:
+            organization = self.get_by_id_or_raise(organization_id)
+            
+            # Update allowed fields
+            allowed_fields = {
+                'name', 'organization_type', 'description', 'contact_email',
+                'contact_phone', 'website', 'address', 'city', 'state',
+                'country', 'postal_code', 'timezone'
+            }
+            
+            update_data = {}
+            for field, value in kwargs.items():
+                if field in allowed_fields and value is not None:
+                    update_data[field] = value
+            
+            # Update organization fields
+            for field, value in update_data.items():
+                setattr(organization, field, value)
+            
+            organization.last_updated = datetime.utcnow()
+            
+            self.db.commit()
+            self.db.refresh(organization)
+            
+            # Audit log
+            self.audit_log("organization_updated", organization_id, {
+                "updated_fields": list(update_data.keys()),
+                "name": organization.name
+            })
+            
+            logger.info(f"Organization updated: {organization.name}")
+            return organization
+            
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error updating organization: {e}")
+            raise ServiceException("Failed to update organization")
+    
     def deactivate_organization(self, organization_id: UUID) -> bool:
         """
         Deactivate an organization.
