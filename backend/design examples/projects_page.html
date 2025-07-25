@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects - LMS evo</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+        }
+        
+        /* Header */
+        .header {
+            background: #1e293b;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+        }
+        
+        .logo {
+            color: #6aff93;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .nav {
+            display: flex;
+            gap: 2rem;
+        }
+        
+        .nav-item {
+            color: #94a3b8;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        
+        .nav-item.active {
+            color: #6aff93;
+            background: rgba(106, 255, 147, 0.1);
+        }
+        
+        .nav-item:hover {
+            color: #6aff93;
+        }
+        
+        .user-menu {
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Main content */
+        .main {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* Page header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, #40e0d0, #6aff93);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        
+        .page-header::after {
+            content: '';
+            position: absolute;
+            bottom: -30px;
+            left: -30px;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        
+        .page-title {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .page-subtitle {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            z-index: 10;
+            position: relative;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .btn-primary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .btn-primary:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #1e293b;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        .btn-secondary:hover {
+            background: #f1f5f9;
+            transform: translateY(-1px);
+        }
+        
+        /* Controls */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .search-filters {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-input {
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            width: 300px;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #6aff93;
+            box-shadow: 0 0 0 3px rgba(106, 255, 147, 0.1);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+        }
+        
+        .filter-select {
+            padding: 0.75rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .view-toggles {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .view-toggle {
+            padding: 0.5rem;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .view-toggle.active {
+            background: #6aff93;
+            border-color: #6aff93;
+            color: white;
+        }
+        
+        .view-toggle:hover {
+            border-color: #6aff93;
+        }
+        
+        /* Projects Grid */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .project-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: all 0.2s;
+            border: 1px solid #f1f5f9;
+        }
+        
+        .project-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-color: #6aff93;
+        }
+        
+        .project-header {
+            padding: 1.5rem;
+            position: relative;
+        }
+        
+        .project-status {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-planning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-completed {
+            background: #dbeafe;
+            color: #1e3a8a;
+        }
+        
+        .status-on-hold {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .project-org {
+            color: #64748b;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .project-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+        
+        .project-description {
+            color: #64748b;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+        }
+        
+        .project-progress {
+            margin-bottom: 1rem;
+        }
+        
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #f1f5f9;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6aff93, #40e0d0);
+            transition: width 0.3s ease;
+        }
+        
+        .project-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            background: #f8fafc;
+            border-top: 1px solid #f1f5f9;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-number {
+            display: block;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .project-footer {
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .project-team {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .team-avatars {
+            display: flex;
+            margin-left: 0.5rem;
+        }
+        
+        .avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid white;
+            margin-left: -8px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        
+        .avatar:first-child {
+            margin-left: 0;
+        }
+        
+        .avatar.bg-green {
+            background: #6aff93;
+            color: white;
+        }
+        
+        .avatar.bg-blue {
+            background: #60a5fa;
+            color: white;
+        }
+        
+        .avatar.bg-purple {
+            background: #a78bfa;
+            color: white;
+        }
+        
+        .avatar.bg-pink {
+            background: #f472b6;
+            color: white;
+        }
+        
+        .project-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .action-btn {
+            padding: 0.5rem;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #64748b;
+        }
+        
+        .action-btn:hover {
+            border-color: #6aff93;
+            color: #6aff93;
+        }
+        
+        .project-timeline {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+        
+        /* List View */
+        .projects-list {
+            display: none;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .list-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr 120px 120px 100px 80px;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            background: #f8fafc;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .project-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 120px 120px 100px 80px;
+            gap: 1rem;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #f1f5f9;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        
+        .project-row:hover {
+            background: #f8fafc;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main {
+                padding: 1rem;
+            }
+            
+            .page-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .search-filters {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .search-input {
+                width: 200px;
+            }
+            
+            .projects-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .project-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">LMS evo</div>
+        <nav class="nav">
+            <a href="#" class="nav-item">Dashboard</a>
+            <a href="#" class="nav-item">Organizations</a>
+            <a href="#" class="nav-item active">Projects</a>
+            <a href="#" class="nav-item">Experiments</a>
+            <a href="#" class="nav-item">Bioreactors</a>
+        </nav>
+        <div class="user-menu">
+            Test User ▼
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Projects</h1>
+                <p class="page-subtitle">Manage research projects and experiments</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary">
+                    📈 Analytics
+                </button>
+                <button class="btn btn-secondary">
+                    📋 Templates
+                </button>
+                <button class="btn btn-primary">
+                    ➕ New Project
+                </button>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="search-filters">
+                <div class="search-box">
+                    <div class="search-icon">🔍</div>
+                    <input type="text" class="search-input" placeholder="Search projects...">
+                </div>
+                <select class="filter-select">
+                    <option>All Organizations</option>
+                    <option>Acme Research Lab</option>
+                    <option>University Lab</option>
+                </select>
+                <select class="filter-select">
+                    <option>All Status</option>
+                    <option>Active</option>
+                    <option>Planning</option>
+                    <option>Completed</option>
+                    <option>On Hold</option>
+                </select>
+                <select class="filter-select">
+                    <option>All Types</option>
+                    <option>Research</option>
+                    <option>Development</option>
+                    <option>Production</option>
+                </select>
+            </div>
+            <div class="view-toggles">
+                <button class="view-toggle active" id="grid-view">⚏</button>
+                <button class="view-toggle" id="list-view">☰</button>
+            </div>
+        </div>
+
+        <!-- Projects Grid View -->
+        <div class="projects-grid" id="projects-grid">
+            <!-- Project Card 1 -->
+            <div class="project-card">
+                <div class="project-header">
+                    <div class="project-status status-active">● Active</div>
+                    <div class="project-org">Acme Research Lab</div>
+                    <h3 class="project-name">pH Optimization Study</h3>
+                    <p class="project-description">Investigating optimal pH ranges for E. coli fermentation processes to maximize yield and minimize by-products.</p>
+                    <div class="project-progress">
+                        <div class="progress-label">
+                            <span>Progress</span>
+                            <span>68%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 68%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="project-stats">
+                    <div class="stat">
+                        <span class="stat-number">3</span>
+                        <span class="stat-label">Experiments</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">2</span>
+                        <span class="stat-label">Bioreactors</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">5</span>
+                        <span class="stat-label">Members</span>
+                    </div>
+                </div>
+                <div class="project-footer">
+                    <div class="project-team">
+                        <span style="font-size: 0.8rem; color: #64748b;">Team:</span>
+                        <div class="team-avatars">
+                            <div class="avatar bg-green">JS</div>
+                            <div class="avatar bg-blue">MK</div>
+                            <div class="avatar bg-purple">AL</div>
+                            <div class="avatar bg-pink">+2</div>
+                        </div>
+                    </div>
+                    <div class="project-actions">
+                        <button class="action-btn" title="View Details">👁️</button>
+                        <button class="action-btn" title="Edit">✏️</button>
+                        <button class="action-btn" title="Experiments">🧪</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Card 2 -->
+            <div class="project-card">
+                <div class="project-header">
+                    <div class="project-status status-planning">● Planning</div>
+                    <div class="project-org">University Lab</div>
+                    <h3 class="project-name">Sustainable Biofuel Production</h3>
+                    <p class="project-description">Developing algae-based biofuel production methods with focus on scalability and environmental impact reduction.</p>
+                    <div class="project-progress">
+                        <div class="progress-label">
+                            <span>Progress</span>
+                            <span>15%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 15%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="project-stats">
+                    <div class="stat">
+                        <span class="stat-number">1</span>
+                        <span class="stat-label">Experiments</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">0</span>
+                        <span class="stat-label">Bioreactors</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">8</span>
+                        <span class="stat-label">Members</span>
+                    </div>
+                </div>
+                <div class="project-footer">
+                    <div class="project-team">
+                        <span style="font-size: 0.8rem; color: #64748b;">Team:</span>
+                        <div class="team-avatars">
+                            <div class="avatar bg-purple">DR</div>
+                            <div class="avatar bg-green">ST</div>
+                            <div class="avatar bg-blue">+6</div>
+                        </div>
+                    </div>
+                    <div class="project-actions">
+                        <button class="action-btn" title="View Details">👁️</button>
+                        <button class="action-btn" title="Edit">✏️</button>
+                        <button class="action-btn" title="Experiments">🧪</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Card 3 -->
+            <div class="project-card">
+                <div class="project-header">
+                    <div class="project-status status-active">● Active</div>
+                    <div class="project-org">Acme Research Lab</div>
+                    <h3 class="project-name">Protein Expression Optimization</h3>
+                    <p class="project-description">Optimizing recombinant protein expression in yeast systems for pharmaceutical applications.</p>
+                    <div class="project-progress">
+                        <div class="progress-label">
+                            <span>Progress</span>
+                            <span>42%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 42%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="project-stats">
+                    <div class="stat">
+                        <span class="stat-number">2</span>
+                        <span class="stat-label">Experiments</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">1</span>
+                        <span class="stat-label">Bioreactors</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">4</span>
+                        <span class="stat-label">Members</span>
+                    </div>
+                </div>
+                <div class="project-footer">
+                    <div class="project-team">
+                        <span style="font-size: 0.8rem; color: #64748b;">Team:</span>
+                        <div class="team-avatars">
+                            <div class="avatar bg-blue">LC</div>
+                            <div class="avatar bg-pink">RW</div>
+                            <div class="avatar bg-green">TH</div>
+                            <div class="avatar bg-purple">NK</div>
+                        </div>
+                    </div>
+                    <div class="project-actions">
+                        <button class="action-btn" title="View Details">👁️</button>
+                        <button class="action-btn" title="Edit">✏️</button>
+                        <button class="action-btn" title="Experiments">🧪</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Card 4 -->
+            <div class="project-card">
+                <div class="project-header">
+                    <div class="project-status status-completed">● Completed</div>
+                    <div class="project-org">University Lab</div>
+                    <h3 class="project-name">Growth Rate Analysis</h3>
+                    <p class="project-description">Comprehensive analysis of bacterial growth rates under various environmental conditions and nutrient compositions.</p>
+                    <div class="project-progress">
+                        <div class="progress-label">
+                            <span>Progress</span>
+                            <span>100%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="project-stats">
+                    <div class="stat">
+                        <span class="stat-number">5</span>
+                        <span class="stat-label">Experiments</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">2</span>
+                        <span class="stat-label">Bioreactors</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">6</span>
+                        <span class="stat-label">Members</span>
+                    </div>
+                </div>
+                <div class="project-footer">
+                    <div class="project-team">
+                        <span style="font-size: 0.8rem; color: #64748b;">Team:</span>
+                        <div class="team-avatars">
+                            <div class="avatar bg-green">AM</div>
+                            <div class="avatar bg-blue">KP</div>
+                            <div class="avatar bg-purple">+4</div>
+                        </div>
+                    </div>
+                    <div class="project-actions">
+                        <button class="action-btn" title="View Details">👁️</button>
+                        <button class="action-btn" title="Edit">✏️</button>
+                        <button class="action-btn" title="Experiments">🧪</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Projects List View -->
+        <div class="projects-list" id="projects-list">
+            <div class="list-header">
+                <div>Project Name</div>
+                <div>Organization</div>
+                <div>Status</div>
+                <div>Progress</div>
+                <div>Team</div>
+                <div>Actions</div>
+            </div>
+            <div class="project-row">
+                <div>
+                    <strong>pH Optimization Study</strong>
+                    <br>
+                    <small style="color: #64748b;">Investigating optimal pH ranges for E. coli fermentation</small>
+                </div>
+                <div>Acme Research Lab</div>
+                <div><span class="status-active">● Active</span></div>
+                <div>68%</div>
+                <div>5 members</div>
+                <div class="project-actions">
+                    <button class="action-btn" title="View">👁️</button>
+                    <button class="action-btn" title="Edit">✏️</button>
+                </div>
+            </div>
+            <!-- Add more rows as needed -->
+        </div>
+    </main>
+
+    <script>
+        // View toggle functionality
+        const gridView = document.getElementById('grid-view');
+        const listView = document.getElementById('list-view');
+        const projectsGrid = document.getElementById('projects-grid');
+        const projectsList = document.getElementById('projects-list');
+
+        gridView.addEventListener('click', () => {
+            gridView.classList.add('active');
+            listView.classList.remove('active');
+            projectsGrid.style.display = 'grid';
+            projectsList.style.display = 'none';
+        });
+
+        listView.addEventListener('click', () => {
+            listView.classList.add('active');
+            gridView.classList.remove('active');
+            projectsGrid.style.display = 'none';
+            projectsList.style.display = 'block';
+        });
+    </script>
+</body>
+</html>

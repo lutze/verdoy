@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organizations - LMS evo</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+        }
+        
+        /* Header */
+        .header {
+            background: #1e293b;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+        }
+        
+        .logo {
+            color: #6aff93;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .nav {
+            display: flex;
+            gap: 2rem;
+        }
+        
+        .nav-item {
+            color: #94a3b8;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        
+        .nav-item.active {
+            color: #6aff93;
+            background: rgba(106, 255, 147, 0.1);
+        }
+        
+        .nav-item:hover {
+            color: #6aff93;
+        }
+        
+        .user-menu {
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Main content */
+        .main {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* Page header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, #6aff93, #40e0d0);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            transform: translate(50%, -50%);
+        }
+        
+        .page-title {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .page-subtitle {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            z-index: 10;
+            position: relative;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .btn-primary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .btn-primary:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #1e293b;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        .btn-secondary:hover {
+            background: #f1f5f9;
+            transform: translateY(-1px);
+        }
+        
+        /* Filters and search */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .search-filters {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-input {
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            width: 300px;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #6aff93;
+            box-shadow: 0 0 0 3px rgba(106, 255, 147, 0.1);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+        }
+        
+        .filter-select {
+            padding: 0.75rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .view-toggles {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .view-toggle {
+            padding: 0.5rem;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .view-toggle.active {
+            background: #6aff93;
+            border-color: #6aff93;
+            color: white;
+        }
+        
+        .view-toggle:hover {
+            border-color: #6aff93;
+        }
+        
+        /* Organization hierarchy */
+        .org-hierarchy {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .org-node {
+            border-bottom: 1px solid #f1f5f9;
+            transition: all 0.2s;
+        }
+        
+        .org-node:hover {
+            background: #f8fafc;
+        }
+        
+        .org-content {
+            display: flex;
+            align-items: center;
+            padding: 1.5rem;
+            gap: 1rem;
+        }
+        
+        .org-indent {
+            width: 24px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .org-indent.level-1 {
+            margin-left: 24px;
+        }
+        
+        .org-indent.level-2 {
+            margin-left: 48px;
+        }
+        
+        .expand-toggle {
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .expand-toggle:hover {
+            background: #f1f5f9;
+        }
+        
+        .org-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        
+        .org-icon.primary {
+            background: linear-gradient(135deg, #6aff93, #40e0d0);
+        }
+        
+        .org-icon.secondary {
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+        }
+        
+        .org-icon.tertiary {
+            background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+        }
+        
+        .org-info {
+            flex: 1;
+        }
+        
+        .org-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+        
+        .org-description {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .org-stats {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+        
+        .stat-number {
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        .org-status {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .status-indicator {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .status-online {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-offline {
+            background: #fecaca;
+            color: #991b1b;
+        }
+        
+        .org-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .action-btn {
+            padding: 0.5rem;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #64748b;
+        }
+        
+        .action-btn:hover {
+            border-color: #6aff93;
+            color: #6aff93;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main {
+                padding: 1rem;
+            }
+            
+            .page-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .search-filters {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .search-input {
+                width: 200px;
+            }
+            
+            .org-stats {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">LMS evo</div>
+        <nav class="nav">
+            <a href="#" class="nav-item">Dashboard</a>
+            <a href="#" class="nav-item active">Organizations</a>
+            <a href="#" class="nav-item">Projects</a>
+            <a href="#" class="nav-item">Experiments</a>
+            <a href="#" class="nav-item">Bioreactors</a>
+        </nav>
+        <div class="user-menu">
+            Test User ▼
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Organizations</h1>
+                <p class="page-subtitle">Manage your research organizations and teams</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary">
+                    📊 Analytics
+                </button>
+                <button class="btn btn-primary">
+                    ➕ New Organization
+                </button>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="search-filters">
+                <div class="search-box">
+                    <div class="search-icon">🔍</div>
+                    <input type="text" class="search-input" placeholder="Search organizations...">
+                </div>
+                <select class="filter-select">
+                    <option>All Organizations</option>
+                    <option>Active Only</option>
+                    <option>Inactive Only</option>
+                </select>
+                <select class="filter-select">
+                    <option>All Types</option>
+                    <option>Research Labs</option>
+                    <option>Universities</option>
+                    <option>Companies</option>
+                </select>
+            </div>
+            <div class="view-toggles">
+                <button class="view-toggle active">📋</button>
+                <button class="view-toggle">🏢</button>
+                <button class="view-toggle">📊</button>
+            </div>
+        </div>
+
+        <!-- Organization Hierarchy -->
+        <div class="org-hierarchy">
+            <!-- Parent Organization -->
+            <div class="org-node">
+                <div class="org-content">
+                    <div class="org-indent">
+                        <button class="expand-toggle">▼</button>
+                    </div>
+                    <div class="org-icon primary">🏢</div>
+                    <div class="org-info">
+                        <h3 class="org-name">Acme Research Institute</h3>
+                        <p class="org-description">Primary research organization focused on biotechnology innovation</p>
+                        <div class="org-stats">
+                            <div class="stat">
+                                <span>👥</span>
+                                <span class="stat-number">24</span>
+                                <span>Members</span>
+                            </div>
+                            <div class="stat">
+                                <span>🧪</span>
+                                <span class="stat-number">8</span>
+                                <span>Active Experiments</span>
+                            </div>
+                            <div class="stat">
+                                <span>⚗️</span>
+                                <span class="stat-number">5</span>
+                                <span>Bioreactors</span>
+                            </div>
+                            <div class="stat">
+                                <span>📁</span>
+                                <span class="stat-number">12</span>
+                                <span>Projects</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="org-status">
+                        <div class="status-indicator status-online">● 3 Online</div>
+                        <div class="org-actions">
+                            <button class="action-btn" title="View Details">👁️</button>
+                            <button class="action-btn" title="Edit">✏️</button>
+                            <button class="action-btn" title="Members">👥</button>
+                            <button class="action-btn" title="Settings">⚙️</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Child Organization Level 1 -->
+            <div class="org-node">
+                <div class="org-content">
+                    <div class="org-indent level-1">
+                        <button class="expand-toggle">▼</button>
+                    </div>
+                    <div class="org-icon secondary">🧬</div>
+                    <div class="org-info">
+                        <h3 class="org-name">Molecular Biology Lab</h3>
+                        <p class="org-description">Specialized lab for molecular research and genetic engineering</p>
+                        <div class="org-stats">
+                            <div class="stat">
+                                <span>👥</span>
+                                <span class="stat-number">12</span>
+                                <span>Members</span>
+                            </div>
+                            <div class="stat">
+                                <span>🧪</span>
+                                <span class="stat-number">4</span>
+                                <span>Active Experiments</span>
+                            </div>
+                            <div class="stat">
+                                <span>⚗️</span>
+                                <span class="stat-number">2</span>
+                                <span>Bioreactors</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="org-status">
+                        <div class="status-indicator status-online">● 2 Online</div>
+                        <div class="org-actions">
+                            <button class="action-btn" title="View Details">👁️</button>
+                            <button class="action-btn" title="Edit">✏️</button>
+                            <button class="action-btn" title="Members">👥</button>
+                            <button class="action-btn" title="Settings">⚙️</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Child Organization Level 2 -->
+            <div class="org-node">
+                <div class="org-content">
+                    <div class="org-indent level-2">
+                        <button class="expand-toggle">▶</button>
+                    </div>
+                    <div class="org-icon tertiary">🦠</div>
+                    <div class="org-info">
+                        <h3 class="org-name">Fermentation Team</h3>
+                        <p class="org-description">Specialized team for fermentation processes and optimization</p>
+                        <div class="org-stats">
+                            <div class="stat">
+                                <span>👥</span>
+                                <span class="stat-number">6</span>
+                                <span>Members</span>
+                            </div>
+                            <div class="stat">
+                                <span>🧪</span>
+                                <span class="stat-number">2</span>
+                                <span>Active Experiments</span>
+                            </div>
+                            <div class="stat">
+                                <span>⚗️</span>
+                                <span class="stat-number">1</span>
+                                <span>Bioreactors</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="org-status">
+                        <div class="status-indicator status-online">● 1 Online</div>
+                        <div class="org-actions">
+                            <button class="action-btn" title="View Details">👁️</button>
+                            <button class="action-btn" title="Edit">✏️</button>
+                            <button class="action-btn" title="Members">👥</button>
+                            <button class="action-btn" title="Settings">⚙️</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Another Parent Organization -->
+            <div class="org-node">
+                <div class="org-content">
+                    <div class="org-indent">
+                        <button class="expand-toggle">▶</button>
+                    </div>
+                    <div class="org-icon secondary">🎓</div>
+                    <div class="org-info">
+                        <h3 class="org-name">University Research Lab</h3>
+                        <p class="org-description">Academic research focused on sustainable biotechnology</p>
+                        <div class="org-stats">
+                            <div class="stat">
+                                <span>👥</span>
+                                <span class="stat-number">18</span>
+                                <span>Members</span>
+                            </div>
+                            <div class="stat">
+                                <span>🧪</span>
+                                <span class="stat-number">3</span>
+                                <span>Active Experiments</span>
+                            </div>
+                            <div class="stat">
+                                <span>⚗️</span>
+                                <span class="stat-number">2</span>
+                                <span>Bioreactors</span>
+                            </div>
+                            <div class="stat">
+                                <span>📁</span>
+                                <span class="stat-number">7</span>
+                                <span>Projects</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="org-status">
+                        <div class="status-indicator status-offline">● 0 Online</div>
+                        <div class="org-actions">
+                            <button class="action-btn" title="View Details">👁️</button>
+                            <button class="action-btn" title="Edit">✏️</button>
+                            <button class="action-btn" title="Members">👥</button>
+                            <button class="action-btn" title="Settings">⚙️</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Toggle organization expansion
+        document.querySelectorAll('.expand-toggle').forEach(toggle => {
+            toggle.addEventListener('click', (e) => {
+                const button = e.target;
+                if (button.textContent === '▼') {
+                    button.textContent = '▶';
+                } else {
+                    button.textContent = '▼';
+                }
+                // Here you would implement the actual expand/collapse logic
+            });
+        });
+
+        // View toggle functionality
+        document.querySelectorAll('.view-toggle').forEach(toggle => {
+            toggle.addEventListener('click', (e) => {
+                document.querySelectorAll('.view-toggle').forEach(t => t.classList.remove('active'));
+                e.target.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
