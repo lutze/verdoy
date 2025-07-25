@@ -33,19 +33,6 @@ class TestProjectEndpoints:
         assert "data" in data
         assert "projects" in data["data"]
 
-    def test_list_projects_html(self, authenticated_client: TestClient):
-        """Test projects list page for HTML clients."""
-        # Act
-        response = authenticated_client.get(
-            "/app/projects",
-            headers={"Accept": "text/html"}
-        )
-        
-        # Assert
-        assert response.status_code == 200
-        assert "text/html" in response.headers["content-type"]
-        assert "Projects" in response.text
-
     def test_list_projects_with_organization_filter(self, authenticated_client: TestClient, test_organization):
         """Test projects list with organization filter."""
         # Act
@@ -80,19 +67,6 @@ class TestProjectEndpoints:
         # Assert
         assert response.status_code == 401
 
-    def test_create_project_page_html(self, authenticated_client: TestClient):
-        """Test create project page loads for HTML clients."""
-        # Act
-        response = authenticated_client.get(
-            "/app/projects/create",
-            headers={"Accept": "text/html"}
-        )
-        
-        # Assert
-        assert response.status_code == 200
-        assert "text/html" in response.headers["content-type"]
-        assert "Create Project" in response.text
-
     def test_create_project_success_json(self, authenticated_client: TestClient, test_organization):
         """Test successful project creation via JSON API."""
         # Arrange
@@ -121,33 +95,6 @@ class TestProjectEndpoints:
         assert data["data"]["project"]["name"] == project_data["name"]
         assert data["data"]["project"]["status"] == project_data["status"]
         assert data["data"]["project"]["priority"] == project_data["priority"]
-
-    def test_create_project_success_html(self, authenticated_client: TestClient, test_organization):
-        """Test successful project creation via HTML form."""
-        # Arrange
-        project_data = {
-            "name": f"HTML Test Project {uuid4().hex[:8]}",
-            "description": "Test project for HTML form testing",
-            "organization_id": str(test_organization.id),
-            "status": "active",
-            "priority": "medium",
-            "start_date": date.today().isoformat(),
-            "budget": "$5,000",
-            "tags": "html,testing,form"
-        }
-        
-        # Act
-        response = authenticated_client.post(
-            "/app/projects/create",
-            data=project_data,
-            headers={"Accept": "text/html"},
-            follow_redirects=False
-        )
-        
-        # Assert
-        assert response.status_code == 303  # Redirect after successful creation
-        assert "location" in response.headers
-        assert "/app/projects/" in response.headers["location"]
 
     def test_create_project_invalid_data(self, authenticated_client: TestClient, test_organization):
         """Test project creation with invalid data fails."""
@@ -236,28 +183,6 @@ class TestProjectEndpoints:
         assert data["data"]["project"]["id"] == project_id
         assert data["data"]["project"]["name"] == project_data["name"]
 
-    def test_get_project_success_html(self, authenticated_client: TestClient, test_organization):
-        """Test successful project detail page for HTML clients."""
-        # Arrange - Create a project first
-        project_data = {
-            "name": "HTML Test Project for Get",
-            "organization_id": str(test_organization.id),
-            "status": "active"
-        }
-        create_response = authenticated_client.post("/api/v1/projects", json=project_data)
-        project_id = create_response.json()["data"]["project"]["id"]
-        
-        # Act
-        response = authenticated_client.get(
-            f"/app/projects/{project_id}",
-            headers={"Accept": "text/html"}
-        )
-        
-        # Assert
-        assert response.status_code == 200
-        assert "text/html" in response.headers["content-type"]
-        assert project_data["name"] in response.text
-
     def test_get_project_not_found(self, authenticated_client: TestClient):
         """Test project retrieval with invalid ID fails."""
         # Act
@@ -265,29 +190,6 @@ class TestProjectEndpoints:
         
         # Assert
         assert response.status_code == 404
-
-    def test_edit_project_page_html(self, authenticated_client: TestClient, test_organization):
-        """Test edit project page loads for HTML clients."""
-        # Arrange - Create a project first
-        project_data = {
-            "name": "Test Project for Edit Page",
-            "organization_id": str(test_organization.id),
-            "status": "active"
-        }
-        create_response = authenticated_client.post("/api/v1/projects", json=project_data)
-        project_id = create_response.json()["data"]["project"]["id"]
-        
-        # Act
-        response = authenticated_client.get(
-            f"/app/projects/{project_id}/edit",
-            headers={"Accept": "text/html"}
-        )
-        
-        # Assert
-        assert response.status_code == 200
-        assert "text/html" in response.headers["content-type"]
-        assert "Edit Project" in response.text
-        assert project_data["name"] in response.text
 
     def test_update_project_success_json(self, authenticated_client: TestClient, test_organization):
         """Test successful project update via JSON API."""
@@ -322,38 +224,6 @@ class TestProjectEndpoints:
         assert data["data"]["project"]["name"] == update_data["name"]
         assert data["data"]["project"]["status"] == update_data["status"]
         assert data["data"]["project"]["progress_percentage"] == update_data["progress_percentage"]
-
-    def test_update_project_success_html(self, authenticated_client: TestClient, test_organization):
-        """Test successful project update via HTML form."""
-        # Arrange - Create a project first
-        project_data = {
-            "name": "HTML Test Project for Update",
-            "organization_id": str(test_organization.id),
-            "status": "active"
-        }
-        create_response = authenticated_client.post("/api/v1/projects", json=project_data)
-        project_id = create_response.json()["data"]["project"]["id"]
-        
-        update_data = {
-            "name": "HTML Updated Project Name",
-            "description": "HTML updated description",
-            "status": "completed",
-            "priority": "low",
-            "progress_percentage": "100"
-        }
-        
-        # Act
-        response = authenticated_client.post(
-            f"/app/projects/{project_id}/edit",
-            data=update_data,
-            headers={"Accept": "text/html"},
-            follow_redirects=False
-        )
-        
-        # Assert
-        assert response.status_code == 303  # Redirect after successful update
-        assert "location" in response.headers
-        assert f"/app/projects/{project_id}" in response.headers["location"]
 
     def test_update_project_invalid_data(self, authenticated_client: TestClient, test_organization):
         """Test project update with invalid data fails."""
@@ -436,7 +306,7 @@ class TestProjectEndpoints:
         
         # Test JSON response
         json_response = authenticated_client.get(
-            f"/app/projects/{project_id}",
+            f"/api/v1/projects/{project_id}",
             headers={"Accept": "application/json"}
         )
         assert json_response.status_code == 200
@@ -444,7 +314,7 @@ class TestProjectEndpoints:
         
         # Test HTML response
         html_response = authenticated_client.get(
-            f"/app/projects/{project_id}",
+            f"/api/v1/projects/{project_id}",
             headers={"Accept": "text/html"}
         )
         assert html_response.status_code == 200
@@ -496,9 +366,6 @@ class TestProjectEndpoints:
         endpoints = [
             "/api/v1/projects",
             f"/api/v1/projects/{project_id}",
-            "/app/projects",
-            f"/app/projects/{project_id}",
-            f"/app/projects/{project_id}/edit",
         ]
         
         for endpoint in endpoints:

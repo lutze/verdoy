@@ -2,13 +2,11 @@
 Router package for the LMS Core API.
 
 This package contains all API route handlers organized by domain:
-- auth: Authentication and user management
 - devices: Device management and IoT operations
 - readings: Sensor data ingestion and retrieval
 - commands: Device command and control
 - analytics: Data analysis and reporting
 - alerts: Alert management and notifications
-- organizations: Multi-tenant organization management
 - billing: Subscription and billing management
 - system: System health and metrics
 - admin: Administrative operations
@@ -16,15 +14,11 @@ This package contains all API route handlers organized by domain:
 - websocket: Real-time WebSocket endpoints
 """
 
-from .auth import router as auth_router
-from .dashboard import router as dashboard_router
 from .devices import router as devices_router
 from .readings import router as readings_router
 from .commands import router as commands_router
 from .analytics import router as analytics_router
 from .alerts import router as alerts_router
-from .organizations import router as organizations_router
-from .projects import router as projects_router
 from .billing import router as billing_router
 from .system import router as system_router
 from .admin import router as admin_router
@@ -36,15 +30,11 @@ from .websocket.device_status import router as device_status_ws_router
 from .websocket.alerts import router as alerts_ws_router
 
 __all__ = [
-    "auth_router",
-    "dashboard_router",
-    "devices_router", 
+    "devices_router",
     "readings_router",
     "commands_router",
     "analytics_router",
     "alerts_router",
-    "organizations_router",
-    "projects_router",
     "billing_router",
     "system_router",
     "admin_router",

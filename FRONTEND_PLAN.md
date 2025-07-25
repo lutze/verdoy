@@ -362,3 +362,9 @@ To ensure all frontend pages continue to load and function correctly after futur
 - ✅ Test logic corrected to properly validate guest vs authenticated navigation states
 
 --- 
+
+---
+
+## Deferred Features
+
+- User API key management (profile page UI and backend) is deferred for now. This is tracked in docs/CONSOLIDATED_TODO.md and will be implemented later. 

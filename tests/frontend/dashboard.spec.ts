@@ -4,15 +4,15 @@ import { TEST_USERS, fillLoginForm, submitForm } from './helpers/auth-helpers';
 test.describe('Dashboard Page', () => {
   test.beforeEach(async ({ page }) => {
     // Login before each test
-    await page.goto('/api/v1/auth/login');
+    await page.goto('/app/login');
     await fillLoginForm(page, TEST_USERS.valid);
     await submitForm(page);
     // Wait for redirect to dashboard or check if we're logged in
-    await page.waitForURL(/\/dashboard|\/profile|\/api\/v1\/dashboard/);
+    await page.waitForURL(/\/dashboard|\/profile/);
   });
 
   test('should load dashboard page and display main elements', async ({ page }) => {
-    await page.goto('/api/v1/dashboard');
+    await page.goto('/app/dashboard');
     
     // Check page loads without errors
     await expect(page).toHaveTitle(/Dashboard/);
@@ -26,7 +26,7 @@ test.describe('Dashboard Page', () => {
   });
 
   test('should display organization cards', async ({ page }) => {
-    await page.goto('/api/v1/dashboard');
+    await page.goto('/app/dashboard');
     
     // Check organization cards are present
     const orgCards = page.locator('.org-card');
@@ -40,7 +40,7 @@ test.describe('Dashboard Page', () => {
   });
 
   test('should display summary statistics', async ({ page }) => {
-    await page.goto('/api/v1/dashboard');
+    await page.goto('/app/dashboard');
     
     // Check stats cards are present
     const statCards = page.locator('.stat-card');
@@ -54,7 +54,7 @@ test.describe('Dashboard Page', () => {
   });
 
   test('should display activity feed', async ({ page }) => {
-    await page.goto('/api/v1/dashboard');
+    await page.goto('/app/dashboard');
     
     // Check activity section is present
     await expect(page.locator('.activity-section h2')).toContainText('Recent Activity');
@@ -66,7 +66,7 @@ test.describe('Dashboard Page', () => {
   });
 
   test('should display quick action cards', async ({ page }) => {
-    await page.goto('/api/v1/dashboard');
+    await page.goto('/app/dashboard');
     
     // Check quick actions section
     await expect(page.locator('.quick-actions h2')).toContainText('Quick Actions');
@@ -85,7 +85,7 @@ test.describe('Dashboard Page', () => {
   });
 
   test('should have working navigation links', async ({ page }) => {
-    await page.goto('/api/v1/dashboard');
+    await page.goto('/app/dashboard');
     
     // Check organization links work
     const orgLinks = page.locator('.org-actions a');
@@ -105,7 +105,7 @@ test.describe('Dashboard Page', () => {
       });
     });
     
-    await page.goto('/api/v1/dashboard');
+    await page.goto('/app/dashboard');
     
     // Check page loads and displays content
     await expect(page).toHaveTitle(/Dashboard/);
@@ -122,7 +122,7 @@ test.describe('Dashboard Page', () => {
     // Set mobile viewport
     await page.setViewportSize({ width: 375, height: 667 });
     
-    await page.goto('/api/v1/dashboard');
+    await page.goto('/app/dashboard');
     
     // Check page loads on mobile
     await expect(page).toHaveTitle(/Dashboard/);
@@ -135,7 +135,7 @@ test.describe('Dashboard Page', () => {
   });
 
   test('should handle HTMX updates gracefully', async ({ page }) => {
-    await page.goto('/api/v1/dashboard');
+    await page.goto('/app/dashboard');
     
     // Check HTMX attributes are present
     await expect(page.locator('.stats-grid')).toHaveAttribute('hx-get', '/api/v1/dashboard/stats');
@@ -148,7 +148,7 @@ test.describe('Dashboard Page', () => {
   });
 
   test('should show user information in header', async ({ page }) => {
-    await page.goto('/api/v1/dashboard');
+    await page.goto('/app/dashboard');
     
     // Check welcome message is present
     await expect(page.locator('.subtitle')).toContainText('Welcome back');
@@ -160,7 +160,7 @@ test.describe('Dashboard Page', () => {
   });
 
   test('should have proper semantic structure', async ({ page }) => {
-    await page.goto('/api/v1/dashboard');
+    await page.goto('/app/dashboard');
     
     // Check semantic HTML elements
     await expect(page.locator('main.dashboard')).toBeVisible();

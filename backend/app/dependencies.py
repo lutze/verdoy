@@ -391,3 +391,71 @@ def authenticate_device(
     if not stored_key or stored_key != api_key:
         raise HTTPException(status_code=401, detail="Invalid device API key")
     return device 
+
+
+def get_api_user(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """
+    Get current authenticated user for API endpoints (Bearer token only).
+    Args:
+        request: FastAPI request object
+        credentials: HTTP authorization credentials (Bearer token)
+        db: Database session
+    Returns:
+        User object from database
+    Raises:
+        CredentialsException: If token is invalid, missing, or session cookie is used
+    """
+    if not credentials or not credentials.credentials:
+        raise CredentialsException(detail="Bearer token required for API endpoints")
+    token = credentials.credentials
+    try:
+        payload = decode_access_token(token)
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise CredentialsException()
+        from .models.user import User
+        user = db.query(User).filter(User.id == user_id).first()
+        if user is None:
+            raise CredentialsException()
+        return user
+    except JWTError:
+        raise CredentialsException()
+
+def get_web_user(
+    request: Request,
+    session_token: Optional[str] = Cookie(None, alias="session_token"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get current authenticated user for web endpoints (session cookie only).
+    Args:
+        request: FastAPI request object
+        session_token: Session token from HTTP-only cookie
+        db: Database session
+    Returns:
+        User object from database
+    Raises:
+        CredentialsException: If session cookie is invalid, missing, or Bearer token is used
+    """
+    # Reject Bearer tokens for web endpoints
+    auth_header = request.headers.get("authorization")
+    if auth_header and auth_header.lower().startswith("bearer"):
+        raise CredentialsException(detail="Bearer token not allowed for web endpoints")
+    if not session_token:
+        raise CredentialsException(detail="Session cookie required for web endpoints")
+    try:
+        payload = decode_access_token(session_token)
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise CredentialsException()
+        from .models.user import User
+        user = db.query(User).filter(User.id == user_id).first()
+        if user is None:
+            raise CredentialsException()
+        return user
+    except JWTError:
+        raise CredentialsException() 

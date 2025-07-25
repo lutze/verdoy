@@ -26,7 +26,7 @@ export const TEST_USERS = {
  * Navigate to login page and verify it loads
  */
 export async function goToLoginPage(page: Page) {
-  await page.goto('/api/v1/auth/login');
+  await page.goto('/app/login');
   await expect(page.locator('form')).toBeVisible();
 }
 
@@ -34,7 +34,7 @@ export async function goToLoginPage(page: Page) {
  * Navigate to registration page and verify it loads
  */
 export async function goToRegistrationPage(page: Page) {
-  await page.goto('/api/v1/auth/register');
+  await page.goto('/app/register');
   await expect(page.locator('form')).toBeVisible();
 }
 

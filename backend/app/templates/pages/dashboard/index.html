@@ -91,7 +91,7 @@
             <div class="section-header">
                 <h2>Recent Activity</h2>
                 <button class="btn btn-secondary" 
-                        hx-get="/api/v1/dashboard/activity" 
+                        hx-get="/app/dashboard/activity" 
                         hx-target="#activity-feed"
                         hx-swap="innerHTML">
                     Refresh
@@ -99,7 +99,7 @@
             </div>
             
             <div id="activity-feed" 
-                 hx-get="/api/v1/dashboard/activity" 
+                 hx-get="/app/dashboard/activity" 
                  hx-trigger="every 60s"
                  hx-swap="innerHTML">
                 {% include "partials/activity_feed.html" %}

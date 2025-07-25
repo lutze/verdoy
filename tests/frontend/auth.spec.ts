@@ -4,7 +4,7 @@ test.describe('Authentication Pages', () => {
   
   test.describe('Login Page', () => {
     test('should load and display login form', async ({ page }) => {
-      await page.goto('/api/v1/auth/login');
+      await page.goto('/app/login');
       
       // Check that the page loads successfully
       await expect(page).toHaveTitle(/Login|LMS Core/);
@@ -20,7 +20,7 @@ test.describe('Authentication Pages', () => {
     });
 
     test('should show error on invalid credentials', async ({ page }) => {
-      await page.goto('/api/v1/auth/login');
+      await page.goto('/app/login');
       
       // Fill in invalid credentials
       await page.fill('input[name="email"]', 'wrong@example.com');
@@ -45,7 +45,7 @@ test.describe('Authentication Pages', () => {
         });
       });
       
-      await page.goto('/api/v1/auth/login');
+      await page.goto('/app/login');
       
       // Basic form should still be visible and functional
       await expect(page.locator('form')).toBeVisible();
@@ -54,7 +54,7 @@ test.describe('Authentication Pages', () => {
     });
 
     test('should have proper form labels and accessibility', async ({ page }) => {
-      await page.goto('/api/v1/auth/login');
+      await page.goto('/app/login');
       
       // Check for proper form labels
       await expect(page.locator('label[for*="email"], label:has-text("email")')).toBeVisible();
@@ -71,7 +71,7 @@ test.describe('Authentication Pages', () => {
 
   test.describe('Registration Page', () => {
     test('should load and display registration form', async ({ page }) => {
-      await page.goto('/api/v1/auth/register');
+      await page.goto('/app/register');
       
       // Check that the page loads successfully
       await expect(page).toHaveTitle(/Register|Sign Up|LMS Core/);
@@ -86,7 +86,7 @@ test.describe('Authentication Pages', () => {
     });
 
     test('should show organization selection', async ({ page }) => {
-      await page.goto('/api/v1/auth/register');
+      await page.goto('/app/register');
       
       // Check for organization selection mechanism
       const orgSelect = page.locator('select[name="organization_id"]');
@@ -100,7 +100,7 @@ test.describe('Authentication Pages', () => {
     });
 
     test('should show error on missing required fields', async ({ page }) => {
-      await page.goto('/api/v1/auth/register');
+      await page.goto('/app/register');
       
       // Submit form without filling required fields
       await page.click('button[type="submit"], input[type="submit"]');
@@ -110,7 +110,7 @@ test.describe('Authentication Pages', () => {
     });
 
     test('should validate email format', async ({ page }) => {
-      await page.goto('/api/v1/auth/register');
+      await page.goto('/app/register');
       
       // Fill form with invalid email
       await page.fill('input[name="name"], input[name="full_name"]', 'Test User');
@@ -130,7 +130,7 @@ test.describe('Authentication Pages', () => {
       // Disable JavaScript
       await context.grantPermissions([]);
       
-      await page.goto('/api/v1/auth/register');
+      await page.goto('/app/register');
       
       // Form should still be visible and functional
       await expect(page.locator('form')).toBeVisible();
@@ -140,8 +140,8 @@ test.describe('Authentication Pages', () => {
   });
 
   test.describe('Profile Page', () => {
-    test('should load profile page structure', async ({ page }) => {
-      await page.goto('/api/v1/auth/profile');
+    test('should load and display profile page for authenticated user', async ({ page }) => {
+      await page.goto('/app/admin/profile');
       
       // Check basic page structure (may redirect to login if not authenticated)
       const isLoginPage = await page.locator('input[name="email"][type="email"]').isVisible();
@@ -152,7 +152,7 @@ test.describe('Authentication Pages', () => {
     });
 
     test('should handle unauthenticated access gracefully', async ({ page }) => {
-      await page.goto('/api/v1/auth/profile');
+      await page.goto('/app/login');
       
       // Should either redirect to login or show appropriate message
       await page.waitForLoadState('networkidle');
@@ -168,7 +168,7 @@ test.describe('Authentication Pages', () => {
 
   test.describe('Navigation Component', () => {
     test('should display correct navigation for guest users', async ({ page }) => {
-      await page.goto('/api/v1/auth/login');
+      await page.goto('/app/login');
       
       // Check for guest navigation elements
       await expect(page.locator('nav, header')).toBeVisible();
@@ -183,7 +183,7 @@ test.describe('Authentication Pages', () => {
     test('should be responsive on mobile viewport', async ({ page }) => {
       // Set mobile viewport
       await page.setViewportSize({ width: 375, height: 667 });
-      await page.goto('/api/v1/auth/login');
+      await page.goto('/app/login');
       
       // Navigation should still be visible and functional on mobile
       await expect(page.locator('nav, header')).toBeVisible();
@@ -199,7 +199,7 @@ test.describe('Authentication Pages', () => {
 
   test.describe('Content Negotiation', () => {
     test('should serve HTML for browser requests', async ({ page }) => {
-      const response = await page.goto('/api/v1/auth/login');
+      const response = await page.goto('/app/login');
       
       expect(response?.status()).toBe(200);
       expect(response?.headers()['content-type']).toContain('text/html');

@@ -137,26 +137,6 @@ app/
 
 Here's a proposed set of principles for the API layer serving ESP32 and other non-HTML clients:
 
-### Content-Aware Response Strategy
-```python
-# Single route, multiple response formats based on Accept header
-@router.get("/experiments/{experiment_id}")
-async def get_experiment(
-    request: Request,
-    experiment_id: int,
-    format: str = None  # Optional override
-):
-    experiment = await experiment_service.get_by_id(experiment_id)
-    
-    # Determine response format
-    if accepts_json(request) or format == "json":
-        return experiment  # Pydantic model auto-serializes to JSON
-    else:
-        return templates.TemplateResponse(
-            "experiments/detail.html",
-            {"request": request, "experiment": experiment}
-        )
-```
 
 ### SOSA-Compliant Data Models
 ```python
@@ -242,16 +222,4 @@ async def send_equipment_command(
 async def get_equipment_status(equipment_id: str) -> EquipmentStatus:
     """Real-time equipment status for monitoring dashboards"""
     pass
-```
-
-**3. Helper Functions**
-```python
-def accepts_json(request: Request) -> bool:
-    """Check if client accepts JSON responses"""
-    accept_header = request.headers.get("accept", "")
-    return (
-        "application/json" in accept_header or
-        "application/ld+json" in accept_header or
-        request.url.path.startswith("/api/")
-    )
 ```

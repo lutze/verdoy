@@ -56,29 +56,32 @@ from app.middleware import (
 # Import all routers from the new app structure
 from app.routers import (
     # Core functionality routers
-    auth_router,
-    dashboard_router,
     devices_router,
     readings_router,
     commands_router,
-    
     # Feature routers
     analytics_router,
     alerts_router,
-    organizations_router,
-    projects_router,
     billing_router,
-    
     # System routers
     system_router,
     admin_router,
     health_router,
-    
     # WebSocket routers
     live_data_ws_router,
     device_status_ws_router,
     alerts_ws_router,
 )
+# Import new API and Web routers for split resources
+default_prefix = ""
+from app.routers.api.api_auth import router as api_auth_router
+from app.routers.api.api_dashboard import router as api_dashboard_router
+from app.routers.api.api_projects import router as api_projects_router
+from app.routers.api.api_organizations import router as api_organizations_router
+from app.routers.web.web_auth import router as web_auth_router
+from app.routers.web.web_dashboard import router as web_dashboard_router
+from app.routers.web.web_projects import router as web_projects_router
+from app.routers.web.web_organizations import router as web_organizations_router
 
 # Import user dependency
 from app.dependencies import get_optional_user
@@ -354,31 +357,20 @@ def register_exception_handlers(app: FastAPI) -> None:
 def register_routers(app: FastAPI) -> None:
     """
     Register all API routers with proper versioning and prefixes.
-    
     Args:
         app: FastAPI application instance
     """
-    
     # Web (HTML) routers - pretty URLs, no /api/v1 prefix
-    app.include_router(
-        auth_router,
-        prefix="/app"
-    )
-    app.include_router(
-        dashboard_router
-    )
-    app.include_router(
-        organizations_router
-    )
-    app.include_router(
-        projects_router
-    )
-
+    app.include_router(web_auth_router)
+    app.include_router(web_dashboard_router)
+    app.include_router(web_projects_router)
+    app.include_router(web_organizations_router)
     # API routers (JSON endpoints)
-    app.include_router(
-        auth_router,
-        prefix=f"{settings.api_prefix}/auth"
-    )
+    app.include_router(api_auth_router)
+    app.include_router(api_dashboard_router)
+    app.include_router(api_projects_router)
+    app.include_router(api_organizations_router)
+    # Other routers (unchanged)
     app.include_router(
         devices_router,
         prefix=f"{settings.api_prefix}/devices"
@@ -391,61 +383,34 @@ def register_routers(app: FastAPI) -> None:
         commands_router,
         prefix=f"{settings.api_prefix}/commands"
     )
-    
-    # Feature routers
     app.include_router(
         analytics_router,
         prefix=f"{settings.api_prefix}/analytics"
     )
-    
     app.include_router(
         alerts_router,
         prefix=f"{settings.api_prefix}/alerts"
     )
-    
-    app.include_router(
-        organizations_router,
-        prefix=f"{settings.api_prefix}/organizations"
-    )
-    
-    app.include_router(
-        projects_router,
-        prefix=f"{settings.api_prefix}/projects"
-    )
-    
     app.include_router(
         billing_router,
         prefix=f"{settings.api_prefix}/billing"
     )
-    
-    # System routers
     app.include_router(
         system_router,
         prefix=f"{settings.api_prefix}/system"
     )
-    
     app.include_router(
         admin_router,
         prefix=f"{settings.api_prefix}/admin"
     )
-    
     app.include_router(
         health_router,
         prefix=f"{settings.api_prefix}/health"
     )
-    
     # WebSocket routers (no API prefix for WebSocket endpoints)
-    app.include_router(
-        live_data_ws_router
-    )
-    
-    app.include_router(
-        device_status_ws_router
-    )
-    
-    app.include_router(
-        alerts_ws_router
-    )
+    app.include_router(live_data_ws_router)
+    app.include_router(device_status_ws_router)
+    app.include_router(alerts_ws_router)
 
 # Create the application instance
 app = create_app()

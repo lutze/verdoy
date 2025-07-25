@@ -80,7 +80,6 @@ def test_app():
     )
     
     # Import and include routers
-    from app.routers.auth import router as auth_router
     from app.routers.alerts import router as alerts_router
     from app.routers.analytics import router as analytics_router
     from app.routers.commands import router as commands_router
@@ -88,21 +87,18 @@ def test_app():
     from app.routers.readings import router as readings_router
     
     # Include routers for testing
-    app.include_router(auth_router, prefix="/api/v1/auth")
+    # Auth endpoints are now in app.routers.api.api_auth
+    from app.routers.api.api_auth import router as api_auth_router
+    app.include_router(api_auth_router)
     app.include_router(alerts_router, prefix="/api/v1/alerts")
     app.include_router(analytics_router, prefix="/api/v1/analytics")
     app.include_router(commands_router, prefix="/api/v1/commands")
     app.include_router(devices_router, prefix="/api/v1/devices")
     app.include_router(readings_router, prefix="/api/v1/readings")
-    
-    # Import and include new routers
-    from app.routers.organizations import router as organizations_router
-    from app.routers.projects import router as projects_router
-    
-    app.include_router(organizations_router, prefix="/api/v1/organizations")
-    app.include_router(projects_router, prefix="/api/v1/projects")
-    app.include_router(organizations_router)  # HTML routes
-    app.include_router(projects_router)  # HTML routes
+    from app.routers.api.api_organizations import router as api_organizations_router
+    from app.routers.api.api_projects import router as api_projects_router
+    app.include_router(api_organizations_router)
+    app.include_router(api_projects_router)
     
     return app
 

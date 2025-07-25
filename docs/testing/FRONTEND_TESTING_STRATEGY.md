@@ -354,3 +354,21 @@ device.get_property("serial_number")  # ✅ JSON property access
 - **Entity Integration:** Complete Entity-based inheritance pattern implementation
 
 --- 
+
+## To improve
+
+Based on the latest Playwright test run after the /app vs /api/v1 split, the following issues were observed and should be addressed:
+
+- **Selector Strictness Issues:** Many tests fail due to Playwright's strict mode when multiple elements match a selector (e.g., `locator('text=Organizations')` or `a[href="/app/projects/create"]` matching more than one element). Use more specific selectors or `getByRole`, `getByTestId`, or `.nth()` to disambiguate.
+- **Outdated API Prefix Expectations:** Some tests still expect `/api/v1/` in URLs or attributes (e.g., navigation link assertions, HTMX attributes). Update all expectations to match the new `/app/`-only frontend structure.
+- **Navigation/Label Mismatches:** Tests expect certain navigation links, quick actions, or labels to be present or unique, but the UI may have multiple similar elements (e.g., multiple 'Create Project' or 'Organizations' links). Update tests to be more robust and match the actual UI structure.
+- **No-JS Mode Flakiness:** Several failures in no-JS mode are due to selectors matching multiple elements or missing expected text. Review and improve progressive enhancement tests for clarity and reliability.
+- **Accessibility/Keyboard Navigation:** Some accessibility and keyboard navigation tests fail due to missing or ambiguous elements. Add `data-testid` attributes or use more robust selectors.
+- **Test Data/State:** Ensure test data is seeded and cleaned up properly to avoid state leakage between tests.
+
+**Action Items:**
+- Refactor selectors in all Playwright tests for strictness and uniqueness.
+- Update all test expectations to match the new `/app/` route structure.
+- Add or update `data-testid` attributes in templates for critical elements.
+- Review and improve no-JS and accessibility tests for reliability.
+- Ensure test data setup/teardown is robust and isolated. 
