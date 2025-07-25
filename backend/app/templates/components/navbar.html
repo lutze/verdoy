@@ -28,7 +28,7 @@
                 <!-- User dropdown -->
                 <div class="nav-dropdown">
                     <button class="nav-dropdown-toggle" onclick="toggleUserDropdown()">
-                        <span>{{ current_user.entity.name if current_user.entity.name else current_user.email }}</span>
+                        <span>{% if current_user.entity and current_user.entity.name %}{{ current_user.entity.name }}{% else %}{{ current_user.email }}{% endif %}</span>
                         <svg class="dropdown-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>

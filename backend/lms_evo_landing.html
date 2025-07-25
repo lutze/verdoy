@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LMS evo - Nature, Precisely Engineered</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a1520 0%, #1a2f3a 25%, #2d4a3e 50%, #1e3c2e 75%, #0f1a0f 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* Animated background particles */
+        .bg-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .particle {
+            position: absolute;
+            background: radial-gradient(circle, rgba(106, 255, 147, 0.3) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .particle:nth-child(1) {
+            width: 4px;
+            height: 4px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .particle:nth-child(2) {
+            width: 6px;
+            height: 6px;
+            top: 60%;
+            left: 80%;
+            animation-delay: 2s;
+        }
+        
+        .particle:nth-child(3) {
+            width: 3px;
+            height: 3px;
+            top: 40%;
+            left: 30%;
+            animation-delay: 4s;
+        }
+        
+        .particle:nth-child(4) {
+            width: 5px;
+            height: 5px;
+            top: 80%;
+            left: 60%;
+            animation-delay: 1s;
+        }
+        
+        .particle:nth-child(5) {
+            width: 4px;
+            height: 4px;
+            top: 30%;
+            left: 90%;
+            animation-delay: 3s;
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0.3;
+            }
+            50% {
+                transform: translateY(-20px) rotate(180deg);
+                opacity: 0.8;
+            }
+        }
+        
+        /* Organic shapes */
+        .organic-shape {
+            position: absolute;
+            pointer-events: none;
+            z-index: 2;
+        }
+        
+        .shape-1 {
+            top: 10%;
+            right: 10%;
+            width: 200px;
+            height: 200px;
+            background: linear-gradient(45deg, rgba(106, 255, 147, 0.1), rgba(64, 224, 208, 0.1));
+            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+            animation: morph 8s ease-in-out infinite;
+        }
+        
+        .shape-2 {
+            bottom: 20%;
+            left: 5%;
+            width: 150px;
+            height: 150px;
+            background: linear-gradient(120deg, rgba(64, 224, 208, 0.08), rgba(32, 178, 170, 0.08));
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            animation: morph 6s ease-in-out infinite reverse;
+        }
+        
+        @keyframes morph {
+            0%, 100% {
+                border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+                transform: rotate(0deg) scale(1);
+            }
+            50% {
+                border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
+                transform: rotate(180deg) scale(1.1);
+            }
+        }
+        
+        /* Main container */
+        .container {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        /* Logo/Brand */
+        .brand {
+            margin-bottom: 3rem;
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        .logo {
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 700;
+            background: linear-gradient(135deg, #6aff93, #40e0d0, #20b2aa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 30px rgba(106, 255, 147, 0.3);
+        }
+        
+        .evo {
+            font-weight: 300;
+            font-style: italic;
+        }
+        
+        /* Taglines */
+        .taglines {
+            margin-bottom: 4rem;
+            animation: fadeInUp 1s ease-out 0.3s both;
+        }
+        
+        .tagline-primary {
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            font-weight: 500;
+            color: rgba(106, 255, 147, 0.9);
+            margin-bottom: 1rem;
+            letter-spacing: 0.02em;
+        }
+        
+        .tagline-secondary {
+            font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+            font-weight: 300;
+            color: rgba(64, 224, 208, 0.8);
+            letter-spacing: 0.05em;
+        }
+        
+        /* Login button */
+        .login-section {
+            animation: fadeInUp 1s ease-out 0.6s both;
+        }
+        
+        .login-btn {
+            background: linear-gradient(135deg, rgba(106, 255, 147, 0.15), rgba(64, 224, 208, 0.15));
+            border: 2px solid rgba(106, 255, 147, 0.3);
+            color: #6aff93;
+            font-family: 'Inter', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 500;
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            text-decoration: none;
+            display: inline-block;
+            letter-spacing: 0.02em;
+        }
+        
+        .login-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(106, 255, 147, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(106, 255, 147, 0.2);
+            border-color: rgba(106, 255, 147, 0.6);
+        }
+        
+        .login-btn:hover::before {
+            left: 100%;
+        }
+        
+        .login-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Floating elements */
+        .floating-elements {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 3;
+        }
+        
+        .dna-helix {
+            position: absolute;
+            top: 15%;
+            left: 15%;
+            width: 2px;
+            height: 100px;
+            background: linear-gradient(to bottom, rgba(106, 255, 147, 0.3), transparent);
+            transform: rotate(20deg);
+            animation: pulse 3s ease-in-out infinite;
+        }
+        
+        .dna-helix::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 15px;
+            width: 2px;
+            height: 100px;
+            background: linear-gradient(to bottom, rgba(64, 224, 208, 0.3), transparent);
+            transform: rotate(60deg);
+        }
+        
+        .circuit-pattern {
+            position: absolute;
+            bottom: 15%;
+            right: 15%;
+            width: 60px;
+            height: 60px;
+            border: 1px solid rgba(106, 255, 147, 0.2);
+            border-radius: 8px;
+            animation: pulse 4s ease-in-out infinite;
+        }
+        
+        .circuit-pattern::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 1px solid rgba(64, 224, 208, 0.3);
+            border-radius: 50%;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.05);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .organic-shape {
+                display: none;
+            }
+            
+            .floating-elements {
+                opacity: 0.5;
+            }
+            
+            .taglines {
+                margin-bottom: 3rem;
+            }
+        }
+        
+        /* Subtle gradient overlay */
+        .gradient-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, rgba(106, 255, 147, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 5;
+        }
+    </style>
+</head>
+<body>
+    <!-- Background elements -->
+    <div class="bg-particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+    
+    <div class="organic-shape shape-1"></div>
+    <div class="organic-shape shape-2"></div>
+    
+    <div class="floating-elements">
+        <div class="dna-helix"></div>
+        <div class="circuit-pattern"></div>
+    </div>
+    
+    <div class="gradient-overlay"></div>
+    
+    <!-- Main content -->
+    <div class="container">
+        <div class="brand">
+            <h1 class="logo">LMS <span class="evo">evo</span></h1>
+        </div>
+        
+        <div class="taglines">
+            <p class="tagline-primary">Nature, Precisely Engineered</p>
+            <p class="tagline-secondary">Where biology meets generative engineering</p>
+        </div>
+        
+        <div class="login-section">
+            <a href="#" class="login-btn" onclick="handleLogin()">Enter Platform</a>
+        </div>
+    </div>
+    
+    <script>
+        function handleLogin() {
+            // Replace with your actual auth page URL
+            window.location.href = '/auth/login';
+        }
+        
+        // Add some subtle interactivity
+        document.addEventListener('mousemove', (e) => {
+            const particles = document.querySelectorAll('.particle');
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+            
+            particles.forEach((particle, index) => {
+                const speed = (index + 1) * 0.5;
+                const xMove = (x - 0.5) * speed;
+                const yMove = (y - 0.5) * speed;
+                
+                particle.style.transform = `translate(${xMove}px, ${yMove}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
