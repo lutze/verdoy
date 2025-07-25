@@ -98,7 +98,8 @@ async def list_devices(
         ],
         total=total,
         page=params.page,
-        per_page=params.per_page
+        per_page=params.per_page,
+        size=len(devices)
     )
 
 @router.post("", response_model=DeviceResponse, responses={

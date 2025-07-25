@@ -49,8 +49,63 @@ async def list_projects_page(
             "selected_organization": selected_org,
             "selected_status": status,
             "stats": stats,
-            "page_title": "Projects"
+            "page_title": "Projects",
+            "current_user": current_user
         }
     )
 
-# TODO: Add create, detail, edit, and other /app/projects endpoints as needed (HTML only). 
+@router.get("/create", response_class=HTMLResponse, include_in_schema=False)
+async def project_create_page(
+    request: Request,
+    current_user: User = Depends(get_web_user),
+    db: Session = Depends(get_db)
+):
+    org_service = OrganizationService(db)
+    organizations = org_service.get_user_organizations(current_user.id)
+    return templates.TemplateResponse(
+        "pages/projects/create.html",
+        {
+            "request": request,
+            "organizations": organizations,
+            "current_user": current_user,
+            "page_title": "Create Project"
+        }
+    )
+
+@router.get("/{project_id}", response_class=HTMLResponse, include_in_schema=False)
+async def project_detail_page(
+    request: Request,
+    project_id: UUID,
+    current_user: User = Depends(get_web_user),
+    db: Session = Depends(get_db)
+):
+    project_service = ProjectService(db)
+    project = project_service.get_by_id(project_id)
+    return templates.TemplateResponse(
+        "pages/projects/detail.html",
+        {
+            "request": request,
+            "project": project,
+            "current_user": current_user,
+            "page_title": project.name if project else "Project Detail"
+        }
+    )
+
+@router.get("/{project_id}/edit", response_class=HTMLResponse, include_in_schema=False)
+async def project_edit_page(
+    request: Request,
+    project_id: UUID,
+    current_user: User = Depends(get_web_user),
+    db: Session = Depends(get_db)
+):
+    project_service = ProjectService(db)
+    project = project_service.get_by_id(project_id)
+    return templates.TemplateResponse(
+        "pages/projects/edit.html",
+        {
+            "request": request,
+            "project": project,
+            "current_user": current_user,
+            "page_title": f"Edit {project.name if project else 'Project'}"
+        }
+    ) 

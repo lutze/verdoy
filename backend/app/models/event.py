@@ -126,18 +126,11 @@ class Event(BaseModel):
     
     @classmethod
     def get_events_by_entity(cls, db, entity_id, entity_type, limit=100):
-        """
-        Get events for a specific entity.
-        
-        Args:
-            db: Database session
-            entity_id: Entity ID
-            entity_type: Entity type
-            limit: Maximum number of events to return
-            
-        Returns:
-            List of events
-        """
+        if isinstance(entity_id, str):
+            try:
+                entity_id = uuid.UUID(entity_id)
+            except Exception:
+                pass
         return db.query(cls).filter(
             cls.entity_id == entity_id,
             cls.entity_type == entity_type,
@@ -164,17 +157,11 @@ class Event(BaseModel):
     
     @classmethod
     def get_events_by_user(cls, db, user_id, limit=100):
-        """
-        Get events for a specific user.
-        
-        Args:
-            db: Database session
-            user_id: User ID
-            limit: Maximum number of events to return
-            
-        Returns:
-            List of events
-        """
+        if isinstance(user_id, str):
+            try:
+                user_id = uuid.UUID(user_id)
+            except Exception:
+                pass
         return db.query(cls).filter(
             cls.user_id == user_id,
             cls.is_active == True

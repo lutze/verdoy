@@ -21,7 +21,8 @@ async def list_all_users(
 ):
     """List all users (admin only)."""
     # TODO: Implement admin user listing
-    return {"users": "Not implemented"}
+    users = []  # Replace with actual user list
+    return {"users": users, "size": len(users)}
 
 @router.get("/devices")
 async def list_all_devices(
@@ -30,7 +31,8 @@ async def list_all_devices(
 ):
     """List all devices (admin only)."""
     # TODO: Implement admin device listing
-    return {"devices": "Not implemented"}
+    devices = []  # Replace with actual device list
+    return {"devices": devices, "size": len(devices)}
 
 @router.get("/stats")
 async def get_platform_stats(

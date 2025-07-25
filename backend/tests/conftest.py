@@ -11,6 +11,9 @@ import uuid
 from contextlib import asynccontextmanager
 from typing import Dict, Any, Generator
 from unittest.mock import patch
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../app')))
 
 import pytest
 from fastapi import FastAPI
@@ -217,9 +220,9 @@ def authenticated_client(client, test_user, auth_service):
     
     response = client.post("/api/v1/auth/login", json=login_data)
     assert response.status_code == 200
-    
+    print("DEBUG login response:", response.json())
     token_data = response.json()
-    access_token = token_data["access_token"]
+    access_token = token_data["data"]["access_token"]
     
     # Set authorization header
     client.headers.update({"Authorization": f"Bearer {access_token}"})

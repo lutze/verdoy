@@ -14,7 +14,7 @@ from ...models.user import User
 from ...services.auth_service import AuthService
 from ...templates_config import templates
 
-router = APIRouter(prefix="/app/auth", tags=["Web Authentication"])
+router = APIRouter(prefix="/app", tags=["Web Authentication"])
 
 @router.get("/login", response_class=HTMLResponse, include_in_schema=False)
 async def login_page(request: Request, error: Optional[str] = None, message: Optional[str] = None):
@@ -182,5 +182,6 @@ async def profile_page(request: Request, current_user: User = Depends(get_web_us
         "request": request,
         "user": {"name": current_user.entity.name if current_user.entity else current_user.email, "email": current_user.email},
         "organization": current_user.entity.organization_id if current_user.entity else None,
-        "api_keys": []
+        "api_keys": [],
+        "current_user": current_user
     }) 

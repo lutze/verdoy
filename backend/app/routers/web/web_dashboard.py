@@ -72,7 +72,8 @@ async def dashboard_page(
     }
     return templates.TemplateResponse("pages/dashboard/index.html", {
         "request": request,
-        "dashboard": dashboard_data
+        "dashboard": dashboard_data,
+        "current_user": current_user
     })
 
 @router.get("/activity", response_class=HTMLResponse, include_in_schema=False)

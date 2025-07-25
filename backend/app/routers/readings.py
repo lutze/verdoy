@@ -79,7 +79,8 @@ async def get_readings(
     return ReadingListResponse(
         readings=[ReadingResponse.from_model(reading) for reading in readings],
         total=total,
-        device_id=params.device_id
+        device_id=params.device_id,
+        size=len(readings)
     )
 
 @router.get("/latest", response_model=List[ReadingResponse], responses={

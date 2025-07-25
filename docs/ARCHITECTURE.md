@@ -896,3 +896,98 @@ This architectural evolution provides a robust foundation for future development
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
 - [Docker Documentation](https://docs.docker.com/)
 - [Prometheus Documentation](https://prometheus.io/docs/) 
+
+# Production Deployment, Security, and Troubleshooting
+
+## Production Deployment Guide
+
+1. **Docker Compose Setup**
+   - Use the provided `docker-compose.yml` to orchestrate backend, database, and (optionally) frontend services.
+   - Ensure all environment variables are set via `.env` or environment (see `.env.example`).
+   - Run: `docker compose up -d --build`
+   - For production, set `DEBUG=0` and configure `ALLOWED_HOSTS`, `SECRET_KEY`, and database credentials securely.
+
+2. **Environment Variables**
+   - All sensitive configuration (database URL, JWT secret, SMTP, etc.) must be set via environment variables.
+   - Never commit secrets to version control.
+   - See `.env.example` for required variables.
+
+3. **Monitoring & Logging**
+   - Logs are output to stdout/stderr by default (Docker best practice).
+   - Integrate with centralized logging (e.g., ELK, Loki, or cloud logging) for production.
+   - Health endpoints: `/api/v1/system/health`, `/api/v1/health`.
+   - Add Prometheus/Grafana for metrics if needed (see ARCHITECTURE.md Monitoring section).
+
+4. **Backup & Recovery**
+   - Use regular PostgreSQL/TimescaleDB backups (e.g., `pg_dump`, WAL archiving).
+   - Store backups securely and test recovery procedures regularly.
+   - Document backup schedule and retention policy.
+
+## Security Documentation
+
+1. **Authentication & Authorization**
+   - API endpoints use JWT Bearer tokens (see `/api/v1/auth/login`).
+   - Web endpoints use secure HTTP-only session cookies.
+   - Device endpoints use API keys (Bearer token in Authorization header).
+   - Role-based access control is enforced at the service and router layer.
+
+2. **API Key Management**
+   - Device API keys are generated per device and stored securely (see CRUD review for improvements).
+   - API keys should be rotated regularly and never exposed in logs or UI.
+   - Future: Move to dedicated, hashed API key storage (see TODO_CRUD_IMPROVEMENTS.txt).
+
+3. **Data Encryption**
+   - All traffic should be served over HTTPS in production.
+   - Database connections should use SSL/TLS where possible.
+   - Sensitive data (passwords, tokens) is always hashed or encrypted at rest.
+
+4. **Security Best Practices**
+   - Use strong, unique secrets for JWT and database.
+   - Set `httponly`, `secure`, and `samesite` flags on cookies.
+   - Enable CORS only for trusted origins.
+   - Sanitize all user input and validate with Pydantic schemas.
+   - Regularly review dependencies for vulnerabilities.
+   - See `docs/backend/PROCESS_FLOWS.md` and `docs/backend/README_CRUD.md` for more details.
+
+## Troubleshooting Guide
+
+1. **Common Issues**
+   - **Database connection errors**: Check environment variables and database container logs.
+   - **Import errors in tests**: Ensure `PYTHONPATH` is set correctly and use the provided `pytest.ini`.
+   - **Authentication failures**: Verify JWT secret, token expiration, and user status.
+   - **Template changes not reflected**: Restart backend container to clear Jinja2 cache.
+
+2. **Debug Logging**
+   - Set `LOG_LEVEL=DEBUG` for verbose logs.
+   - Use FastAPI's exception handlers for detailed error traces.
+   - Check logs for stack traces and error codes.
+
+3. **Performance Optimization**
+   - Use database indexes for frequent queries (see TODO_CRUD_IMPROVEMENTS.txt).
+   - Enable connection pooling.
+   - Use pagination for large list endpoints.
+   - Profile slow endpoints with logging and monitoring tools.
+
+4. **Error Code Reference**
+   - 400: Validation error (see Pydantic error details)
+   - 401: Unauthorized (invalid/missing token)
+   - 403: Forbidden (insufficient permissions)
+   - 404: Not found (resource does not exist)
+   - 409: Conflict (duplicate resource)
+   - 422: Unprocessable Entity (schema validation)
+   - 500: Internal server error (check logs)
+
+## CI/CD Integration Overview
+
+- All tests (unit, API, integration) are run via pytest in CI (see TESTING_STRATEGY.md).
+- Playwright frontend tests run in CI for `/app/` routes (see FRONTEND_TESTING_STRATEGY.md).
+- Code coverage and quality checks are enforced before merge.
+- Deployment pipeline should build Docker images, run tests, and deploy to staging/production on success.
+- See `docs/backend/guides/TESTING_STRATEGY.md` for details.
+
+## References
+- [API Testing Strategy](./backend/guides/TESTING_STRATEGY.md)
+- [Process Flows](./backend/PROCESS_FLOWS.md)
+- [CRUD Operations Review](./backend/README_CRUD.md)
+- [Frontend Testing Strategy](./testing/FRONTEND_TESTING_STRATEGY.md)
+- [CRUD Improvements & Security TODOs](./backend/refactoring_proj/TODO_CRUD_IMPROVEMENTS.txt) 

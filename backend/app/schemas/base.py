@@ -15,6 +15,7 @@ class BaseResponse(BaseModel):
     """Base response schema for all API responses."""
     success: bool = True
     message: Optional[str] = None
+    data: Optional[Any] = None
 
 
 class ErrorResponse(BaseModel):

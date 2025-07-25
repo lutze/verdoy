@@ -11,6 +11,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from uuid import UUID
+import uuid
 
 from .config import settings
 from .database import get_db
@@ -81,8 +82,12 @@ def get_current_user(
         user_id: str = payload.get("sub")
         if user_id is None:
             raise CredentialsException()
-        
-        # Validate user exists in database
+        # Convert user_id to UUID if needed
+        if isinstance(user_id, str):
+            try:
+                user_id = uuid.UUID(user_id)
+            except Exception:
+                raise CredentialsException()
         from .models.user import User
         user = db.query(User).filter(User.id == user_id).first()
         if user is None:
