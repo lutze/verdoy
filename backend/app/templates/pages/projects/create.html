@@ -4,172 +4,548 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-8 max-w-4xl">
-    <!-- Header -->
-    <div class="mb-8">
-        <div class="flex items-center mb-4">
-            <a href="/app/projects" class="text-blue-600 hover:text-blue-700 mr-4">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                </svg>
-            </a>
-            <h1 class="text-3xl font-bold text-gray-900">Create Project</h1>
+    <!-- Page Header with Scientific Gradient -->
+    <div class="page-header scientific-accent mb-8">
+        <div class="page-header-content">
+            <div class="header-left">
+                <div class="breadcrumb">
+                    <a href="/app/projects" class="breadcrumb-link">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                        Projects
+                    </a>
+                </div>
+                <h1 class="page-title">Create Project</h1>
+                <p class="page-subtitle">Set up a new research project for your team</p>
+            </div>
         </div>
-        <p class="text-gray-600">Set up a new research project for your team.</p>
     </div>
 
     <!-- Error Message -->
     {% if form_errors and form_errors.general %}
-    <div class="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
-        <div class="flex">
-            <div class="flex-shrink-0">
-                <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-            </div>
-            <div class="ml-3">
-                <p class="text-sm text-red-700">{{ form_errors.general }}</p>
-            </div>
+    <div class="alert alert-error mb-6">
+        <div class="alert-icon">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+        </div>
+        <div class="alert-content">
+            <h3 class="alert-title">Error</h3>
+            <p class="alert-message">{{ form_errors.general }}</p>
         </div>
     </div>
     {% endif %}
 
-    <!-- Project Form -->
-    <form action="/app/projects/create" method="post" class="space-y-8">
+    <!-- Project Creation Form -->
+    <form action="/app/projects/create" method="post" class="form-container">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
         
-        <!-- Basic Information -->
-        <div class="bg-white rounded-lg shadow border border-gray-200 p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-6">Basic Information</h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="md:col-span-2">
-                    <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
-                        Project Name <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" 
-                           id="name" 
-                           name="name" 
-                           value="{{ form_data.name if form_data else '' }}"
-                           required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    <p class="mt-1 text-sm text-gray-500">The display name for your project</p>
+        <div class="form-sections">
+            <!-- Basic Information -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon">🧪</div>
+                    <div>
+                        <h3 class="section-title">Basic Information</h3>
+                        <p class="section-description">Core details about your research project</p>
+                    </div>
                 </div>
-                
-                <div class="md:col-span-2">
-                    <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                    <textarea id="description" 
-                              name="description" 
-                              rows="3"
-                              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">{{ form_data.description if form_data else '' }}</textarea>
-                    <p class="mt-1 text-sm text-gray-500">Brief description of your project</p>
-                </div>
-                
-                <div>
-                    <label for="organization_id" class="block text-sm font-medium text-gray-700 mb-2">
-                        Organization <span class="text-red-500">*</span>
-                    </label>
-                    <select id="organization_id" 
-                            name="organization_id"
-                            required
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">Select Organization</option>
-                        {% for org in organizations %}
-                        <option value="{{ org.id }}" 
-                                {% if (form_data and form_data.organization_id == str(org.id)) or (selected_organization_id and selected_organization_id == org.id) %}selected{% endif %}>
-                            {{ org.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div>
-                    <label for="priority" class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
-                    <select id="priority" 
-                            name="priority"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                        {% set current_priority = form_data.priority if form_data else 'medium' %}
-                        <option value="low" {% if current_priority == 'low' %}selected{% endif %}>Low</option>
-                        <option value="medium" {% if current_priority == 'medium' %}selected{% endif %}>Medium</option>
-                        <option value="high" {% if current_priority == 'high' %}selected{% endif %}>High</option>
-                        <option value="critical" {% if current_priority == 'critical' %}selected{% endif %}>Critical</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <!-- Timeline -->
-        <div class="bg-white rounded-lg shadow border border-gray-200 p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-6">Timeline</h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                    <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
-                    <input type="date" 
-                           id="start_date" 
-                           name="start_date" 
-                           value="{{ form_data.start_date if form_data else '' }}"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                
-                <div>
-                    <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
-                    <input type="date" 
-                           id="end_date" 
-                           name="end_date" 
-                           value="{{ form_data.end_date if form_data else '' }}"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                
-                <div>
-                    <label for="expected_completion" class="block text-sm font-medium text-gray-700 mb-2">Expected Completion</label>
-                    <input type="date" 
-                           id="expected_completion" 
-                           name="expected_completion" 
-                           value="{{ form_data.expected_completion if form_data else '' }}"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label for="name" class="form-label">Project Name *</label>
+                        <input type="text" 
+                               id="name" 
+                               name="name" 
+                               value="{{ form_data.name if form_data else '' }}"
+                               required
+                               class="form-input"
+                               placeholder="Enter project name">
+                        <p class="form-help">The display name for your project</p>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea id="description" 
+                                  name="description" 
+                                  rows="3"
+                                  class="form-textarea"
+                                  placeholder="Describe your research project">{{ form_data.description if form_data else '' }}</textarea>
+                        <p class="form-help">Brief description of your project goals and objectives</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="organization_id" class="form-label">Organization *</label>
+                        <select id="organization_id" 
+                                name="organization_id"
+                                required
+                                class="form-select">
+                            <option value="">Select Organization</option>
+                            {% for org in organizations %}
+                            <option value="{{ org.id }}" 
+                                    {% if (form_data and form_data.organization_id == org.id|string) or (selected_organization_id and selected_organization_id == org.id) %}selected{% endif %}>
+                                {{ org.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="priority" class="form-label">Priority</label>
+                        <select id="priority" 
+                                name="priority"
+                                class="form-select">
+                            {% set current_priority = form_data.priority if form_data else 'medium' %}
+                            <option value="low" {% if current_priority == 'low' %}selected{% endif %}>Low</option>
+                            <option value="medium" {% if current_priority == 'medium' %}selected{% endif %}>Medium</option>
+                            <option value="high" {% if current_priority == 'high' %}selected{% endif %}>High</option>
+                            <option value="critical" {% if current_priority == 'critical' %}selected{% endif %}>Critical</option>
+                        </select>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Additional Details -->
-        <div class="bg-white rounded-lg shadow border border-gray-200 p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-6">Additional Details</h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label for="budget" class="block text-sm font-medium text-gray-700 mb-2">Budget</label>
-                    <input type="text" 
-                           id="budget" 
-                           name="budget" 
-                           value="{{ form_data.budget if form_data else '' }}"
-                           placeholder="e.g., $50,000"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            <!-- Timeline -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon">📅</div>
+                    <div>
+                        <h3 class="section-title">Timeline</h3>
+                        <p class="section-description">Project schedule and milestones</p>
+                    </div>
                 </div>
-                
-                <div>
-                    <label for="tags" class="block text-sm font-medium text-gray-700 mb-2">Tags</label>
-                    <input type="text" 
-                           id="tags" 
-                           name="tags" 
-                           value="{{ form_data.tags if form_data else '' }}"
-                           placeholder="e.g., optimization, pH, yield"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    <p class="mt-1 text-sm text-gray-500">Comma-separated tags</p>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="start_date" class="form-label">Start Date</label>
+                        <input type="date" 
+                               id="start_date" 
+                               name="start_date" 
+                               value="{{ form_data.start_date if form_data else '' }}"
+                               class="form-input">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="end_date" class="form-label">End Date</label>
+                        <input type="date" 
+                               id="end_date" 
+                               name="end_date" 
+                               value="{{ form_data.end_date if form_data else '' }}"
+                               class="form-input">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="expected_completion" class="form-label">Expected Completion</label>
+                        <input type="date" 
+                               id="expected_completion" 
+                               name="expected_completion" 
+                               value="{{ form_data.expected_completion if form_data else '' }}"
+                               class="form-input">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Details -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon">📊</div>
+                    <div>
+                        <h3 class="section-title">Project Details</h3>
+                        <p class="section-description">Additional project information and metadata</p>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="budget" class="form-label">Budget</label>
+                        <input type="text" 
+                               id="budget" 
+                               name="budget" 
+                               value="{{ form_data.budget if form_data else '' }}"
+                               placeholder="e.g., $50,000"
+                               class="form-input">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tags" class="form-label">Tags</label>
+                        <input type="text" 
+                               id="tags" 
+                               name="tags" 
+                               value="{{ form_data.tags if form_data else '' }}"
+                               placeholder="e.g., optimization, pH, yield"
+                               class="form-input">
+                        <p class="form-help">Comma-separated tags for easy categorization</p>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Form Actions -->
-        <div class="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
-            <a href="/app/projects" 
-               class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md font-medium transition-colors">
+        <div class="form-actions">
+            <a href="/app/projects" class="btn btn-secondary">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
                 Cancel
             </a>
-            <button type="submit" 
-                    class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors">
+            <button type="submit" class="btn btn-primary">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
                 Create Project
             </button>
         </div>
     </form>
 </div>
+
+<style>
+/* CSS Variables */
+:root {
+    --primary: #6aff93;
+    --primary-dark: #4ade80;
+    --primary-light: #86efac;
+    --secondary: #40e0d0;
+    --secondary-dark: #20b2aa;
+    --secondary-light: #5eead4;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-tertiary: #f1f5f9;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --text-tertiary: #94a3b8;
+    --text-inverse: #ffffff;
+    --border-light: #e2e8f0;
+    --danger: #ef4444;
+    --danger-light: #fef2f2;
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 3rem;
+    --space-3xl: 4rem;
+    --space-4xl: 6rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.15);
+    --shadow-lg: 0 10px 30px rgba(106, 255, 147, 0.2);
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+    --font-size-4xl: 2.25rem;
+    --transition-normal: 0.3s ease;
+}
+
+/* Page Header Styles */
+.page-header {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: var(--radius-xl);
+    position: relative;
+    overflow: hidden;
+    padding: var(--space-8);
+}
+
+.page-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(50%, -50%);
+}
+
+.page-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 10;
+}
+
+.header-left {
+    flex: 1;
+}
+
+.breadcrumb {
+    margin-bottom: var(--space-2);
+}
+
+.breadcrumb-link {
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+    transition: color var(--transition-normal);
+}
+
+.breadcrumb-link:hover {
+    color: var(--text-inverse);
+}
+
+.page-title {
+    color: var(--text-inverse);
+    font-size: var(--font-size-4xl);
+    font-weight: 700;
+    margin-bottom: var(--space-2);
+}
+
+.page-subtitle {
+    color: rgba(255,255,255,0.9);
+    font-size: var(--font-size-lg);
+    font-weight: 400;
+}
+
+/* Alert Styles */
+.alert {
+    display: flex;
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    gap: var(--space-3);
+}
+
+.alert-error {
+    background: var(--danger-light);
+    border: 1px solid var(--danger);
+    color: var(--danger);
+}
+
+.alert-icon {
+    flex-shrink: 0;
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-title {
+    font-weight: 600;
+    margin-bottom: var(--space-1);
+}
+
+.alert-message {
+    font-size: var(--font-size-sm);
+}
+
+/* Form Container */
+.form-container {
+    background: var(--bg-primary);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.form-sections {
+    padding: var(--space-8);
+}
+
+.form-section {
+    margin-bottom: var(--space-8);
+    padding-bottom: var(--space-8);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.form-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+
+.section-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: var(--radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-2xl);
+    color: var(--text-inverse);
+}
+
+.section-title {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-1);
+}
+
+.section-description {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+/* Form Grid */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--space-6);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    background: var(--bg-primary);
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    transition: all var(--transition-normal);
+    color: var(--text-primary);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(106, 255, 147, 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+    color: var(--text-tertiary);
+}
+
+.form-help {
+    margin-top: var(--space-1);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+/* Button Styles */
+.btn {
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-lg);
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-family);
+    text-decoration: none;
+    font-size: var(--font-size-base);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: var(--text-inverse);
+    border: 1px solid rgba(255,255,255,0.3);
+    backdrop-filter: blur(10px);
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-light);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-tertiary);
+    transform: translateY(-1px);
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-4);
+    padding: var(--space-6) var(--space-8);
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-light);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-header-content {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-4);
+    }
+    
+    .form-sections {
+        padding: var(--space-6);
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-3);
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+    
+    .btn {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: var(--space-4);
+    }
+    
+    .page-title {
+        font-size: var(--font-size-3xl);
+    }
+    
+    .section-title {
+        font-size: var(--font-size-lg);
+    }
+}
+</style>
 {% endblock %} 

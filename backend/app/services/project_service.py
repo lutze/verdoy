@@ -88,10 +88,23 @@ class ProjectService(BaseService[Project]):
                 if not project_lead:
                     raise UserNotFoundException(f"User {project_data.project_lead_id} not found")
             
-            # Create project
-            project = Project(
+            # Create entity record first (for name and description)
+            from ..models.entity import Entity
+            entity = Entity(
+                entity_type="project",
                 name=project_data.name,
                 description=project_data.description,
+                organization_id=project_data.organization_id,
+                status="active"
+            )
+            
+            # Save entity to get the ID
+            self.db.add(entity)
+            self.db.flush()  # Get the ID without committing
+            
+            # Create project record
+            project = Project(
+                id=entity.id,  # Use the same ID as the entity
                 organization_id=project_data.organization_id,
                 status=project_data.status.value,
                 priority=project_data.priority.value,
@@ -106,7 +119,7 @@ class ProjectService(BaseService[Project]):
                 settings=project_data.settings
             )
             
-            # Save to database
+            # Save project to database
             self.db.add(project)
             self.db.commit()
             self.db.refresh(project)

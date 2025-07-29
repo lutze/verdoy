@@ -30,9 +30,8 @@ class Project(BaseModel):
     
     __tablename__ = "projects"
     
-    # Basic project information
-    name = Column(String(255), nullable=False, index=True)
-    description = Column(Text, nullable=True)
+    # Project inherits from entities table - name and description are in entities
+    # id is the foreign key to entities table
     
     # Organization relationship
     organization_id = Column(PostgresUUID(as_uuid=True), ForeignKey("entities.id"), nullable=False, index=True)
@@ -60,11 +59,22 @@ class Project(BaseModel):
     # Relationships
     organization = relationship("Entity", foreign_keys=[organization_id])
     project_lead = relationship("Entity", foreign_keys=[project_lead_id])
+    entity = relationship("Entity", foreign_keys=[BaseModel.id])  # Link to entity for name/description
     # experiments = relationship("Experiment", back_populates="project")  # Will be added when Experiment model exists
     # members = relationship("ProjectMember", back_populates="project")  # For project team management
     
     def __repr__(self):
-        return f"<Project(id={self.id}, name='{self.name}', status='{self.status}')>"
+        return f"<Project(id={self.id}, name='{self.entity.name if self.entity else 'Unknown'}', status='{self.status}')>"
+    
+    @property
+    def name(self) -> str:
+        """Get project name from associated entity."""
+        return self.entity.name if self.entity else "Unknown"
+    
+    @property
+    def description(self) -> str:
+        """Get project description from associated entity."""
+        return self.entity.description if self.entity else ""
     
     @property
     def is_active(self) -> bool:

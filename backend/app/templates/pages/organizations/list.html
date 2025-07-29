@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
-    <!-- Enhanced Page Header -->
+    <!-- Clean Page Header -->
     <div class="page-header mb-8">
         <div class="page-header-content">
             <div>
@@ -15,17 +15,14 @@
                 <button class="btn btn-secondary">
                     📊 Analytics
                 </button>
-                <button class="btn btn-secondary">
-                    📋 Templates
-                </button>
                 <a href="/app/admin/organization/create" class="btn btn-primary">
-                    ➕ Add Organization
+                    ➕ New Organization
                 </a>
             </div>
         </div>
     </div>
 
-    <!-- Enhanced Controls -->
+    <!-- Clean Controls Section -->
     <form method="get" class="controls-section mb-6">
         <div class="controls-content">
             <div class="search-filters">
@@ -50,101 +47,59 @@
                     Filter
                 </button>
             </div>
-            <div class="view-toggles">
-                <button type="button" class="view-toggle active" id="hierarchy-view" title="Hierarchy View">📋</button>
-                <button type="button" class="view-toggle" id="grid-view" title="Grid View">🏢</button>
-                <button type="button" class="view-toggle" id="list-view" title="List View">📊</button>
-            </div>
         </div>
     </form>
 
-    <!-- Organizations Grid View -->
+    <!-- Simple Organizations List -->
     {% if organizations %}
-    <div class="organizations-grid" id="organizations-grid">
+    <div class="org-list" id="organizations-list">
         {% for org in organizations %}
-        <div class="organization-card">
-            <div class="organization-header">
-                <div class="organization-status status-{{ org.status }}">
-                    ● {{ org.status|title }}
+        <div class="org-item">
+            <div class="org-content">
+                <div class="org-icon {% if org.organization_type == 'enterprise' %}primary{% elif org.organization_type == 'educational' %}secondary{% else %}tertiary{% endif %}">
+                    {% if org.organization_type == 'enterprise' %}🏢
+                    {% elif org.organization_type == 'educational' %}🎓
+                    {% elif org.organization_type == 'small_business' %}🏭
+                    {% elif org.organization_type == 'research_lab' %}🧪
+                    {% else %}🏢{% endif %}
                 </div>
-                <div class="organization-type">{{ org.organization_type|replace('_', ' ')|title }}</div>
-                <h3 class="organization-name">{{ org.name }}</h3>
-                {% if org.description %}
-                <p class="organization-description">{{ org.description }}</p>
-                {% endif %}
-                <div class="organization-progress">
-                    <div class="progress-label">
-                        <span>Activity</span>
-                        <span>{{ org.device_count|default(0) }} Online</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: {{ (org.device_count|default(0) / (org.member_count|default(1) if org.member_count|default(1) > 0 else 1)) * 100 }}%"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="organization-stats">
-                <div class="stat">
-                    <span class="stat-number">{{ org.member_count|default(0) }}</span>
-                    <span class="stat-label">Members</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-number">{{ org.device_count|default(0) }}</span>
-                    <span class="stat-label">Devices</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-number">{{ org.project_count|default(0) }}</span>
-                    <span class="stat-label">Projects</span>
-                </div>
-            </div>
-            
-            <div class="organization-footer">
-                <div class="organization-team">
-                    <span class="team-label">Type:</span>
-                    <div class="organization-type-badge">
-                        {% if org.organization_type == 'enterprise' %}🏢 Enterprise
-                        {% elif org.organization_type == 'educational' %}🎓 Educational
-                        {% elif org.organization_type == 'small_business' %}🏭 Small Business
-                        {% elif org.organization_type == 'research_lab' %}🧪 Research Lab
-                        {% else %}🏢 Organization{% endif %}
+                <div class="org-info">
+                    <h3 class="org-name">{{ org.name }}</h3>
+                    <p class="org-description">{{ org.description or 'Default organization for existing entities' }}</p>
+                    <div class="org-stats">
+                        <div class="stat">
+                            <span class="stat-icon">👥</span>
+                            <span class="stat-number">{{ org.member_count|default(0) }}</span>
+                            <span class="stat-label">Members</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-icon">✅</span>
+                            <span class="stat-number">{{ org.device_count|default(0) }}</span>
+                            <span class="stat-label">Active Experiments</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-icon">🏭</span>
+                            <span class="stat-number">{{ org.project_count|default(0) }}</span>
+                            <span class="stat-label">Projects</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-icon">📁</span>
+                            <span class="stat-number">{{ org.device_count|default(0) }}</span>
+                            <span class="stat-label">Devices</span>
+                        </div>
                     </div>
                 </div>
-                <div class="organization-actions">
-                    <a href="/app/admin/organization/{{ org.id }}" class="action-btn" title="View Details">👁️</a>
-                    <a href="/app/admin/organization/{{ org.id }}/edit" class="action-btn" title="Edit">✏️</a>
-                    <a href="/app/admin/organization/{{ org.id }}/members" class="action-btn" title="Members">👥</a>
+                <div class="org-status">
+                    <div class="status-indicator {% if org.status == 'active' %}status-online{% else %}status-offline{% endif %}">
+                        <span class="status-dot">●</span> {{ org.device_count|default(0) }} Online
+                    </div>
+                    <div class="org-actions">
+                        <a href="/app/admin/organization/{{ org.id }}" class="action-btn" title="View Details">👁️</a>
+                        <a href="/app/admin/organization/{{ org.id }}/edit" class="action-btn" title="Edit">✏️</a>
+                        <a href="/app/admin/organization/{{ org.id }}/members" class="action-btn" title="Members">👥</a>
+                        <button class="action-btn" title="Settings">⚙️</button>
+                    </div>
                 </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-
-    <!-- Organizations List View -->
-    <div class="organizations-list" id="organizations-list" style="display: none;">
-        <div class="list-header">
-            <div>Organization Name</div>
-            <div>Type</div>
-            <div>Status</div>
-            <div>Members</div>
-            <div>Devices</div>
-            <div>Actions</div>
-        </div>
-        {% for org in organizations %}
-        <div class="organization-row">
-            <div class="organization-info">
-                <strong>{{ org.name }}</strong>
-                {% if org.description %}
-                <br>
-                <small class="organization-desc">{{ org.description[:50] }}{% if org.description|length > 50 %}...{% endif %}</small>
-                {% endif %}
-            </div>
-            <div>{{ org.organization_type|replace('_', ' ')|title }}</div>
-            <div><span class="status-{{ org.status }}">● {{ org.status|title }}</span></div>
-            <div>{{ org.member_count|default(0) }}</div>
-            <div>{{ org.device_count|default(0) }}</div>
-            <div class="organization-actions">
-                <a href="/app/admin/organization/{{ org.id }}" class="action-btn" title="View">👁️</a>
-                <a href="/app/admin/organization/{{ org.id }}/edit" class="action-btn" title="Edit">✏️</a>
             </div>
         </div>
         {% endfor %}
@@ -165,71 +120,47 @@
         </a>
     </div>
     {% endif %}
-
-    <!-- Grid View (Hidden by default) -->
-    <div id="grid-view" class="org-grid hidden">
-        {% if organizations %}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {% for org in organizations %}
-            <div class="org-card">
-                <div class="org-card-header">
-                    <div class="org-card-icon {% if org.organization_type == 'enterprise' %}primary{% elif org.organization_type == 'educational' %}secondary{% else %}tertiary{% endif %}">
-                        {% if org.organization_type == 'enterprise' %}🏢
-                        {% elif org.organization_type == 'educational' %}🎓
-                        {% elif org.organization_type == 'small_business' %}🏭
-                        {% else %}🏢{% endif %}
-                    </div>
-                    <div class="org-card-info">
-                        <h3 class="org-card-name">{{ org.name }}</h3>
-                        <p class="org-card-description">{{ org.description or 'Research organization' }}</p>
-                        <div class="org-card-status">
-                            <span class="status-badge {% if org.status == 'active' %}active{% else %}inactive{% endif %}">
-                                {{ org.status|title }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <div class="org-card-stats">
-                    <div class="stat-item">
-                        <span class="stat-label">Members</span>
-                        <span class="stat-value">{{ org.member_count|default(0) }}</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Devices</span>
-                        <span class="stat-value">{{ org.device_count|default(0) }}</span>
-                    </div>
-                </div>
-                <div class="org-card-actions">
-                    <a href="/app/admin/organization/{{ org.id }}" class="btn btn-primary btn-sm">View Details</a>
-                    <button class="btn btn-secondary btn-sm">Settings</button>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-    </div>
 </div>
 
 <style>
-/* Page Header Styles */
+/* Clean CSS Variables */
+:root {
+    --primary: #6aff93;
+    --primary-dark: #4ade80;
+    --primary-light: #86efac;
+    --secondary: #40e0d0;
+    --secondary-dark: #20b2aa;
+    --secondary-light: #5eead4;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-tertiary: #f1f5f9;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --text-tertiary: #94a3b8;
+    --text-inverse: #ffffff;
+    --border-light: #e2e8f0;
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 3rem;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.15);
+    --shadow-lg: 0 10px 30px rgba(106, 255, 147, 0.2);
+}
+
+/* Clean Page Header */
 .page-header {
     background: linear-gradient(135deg, var(--primary), var(--secondary));
     border-radius: var(--radius-xl);
     position: relative;
     overflow: hidden;
-    padding: var(--space-8);
-}
-
-.page-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 200px;
-    height: 200px;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-    border-radius: 50%;
-    transform: translate(50%, -50%);
+    padding: var(--space-2xl);
 }
 
 .page-header-content {
@@ -242,34 +173,36 @@
 
 .page-title {
     color: var(--text-inverse);
-    font-size: var(--font-size-4xl);
+    font-size: 2.5rem;
     font-weight: 700;
-    margin-bottom: var(--space-2);
+    margin-bottom: var(--space-sm);
 }
 
 .page-subtitle {
     color: rgba(255,255,255,0.9);
-    font-size: var(--font-size-lg);
+    font-size: 1.1rem;
     font-weight: 400;
 }
 
 .header-actions {
     display: flex;
-    gap: var(--space-4);
+    gap: var(--space-md);
+    z-index: 10;
+    position: relative;
 }
 
-/* Button Styles */
+/* Clean Button Styles */
 .btn {
-    padding: var(--space-3) var(--space-6);
-    border-radius: var(--radius-lg);
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-md);
     border: none;
     font-weight: 500;
     cursor: pointer;
-    transition: all var(--transition-normal);
+    transition: all 0.3s ease;
     display: inline-flex;
     align-items: center;
-    gap: var(--space-2);
-    font-family: var(--font-family);
+    gap: var(--space-sm);
+    font-family: 'Inter', sans-serif;
     text-decoration: none;
 }
 
@@ -292,29 +225,26 @@
 }
 
 .btn-secondary:hover {
-    background: var(--bg-secondary);
+    background: var(--bg-tertiary);
     transform: translateY(-1px);
 }
 
-.btn-sm {
-    padding: var(--space-2) var(--space-4);
-    font-size: var(--font-size-sm);
-}
-
-/* Controls Section */
+/* Clean Controls Section */
 .controls-section {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--space-6);
+    margin-bottom: var(--space-xl);
+    padding: var(--space-lg);
     background: var(--bg-primary);
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-light);
 }
 
 .search-filters {
     display: flex;
-    gap: var(--space-4);
+    gap: var(--space-md);
     align-items: center;
 }
 
@@ -323,11 +253,13 @@
 }
 
 .search-input {
-    padding: var(--space-3) var(--space-4) var(--space-3) var(--space-10);
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
     border: 1px solid var(--border-light);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     width: 300px;
-    font-family: var(--font-family);
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-primary);
+    transition: all 0.3s ease;
 }
 
 .search-input:focus {
@@ -338,96 +270,64 @@
 
 .search-icon {
     position: absolute;
-    left: var(--space-3);
+    left: 0.75rem;
     top: 50%;
     transform: translateY(-50%);
     color: var(--text-secondary);
 }
 
 .filter-select {
-    padding: var(--space-3) var(--space-4);
+    padding: 0.75rem var(--space-md);
     border: 1px solid var(--border-light);
-    border-radius: var(--radius-lg);
-    background: var(--bg-primary);
-    font-family: var(--font-family);
-}
-
-.view-toggles {
-    display: flex;
-    gap: var(--space-2);
-}
-
-.view-toggle {
-    padding: var(--space-2);
-    border: 1px solid var(--border-light);
-    background: var(--bg-primary);
     border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: all var(--transition-normal);
-}
-
-.view-toggle.active {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: var(--text-inverse);
-}
-
-.view-toggle:hover {
-    border-color: var(--primary);
-}
-
-/* Organization Hierarchy */
-.org-hierarchy {
     background: var(--bg-primary);
-    border-radius: var(--radius-xl);
+    font-family: 'Inter', sans-serif;
+    transition: all 0.3s ease;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(106, 255, 147, 0.1);
+}
+
+/* Clean Organization List */
+.org-list {
+    background: var(--bg-primary);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
     overflow: hidden;
+    border: 1px solid var(--border-light);
 }
 
-.org-node {
+.org-item {
     border-bottom: 1px solid var(--border-light);
-    transition: all var(--transition-normal);
+    transition: all 0.3s ease;
 }
 
-.org-node:hover {
+.org-item:hover {
     background: var(--bg-secondary);
+}
+
+.org-item:last-child {
+    border-bottom: none;
 }
 
 .org-content {
     display: flex;
     align-items: center;
-    padding: var(--space-6);
-    gap: var(--space-4);
-}
-
-.org-indent {
-    width: 24px;
-    display: flex;
-    justify-content: center;
-}
-
-.expand-toggle {
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    cursor: pointer;
-    padding: var(--space-1);
-    border-radius: var(--radius-sm);
-    transition: all var(--transition-normal);
-}
-
-.expand-toggle:hover {
-    background: var(--bg-tertiary);
+    padding: var(--space-lg);
+    gap: var(--space-md);
 }
 
 .org-icon {
     width: 48px;
     height: 48px;
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-lg);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: var(--font-size-2xl);
+    font-size: 1.5rem;
     flex-shrink: 0;
 }
 
@@ -436,11 +336,11 @@
 }
 
 .org-icon.secondary {
-    background: linear-gradient(135deg, var(--info), var(--info-light));
+    background: linear-gradient(135deg, var(--secondary), var(--secondary-dark));
 }
 
 .org-icon.tertiary {
-    background: linear-gradient(135deg, var(--warning), var(--warning-light));
+    background: linear-gradient(135deg, var(--secondary-dark), var(--primary-dark));
 }
 
 .org-info {
@@ -448,29 +348,33 @@
 }
 
 .org-name {
-    font-size: var(--font-size-lg);
+    font-size: 1.25rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: var(--space-1);
+    margin-bottom: var(--space-xs);
 }
 
 .org-description {
     color: var(--text-secondary);
-    font-size: var(--font-size-sm);
-    margin-bottom: var(--space-2);
+    font-size: 0.9rem;
+    margin-bottom: var(--space-sm);
 }
 
 .org-stats {
     display: flex;
-    gap: var(--space-6);
+    gap: var(--space-lg);
 }
 
 .stat {
     display: flex;
     align-items: center;
-    gap: var(--space-1);
-    font-size: var(--font-size-xs);
+    gap: var(--space-xs);
+    font-size: 0.8rem;
     color: var(--text-secondary);
+}
+
+.stat-icon {
+    font-size: 0.9rem;
 }
 
 .stat-number {
@@ -478,54 +382,69 @@
     color: var(--text-primary);
 }
 
+.stat-label {
+    color: var(--text-secondary);
+}
+
 .org-status {
     display: flex;
     align-items: center;
-    gap: var(--space-4);
+    gap: var(--space-md);
 }
 
 .status-indicator {
-    padding: var(--space-1) var(--space-3);
+    padding: var(--space-xs) 0.75rem;
     border-radius: 20px;
-    font-size: var(--font-size-xs);
+    font-size: 0.75rem;
     font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
 }
 
 .status-online {
-    background: var(--success-light);
-    color: var(--success);
+    background: rgba(106, 255, 147, 0.1);
+    color: var(--primary-dark);
+    border: 1px solid rgba(106, 255, 147, 0.2);
 }
 
 .status-offline {
-    background: var(--danger-light);
-    color: var(--danger);
+    background: rgba(248, 113, 113, 0.1);
+    color: #dc2626;
+    border: 1px solid rgba(248, 113, 113, 0.2);
+}
+
+.status-dot {
+    font-size: 0.6rem;
 }
 
 .org-actions {
     display: flex;
-    gap: var(--space-2);
+    gap: var(--space-sm);
 }
 
 .action-btn {
-    padding: var(--space-2);
+    padding: var(--space-sm);
     border: 1px solid var(--border-light);
     background: var(--bg-primary);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: all var(--transition-normal);
+    transition: all 0.3s ease;
     color: var(--text-secondary);
     text-decoration: none;
+    font-size: 0.9rem;
 }
 
 .action-btn:hover {
     border-color: var(--primary);
     color: var(--primary);
+    background: var(--bg-secondary);
 }
 
 /* Empty State */
 .empty-state {
     text-align: center;
-    padding: var(--space-16);
+    padding: var(--space-2xl);
 }
 
 .empty-icon {
@@ -536,119 +455,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto var(--space-6);
+    margin: 0 auto var(--space-lg);
     color: var(--text-tertiary);
 }
 
 .empty-title {
-    font-size: var(--font-size-xl);
+    font-size: 1.5rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: var(--space-2);
+    margin-bottom: var(--space-sm);
 }
 
 .empty-description {
     color: var(--text-secondary);
-    margin-bottom: var(--space-6);
-}
-
-/* Grid View */
-.org-grid {
-    display: none;
-}
-
-.org-grid.active {
-    display: block;
-}
-
-.org-card {
-    background: var(--bg-primary);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-sm);
-    padding: var(--space-6);
-    transition: all var(--transition-normal);
-}
-
-.org-card:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
-}
-
-.org-card-header {
-    display: flex;
-    align-items: center;
-    gap: var(--space-4);
-    margin-bottom: var(--space-4);
-}
-
-.org-card-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: var(--radius-xl);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: var(--font-size-2xl);
-}
-
-.org-card-name {
-    font-size: var(--font-size-lg);
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: var(--space-1);
-}
-
-.org-card-description {
-    color: var(--text-secondary);
-    font-size: var(--font-size-sm);
-    margin-bottom: var(--space-2);
-}
-
-.status-badge {
-    padding: var(--space-1) var(--space-2);
-    border-radius: var(--radius-full);
-    font-size: var(--font-size-xs);
-    font-weight: 500;
-}
-
-.status-badge.active {
-    background: var(--success-light);
-    color: var(--success);
-}
-
-.status-badge.inactive {
-    background: var(--danger-light);
-    color: var(--danger);
-}
-
-.org-card-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-4);
-    margin-bottom: var(--space-4);
-}
-
-.stat-item {
-    text-align: center;
-}
-
-.stat-label {
-    display: block;
-    font-size: var(--font-size-xs);
-    color: var(--text-secondary);
-    margin-bottom: var(--space-1);
-}
-
-.stat-value {
-    display: block;
-    font-size: var(--font-size-xl);
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.org-card-actions {
-    display: flex;
-    gap: var(--space-2);
+    margin-bottom: var(--space-lg);
 }
 
 /* Responsive Design */
@@ -656,17 +476,18 @@
     .page-header-content {
         flex-direction: column;
         text-align: center;
-        gap: var(--space-4);
+        gap: var(--space-md);
     }
     
     .controls-section {
         flex-direction: column;
-        gap: var(--space-4);
+        gap: var(--space-md);
     }
     
     .search-filters {
         width: 100%;
         justify-content: space-between;
+        flex-wrap: wrap;
     }
     
     .search-input {
@@ -680,7 +501,7 @@
     .org-content {
         flex-direction: column;
         align-items: flex-start;
-        gap: var(--space-3);
+        gap: var(--space-md);
     }
     
     .org-status {
@@ -689,41 +510,4 @@
     }
 }
 </style>
-
-<script>
-// View toggle functionality
-document.querySelectorAll('.view-toggle').forEach(toggle => {
-    toggle.addEventListener('click', (e) => {
-        const view = e.target.dataset.view;
-        
-        // Update active toggle
-        document.querySelectorAll('.view-toggle').forEach(t => t.classList.remove('active'));
-        e.target.classList.add('active');
-        
-        // Show/hide views
-        document.querySelectorAll('#hierarchy-view, #grid-view').forEach(view => {
-            view.classList.add('hidden');
-        });
-        
-        if (view === 'hierarchy') {
-            document.getElementById('hierarchy-view').classList.remove('hidden');
-        } else if (view === 'grid') {
-            document.getElementById('grid-view').classList.remove('hidden');
-        }
-    });
-});
-
-// Organization expansion toggle
-document.querySelectorAll('.expand-toggle').forEach(toggle => {
-    toggle.addEventListener('click', (e) => {
-        const button = e.target;
-        if (button.textContent === '▼') {
-            button.textContent = '▶';
-        } else {
-            button.textContent = '▼';
-        }
-        // Here you would implement the actual expand/collapse logic
-    });
-});
-</script>
 {% endblock %} 
