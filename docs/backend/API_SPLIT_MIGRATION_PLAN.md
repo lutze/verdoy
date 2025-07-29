@@ -199,7 +199,8 @@ backend/app/routers/
 - [Step 2] Migrated and refactored projects endpoints into `api/api_projects.py` and `web/web_projects.py`.
 - [Step 2] Migrated and refactored organizations endpoints into `api/api_organizations.py` and `web/web_organizations.py`.
 - [Step 2] Registered new API and Web routers in `main.py` for all split resources.
-- [Step 3] Implemented strict authentication separation: API endpoints require JWT/Bearer token, web endpoints require session cookie. All new routers updated to use the correct dependency. 
+- [Step 3] Implemented strict authentication separation: API endpoints require JWT/Bearer token, web endpoints require session cookie. All new routers updated to use the correct dependency.
+- [Step 4] Completed project CRUD implementation with full Create, Read, Update, Archive operations, form processing, and mobile navigation support.
 
 ---
 
@@ -209,6 +210,7 @@ backend/app/routers/
 - Eliminated all `accepts_json` and dual return logic from the codebase; all endpoints are now strictly API or web.
 - All API endpoints now always return JSON (using Pydantic models or dicts).
 - All web endpoints now always return `TemplateResponse`/`RedirectResponse` and have `include_in_schema=False`.
+- Completed project CRUD implementation with comprehensive form processing, validation, and mobile navigation support.
 - Step 4 is fully complete.
 
 ## Semantic Changelog

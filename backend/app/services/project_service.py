@@ -185,6 +185,67 @@ class ProjectService(BaseService[Project]):
             logger.error(f"Error getting projects by user: {e}")
             return []
     
+    def update_project(self, project_id: UUID, project_data: ProjectUpdate, updated_by: Optional[UUID] = None) -> Project:
+        """
+        Update an existing project.
+        
+        Args:
+            project_id: Project ID
+            project_data: Project update data
+            updated_by: User ID who updated the project
+            
+        Returns:
+            Updated project
+            
+        Raises:
+            NotFoundException: If project not found
+            ValidationException: If data validation fails
+            ServiceException: If update fails
+        """
+        start_time = datetime.utcnow()
+        
+        try:
+            # Get existing project
+            project = self.get_by_id_or_raise(project_id)
+            
+            # Validate update data
+            self.validate_project_update_data(project_data)
+            
+            # Update project fields
+            update_fields = {}
+            for field, value in project_data.dict(exclude_unset=True).items():
+                if hasattr(project, field):
+                    setattr(project, field, value)
+                    update_fields[field] = value
+            
+            # Update timestamps
+            project.updated_at = datetime.utcnow()
+            
+            # Save to database
+            self.db.commit()
+            self.db.refresh(project)
+            
+            # Audit log
+            self.audit_log("project_updated", project_id, {
+                "updated_fields": list(update_fields.keys()),
+                "updated_by": str(updated_by) if updated_by else "system"
+            })
+            
+            # Performance monitoring
+            self.performance_monitor("project_update", start_time)
+            
+            logger.info(f"Project updated successfully: {project.name}")
+            return project
+            
+        except IntegrityError as e:
+            self.db.rollback()
+            logger.error(f"Database integrity error during project update: {e}")
+            raise ServiceException("Failed to update project due to data conflict")
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error during project update: {e}")
+            raise ServiceException("Failed to update project")
+
     def update_project_progress(self, project_id: UUID, progress_percentage: int) -> Project:
         """
         Update project progress percentage.
@@ -378,5 +439,45 @@ class ProjectService(BaseService[Project]):
         
         if not (0 <= project_data.progress_percentage <= 100):
             raise ValidationException("Progress percentage must be between 0 and 100")
+        
+        return True
+
+    def validate_project_update_data(self, project_data: ProjectUpdate) -> bool:
+        """
+        Validate project update data.
+        
+        Args:
+            project_data: Project update data
+            
+        Returns:
+            True if data is valid
+            
+        Raises:
+            ValidationException: If data validation fails
+        """
+        if project_data.name is not None:
+            if not project_data.name:
+                raise ValidationException("Project name cannot be empty")
+            
+            if len(project_data.name) < 2:
+                raise ValidationException("Project name must be at least 2 characters long")
+            
+            if len(project_data.name) > 255:
+                raise ValidationException("Project name must be less than 255 characters")
+        
+        if project_data.description is not None and len(project_data.description) > 2000:
+            raise ValidationException("Project description must be less than 2000 characters")
+        
+        if project_data.start_date and project_data.end_date:
+            if project_data.end_date < project_data.start_date:
+                raise ValidationException("End date must be after start date")
+        
+        if project_data.start_date and project_data.expected_completion:
+            if project_data.expected_completion < project_data.start_date:
+                raise ValidationException("Expected completion must be after start date")
+        
+        if project_data.progress_percentage is not None:
+            if not (0 <= project_data.progress_percentage <= 100):
+                raise ValidationException("Progress percentage must be between 0 and 100")
         
         return True 

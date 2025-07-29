@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <nav class="text-sm text-gray-600 mb-4">
+            <a href="{{ url_for('web_projects.list_projects_page') }}" class="hover:text-blue-600">Projects</a>
+            <span class="mx-2">/</span>
+            <a href="{{ url_for('web_projects.project_detail_page', project_id=project.id) }}" class="hover:text-blue-600">{{ project.name }}</a>
+            <span class="mx-2">/</span>
+            <span class="text-gray-900">Edit</span>
+        </nav>
+        
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Edit Project</h1>
+                <p class="text-gray-600">Update project information and settings</p>
+            </div>
+            <div class="flex space-x-3">
+                <a href="{{ url_for('web_projects.project_detail_page', project_id=project.id) }}" 
+                   class="btn btn-secondary">
+                    Cancel
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Form -->
+    <div class="bg-white rounded-lg shadow-lg border border-gray-200">
+        <form method="POST" action="{{ url_for('web_projects.project_update', project_id=project.id) }}" class="p-6">
+            <!-- Basic Information -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Basic Information
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Project Name *</label>
+                        <input type="text" 
+                               id="name" 
+                               name="name" 
+                               value="{{ project.name }}"
+                               class="form-input w-full" 
+                               required>
+                        {% if form_errors and form_errors.name %}
+                            <p class="text-red-600 text-sm mt-1">{{ form_errors.name }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                        <select id="status" name="status" class="form-select w-full" required>
+                            <option value="active" {% if project.status == 'active' %}selected{% endif %}>Active</option>
+                            <option value="on_hold" {% if project.status == 'on_hold' %}selected{% endif %}>On Hold</option>
+                            <option value="completed" {% if project.status == 'completed' %}selected{% endif %}>Completed</option>
+                            <option value="archived" {% if project.status == 'archived' %}selected{% endif %}>Archived</option>
+                        </select>
+                        {% if form_errors and form_errors.status %}
+                            <p class="text-red-600 text-sm mt-1">{{ form_errors.status }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea id="description" 
+                              name="description" 
+                              rows="4" 
+                              class="form-textarea w-full"
+                              placeholder="Describe the project goals, objectives, and scope...">{{ project.description or '' }}</textarea>
+                    {% if form_errors and form_errors.description %}
+                        <p class="text-red-600 text-sm mt-1">{{ form_errors.description }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Project Details -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                    Project Details
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="priority" class="block text-sm font-medium text-gray-700 mb-2">Priority *</label>
+                        <select id="priority" name="priority" class="form-select w-full" required>
+                            <option value="low" {% if project.priority == 'low' %}selected{% endif %}>Low</option>
+                            <option value="medium" {% if project.priority == 'medium' %}selected{% endif %}>Medium</option>
+                            <option value="high" {% if project.priority == 'high' %}selected{% endif %}>High</option>
+                            <option value="critical" {% if project.priority == 'critical' %}selected{% endif %}>Critical</option>
+                        </select>
+                        {% if form_errors and form_errors.priority %}
+                            <p class="text-red-600 text-sm mt-1">{{ form_errors.priority }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="budget" class="block text-sm font-medium text-gray-700 mb-2">Budget</label>
+                        <input type="text" 
+                               id="budget" 
+                               name="budget" 
+                               value="{{ project.budget or '' }}"
+                               class="form-input w-full" 
+                               placeholder="e.g., $50,000">
+                        {% if form_errors and form_errors.budget %}
+                            <p class="text-red-600 text-sm mt-1">{{ form_errors.budget }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div>
+                        <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                        <input type="date" 
+                               id="start_date" 
+                               name="start_date" 
+                               value="{{ project.start_date.strftime('%Y-%m-%d') if project.start_date else '' }}"
+                               class="form-input w-full">
+                        {% if form_errors and form_errors.start_date %}
+                            <p class="text-red-600 text-sm mt-1">{{ form_errors.start_date }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                        <input type="date" 
+                               id="end_date" 
+                               name="end_date" 
+                               value="{{ project.end_date.strftime('%Y-%m-%d') if project.end_date else '' }}"
+                               class="form-input w-full">
+                        {% if form_errors and form_errors.end_date %}
+                            <p class="text-red-600 text-sm mt-1">{{ form_errors.end_date }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div>
+                        <label for="expected_completion" class="block text-sm font-medium text-gray-700 mb-2">Expected Completion</label>
+                        <input type="date" 
+                               id="expected_completion" 
+                               name="expected_completion" 
+                               value="{{ project.expected_completion.strftime('%Y-%m-%d') if project.expected_completion else '' }}"
+                               class="form-input w-full">
+                        {% if form_errors and form_errors.expected_completion %}
+                            <p class="text-red-600 text-sm mt-1">{{ form_errors.expected_completion }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div>
+                        <label for="progress_percentage" class="block text-sm font-medium text-gray-700 mb-2">Progress (%)</label>
+                        <input type="number" 
+                               id="progress_percentage" 
+                               name="progress_percentage" 
+                               value="{{ project.progress_percentage }}"
+                               min="0" 
+                               max="100" 
+                               class="form-input w-full">
+                        {% if form_errors and form_errors.progress_percentage %}
+                            <p class="text-red-600 text-sm mt-1">{{ form_errors.progress_percentage }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Settings -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    Project Settings
+                </h2>
+                
+                <div>
+                    <label for="tags" class="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+                    <input type="text" 
+                           id="tags" 
+                           name="tags" 
+                           value="{{ (project.tags or []) | join(', ') }}"
+                           class="form-input w-full" 
+                           placeholder="Enter tags separated by commas">
+                    <p class="text-sm text-gray-500 mt-1">Separate tags with commas (e.g., research, optimization, pH)</p>
+                    {% if form_errors and form_errors.tags %}
+                        <p class="text-red-600 text-sm mt-1">{{ form_errors.tags }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                <div class="flex space-x-3">
+                    <button type="submit" class="btn btn-primary">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Update Project
+                    </button>
+                    <a href="{{ url_for('web_projects.project_detail_page', project_id=project.id) }}" 
+                       class="btn btn-secondary">
+                        Cancel
+                    </a>
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button type="button" 
+                            onclick="if(confirm('Are you sure you want to archive this project?')) { document.getElementById('archive-form').submit(); }"
+                            class="btn btn-danger">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-14 0h14"></path>
+                        </svg>
+                        Archive Project
+                    </button>
+                </div>
+            </div>
+        </form>
+        
+        <!-- Archive Form (Hidden) -->
+        <form id="archive-form" method="POST" action="{{ url_for('web_projects.project_archive', project_id=project.id) }}" class="hidden">
+        </form>
+    </div>
+</div>
+{% endblock %} 

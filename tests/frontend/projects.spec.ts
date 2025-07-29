@@ -18,13 +18,13 @@ test.describe('Project Management', () => {
       // Check for main elements
       await expect(page.locator('h1')).toContainText('Projects');
       await expect(page.locator('text=Manage your research projects')).toBeVisible();
-      await expect(page.locator('a[href="/app/projects/create"]')).toBeVisible();
+      await expect(page.locator('a[href="/app/projects/create"]').first()).toBeVisible();
     });
 
     test('should display create project button', async ({ page }) => {
       await page.goto('/app/projects');
       
-      const createButton = page.locator('a[href="/app/projects/create"]');
+      const createButton = page.locator('a[href="/app/projects/create"]').first();
       await expect(createButton).toBeVisible();
       await expect(createButton).toContainText('Create Project');
     });
@@ -35,7 +35,7 @@ test.describe('Project Management', () => {
       // Check for filter form
       await expect(page.locator('select[name="organization_id"]')).toBeVisible();
       await expect(page.locator('select[name="status"]')).toBeVisible();
-      await expect(page.locator('button[type="submit"]')).toContainText('Filter');
+      await expect(page.locator('form[method="get"] button[type="submit"]')).toContainText('Filter');
     });
 
     test('should display empty state when no projects exist', async ({ page }) => {
@@ -56,7 +56,7 @@ test.describe('Project Management', () => {
       
       // Basic functionality should still work
       await expect(page.locator('h1')).toContainText('Projects');
-      await expect(page.locator('form')).toBeVisible(); // Filter form
+      await expect(page.locator('form[method="get"]')).toBeVisible(); // Filter form
     });
 
     test('should be responsive on mobile', async ({ page }) => {
@@ -64,7 +64,7 @@ test.describe('Project Management', () => {
       await page.goto('/app/projects');
       
       await expect(page.locator('h1')).toBeVisible();
-      await expect(page.locator('a[href="/app/projects/create"]')).toBeVisible();
+      await expect(page.locator('a[href="/app/projects/create"]').first()).toBeVisible();
     });
   });
 
@@ -123,8 +123,8 @@ test.describe('Project Management', () => {
     test('should show cancel and submit buttons', async ({ page }) => {
       await page.goto('/app/projects/create');
       
-      await expect(page.locator('a[href="/app/projects"]')).toContainText('Cancel');
-      await expect(page.locator('button[type="submit"]')).toContainText('Create Project');
+      await expect(page.locator('a[href="/app/projects"]:has-text("Cancel")')).toContainText('Cancel');
+      await expect(page.locator('form[action="/app/projects/create"] button[type="submit"]')).toContainText('Create Project');
     });
 
     test('should work without JavaScript', async ({ page, context }) => {
@@ -133,9 +133,9 @@ test.describe('Project Management', () => {
       await page.goto('/app/projects/create');
       
       // Form should still be functional
-      await expect(page.locator('form')).toBeVisible();
+      await expect(page.locator('form[action="/app/projects/create"]')).toBeVisible();
       await expect(page.locator('input[name="name"]')).toBeVisible();
-      await expect(page.locator('button[type="submit"]')).toBeVisible();
+      await expect(page.locator('form[action="/app/projects/create"] button[type="submit"]')).toBeVisible();
     });
 
     test('should be responsive on mobile', async ({ page }) => {
@@ -143,14 +143,14 @@ test.describe('Project Management', () => {
       await page.goto('/app/projects/create');
       
       await expect(page.locator('h1')).toBeVisible();
-      await expect(page.locator('form')).toBeVisible();
+      await expect(page.locator('form[action="/app/projects/create"]')).toBeVisible();
     });
 
     test('should handle form submission with missing required fields', async ({ page }) => {
       await page.goto('/app/projects/create');
       
-      // Try to submit without required fields
-      await page.click('button[type="submit"]');
+      // Try to submit without required fields - target the specific form submit button
+      await page.click('form[action="/app/projects/create"] button[type="submit"]');
       
       // Should show validation errors (browser validation)
       const nameInput = page.locator('input[name="name"]');
@@ -162,8 +162,16 @@ test.describe('Project Management', () => {
     test('should have project link in main navigation', async ({ page }) => {
       await page.goto('/app/dashboard');
       
-      // Check for projects link in navbar
-      const projectsLink = page.locator('nav a[href="/app/projects"]');
+      // For mobile, we might need to open the mobile menu first
+      const isMobile = await page.evaluate(() => window.innerWidth < 768);
+      if (isMobile) {
+        // Open mobile menu
+        await page.click('.navbar-toggle');
+        await page.waitForSelector('.navbar-menu.mobile-open');
+      }
+      
+      // Check for projects link in navbar - target the specific nav link
+      const projectsLink = page.locator('nav a[href="/app/projects"]').first();
       await expect(projectsLink).toBeVisible();
       await expect(projectsLink).toContainText('Projects');
     });
@@ -171,8 +179,8 @@ test.describe('Project Management', () => {
     test('should have project quick action on dashboard', async ({ page }) => {
       await page.goto('/app/dashboard');
       
-      // Check for projects quick action
-      const projectsAction = page.locator('a[href="/app/projects"]');
+      // Check for projects quick action - target the dashboard action card
+      const projectsAction = page.locator('.action-card a[href="/app/projects"]').first();
       await expect(projectsAction).toBeVisible();
       
       // Should have project icon and description
@@ -184,16 +192,29 @@ test.describe('Project Management', () => {
       // Start from dashboard
       await page.goto('/app/dashboard');
       
-      // Navigate to projects
-      await page.click('a[href="/app/projects"]');
+      // For mobile, we might need to open the mobile menu first
+      const isMobile = await page.evaluate(() => window.innerWidth < 768);
+      if (isMobile) {
+        // Open mobile menu
+        await page.click('.navbar-toggle');
+        await page.waitForSelector('.navbar-menu.mobile-open');
+      }
+      
+      // Navigate to projects - target the navbar link
+      await page.click('nav a[href="/app/projects"]');
       await expect(page).toHaveURL('/app/projects');
       
-      // Navigate to create project
-      await page.click('a[href="/app/projects/create"]');
+      // Navigate to create project - target the specific create button
+      await page.locator('a[href="/app/projects/create"]').first().click();
       await expect(page).toHaveURL('/app/projects/create');
       
-      // Navigate back to projects list
-      await page.click('a[href="/app/projects"]');
+      // Navigate back to projects list - target the navbar link
+      if (isMobile) {
+        // Open mobile menu again
+        await page.click('.navbar-toggle');
+        await page.waitForSelector('.navbar-menu.mobile-open');
+      }
+      await page.click('nav a[href="/app/projects"]');
       await expect(page).toHaveURL('/app/projects');
     });
   });
@@ -231,7 +252,7 @@ test.describe('Project Management', () => {
       
       // Fill form with invalid data and submit
       await page.fill('input[name="name"]', ''); // Empty name
-      await page.click('button[type="submit"]');
+      await page.click('form[action="/app/projects/create"] button[type="submit"]');
       
       // Should show validation feedback
       const nameInput = page.locator('input[name="name"]');
@@ -268,7 +289,7 @@ test.describe('Project Management', () => {
       await page.keyboard.press('Tab');
       
       // Create button should be focusable
-      const createButton = page.locator('a[href="/app/projects/create"]');
+      const createButton = page.locator('a[href="/app/projects/create"]').first();
       await expect(createButton).toBeVisible();
     });
   });

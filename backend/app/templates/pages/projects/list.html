@@ -4,27 +4,36 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-8">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-900">Projects</h1>
-            <p class="text-gray-600 mt-2">Manage your research projects and experiments</p>
+    <!-- Enhanced Page Header -->
+    <div class="page-header mb-8">
+        <div class="page-header-content">
+            <div>
+                <h1 class="page-title">Projects</h1>
+                <p class="page-subtitle">Manage your research projects and experiments</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary">
+                    📈 Analytics
+                </button>
+                <button class="btn btn-secondary">
+                    📋 Templates
+                </button>
+                <a href="/app/projects/create" class="btn btn-primary">
+                    ➕ New Project
+                </a>
+            </div>
         </div>
-        <a href="/app/projects/create" 
-           class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-            </svg>
-            Create Project
-        </a>
     </div>
 
-    <!-- Filters -->
-    <div class="bg-white rounded-lg shadow border border-gray-200 p-4 mb-6">
-        <form method="get" class="flex gap-4 items-end">
-            <div class="flex-1">
-                <label for="organization_id" class="block text-sm font-medium text-gray-700 mb-1">Organization</label>
-                <select name="organization_id" id="organization_id" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+    <!-- Enhanced Controls -->
+    <form method="get" class="controls-section mb-6">
+        <div class="controls-content">
+            <div class="search-filters">
+                <div class="search-box">
+                    <div class="search-icon">🔍</div>
+                    <input type="text" class="search-input" placeholder="Search projects..." name="search" value="{{ selected_search or '' }}">
+                </div>
+                <select name="organization_id" class="filter-select">
                     <option value="">All Organizations</option>
                     {% for org in organizations %}
                     <option value="{{ org.id }}" {% if selected_organization and selected_organization.id == org.id %}selected{% endif %}>
@@ -32,157 +41,715 @@
                     </option>
                     {% endfor %}
                 </select>
-            </div>
-            <div class="flex-1">
-                <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select name="status" id="status" class="w-full px-3 py-2 border border-gray-300 rounded-md">
-                    <option value="">All Statuses</option>
+                <select name="status" class="filter-select">
+                    <option value="">All Status</option>
                     <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="planning" {% if selected_status == 'planning' %}selected{% endif %}>Planning</option>
                     <option value="on_hold" {% if selected_status == 'on_hold' %}selected{% endif %}>On Hold</option>
                     <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>Completed</option>
                     <option value="archived" {% if selected_status == 'archived' %}selected{% endif %}>Archived</option>
                 </select>
+                <select name="priority" class="filter-select">
+                    <option value="">All Priorities</option>
+                    <option value="critical" {% if selected_priority == 'critical' %}selected{% endif %}>Critical</option>
+                    <option value="high" {% if selected_priority == 'high' %}selected{% endif %}>High</option>
+                    <option value="medium" {% if selected_priority == 'medium' %}selected{% endif %}>Medium</option>
+                    <option value="low" {% if selected_priority == 'low' %}selected{% endif %}>Low</option>
+                </select>
+                <button type="submit" class="btn btn-primary">
+                    Filter
+                </button>
             </div>
-            <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md font-medium transition-colors">
-                Filter
-            </button>
-        </form>
-    </div>
+            <div class="view-toggles">
+                <button type="button" class="view-toggle active" id="grid-view" title="Grid View">⚏</button>
+                <button type="button" class="view-toggle" id="list-view" title="List View">☰</button>
+            </div>
+        </div>
+    </form>
 
     <!-- Error Message -->
     {% if error %}
-    <div class="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
-        <p class="text-red-700">{{ error }}</p>
+    <div class="alert alert-error mb-6">
+        <p>{{ error }}</p>
     </div>
     {% endif %}
 
-    <!-- Projects Grid -->
+    <!-- Projects Grid View -->
     {% if projects %}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="projects-grid" id="projects-grid">
         {% for project in projects %}
-        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200">
-            <!-- Project Header -->
-            <div class="p-6 border-b border-gray-100">
-                <div class="flex items-start justify-between">
-                    <div class="flex-1">
-                        <h3 class="text-xl font-semibold text-gray-900 mb-2">{{ project.name }}</h3>
-                        {% if project.description %}
-                        <p class="text-gray-600 text-sm mb-3">{{ project.description }}</p>
-                        {% endif %}
-                        <div class="flex items-center space-x-4 text-sm text-gray-500">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                       {% if project.status == 'active' %}bg-green-100 text-green-800
-                                       {% elif project.status == 'on_hold' %}bg-yellow-100 text-yellow-800
-                                       {% elif project.status == 'completed' %}bg-blue-100 text-blue-800
-                                       {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                {{ project.status|replace('_', ' ')|title }}
-                            </span>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                       {% if project.priority == 'critical' %}bg-red-100 text-red-800
-                                       {% elif project.priority == 'high' %}bg-orange-100 text-orange-800
-                                       {% elif project.priority == 'medium' %}bg-yellow-100 text-yellow-800
-                                       {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                {{ project.priority|title }}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                      d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                            </svg>
-                        </div>
-                    </div>
+        <div class="project-card">
+            <div class="project-header">
+                <div class="project-status status-{{ project.status }}">
+                    ● {{ project.status|replace('_', ' ')|title }}
                 </div>
-            </div>
-
-            <!-- Project Progress -->
-            <div class="p-6">
-                <div class="mb-4">
-                    <div class="flex justify-between text-sm font-medium mb-1">
+                <div class="project-org">{{ project.organization.name if project.organization else 'No Organization' }}</div>
+                <h3 class="project-name">{{ project.name }}</h3>
+                {% if project.description %}
+                <p class="project-description">{{ project.description }}</p>
+                {% endif %}
+                <div class="project-progress">
+                    <div class="progress-label">
                         <span>Progress</span>
                         <span>{{ project.progress_percentage }}%</span>
                     </div>
-                                         <div class="w-full bg-gray-200 rounded-full h-2">
-                         <div class="bg-blue-600 h-2 rounded-full progress-bar" data-progress="{{ project.progress_percentage }}"></div>
-                     </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ project.progress_percentage }}%"></div>
+                    </div>
                 </div>
-
-                <!-- Project Timeline -->
-                {% if project.expected_completion %}
-                <div class="text-sm text-gray-600 mb-4">
-                    <span class="font-medium">Due:</span> {{ project.expected_completion.strftime('%b %d, %Y') }}
-                    {% if project.is_overdue %}
-                    <span class="text-red-600 font-medium">(Overdue)</span>
-                    {% endif %}
+            </div>
+            
+            <div class="project-stats">
+                <div class="stat">
+                    <span class="stat-number">{{ project.experiment_count|default(0) }}</span>
+                    <span class="stat-label">Experiments</span>
                 </div>
-                {% endif %}
-
-                <!-- Project Tags -->
-                {% if project.tags %}
-                <div class="flex flex-wrap gap-1 mb-4">
-                    {% for tag in project.tags[:3] %}
-                    <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800">
-                        {{ tag }}
-                    </span>
-                    {% endfor %}
-                    {% if project.tags|length > 3 %}
-                    <span class="text-xs text-gray-500">+{{ project.tags|length - 3 }} more</span>
-                    {% endif %}
+                <div class="stat">
+                    <span class="stat-number">{{ project.bioreactor_count|default(0) }}</span>
+                    <span class="stat-label">Bioreactors</span>
                 </div>
-                {% endif %}
-
-                <!-- Actions -->
-                <div class="flex space-x-2">
-                    <a href="/app/projects/{{ project.id }}" 
-                       class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-3 rounded-md text-sm font-medium transition-colors">
-                        View Details
-                    </a>
-                    <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-md transition-colors">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                  d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
-                        </svg>
-                    </button>
+                <div class="stat">
+                    <span class="stat-number">{{ project.member_count|default(0) }}</span>
+                    <span class="stat-label">Members</span>
+                </div>
+            </div>
+            
+            <div class="project-footer">
+                <div class="project-team">
+                    <span class="team-label">Team:</span>
+                    <div class="team-avatars">
+                        {% for member in project.members[:3] %}
+                        <div class="avatar bg-{{ ['green', 'blue', 'purple', 'pink']|random }}">
+                            {{ member.name[:2]|upper if member.name else 'U' }}
+                        </div>
+                        {% endfor %}
+                        {% if project.members|length > 3 %}
+                        <div class="avatar bg-gray">+{{ project.members|length - 3 }}</div>
+                        {% endif %}
+                        {% if not project.members %}
+                        <div class="avatar bg-gray">0</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="project-actions">
+                    <a href="/app/projects/{{ project.id }}" class="action-btn" title="View Details">👁️</a>
+                    <a href="/app/projects/{{ project.id }}/edit" class="action-btn" title="Edit">✏️</a>
+                    <a href="/app/projects/{{ project.id }}/experiments" class="action-btn" title="Experiments">🧪</a>
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
+
+    <!-- Projects List View -->
+    <div class="projects-list" id="projects-list" style="display: none;">
+        <div class="list-header">
+            <div>Project Name</div>
+            <div>Organization</div>
+            <div>Status</div>
+            <div>Progress</div>
+            <div>Team</div>
+            <div>Actions</div>
+        </div>
+        {% for project in projects %}
+        <div class="project-row">
+            <div class="project-info">
+                <strong>{{ project.name }}</strong>
+                {% if project.description %}
+                <br>
+                <small class="project-desc">{{ project.description[:50] }}{% if project.description|length > 50 %}...{% endif %}</small>
+                {% endif %}
+            </div>
+            <div>{{ project.organization.name if project.organization else 'No Organization' }}</div>
+            <div><span class="status-{{ project.status }}">● {{ project.status|replace('_', ' ')|title }}</span></div>
+            <div>{{ project.progress_percentage }}%</div>
+            <div>{{ project.member_count|default(0) }} members</div>
+            <div class="project-actions">
+                <a href="/app/projects/{{ project.id }}" class="action-btn" title="View">👁️</a>
+                <a href="/app/projects/{{ project.id }}/edit" class="action-btn" title="Edit">✏️</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
     {% else %}
-    <!-- Empty State -->
-    <div class="text-center py-12">
-        <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <!-- Enhanced Empty State -->
+    <div class="empty-state">
+        <div class="empty-icon">
+            <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                       d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
             </svg>
         </div>
-        <h3 class="text-xl font-semibold text-gray-900 mb-2">No projects yet</h3>
-        <p class="text-gray-600 mb-6">Create your first project to get started with organizing your research and experiments.</p>
-        <a href="/app/projects/create" 
-           class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">
+        <h3 class="empty-title">No projects yet</h3>
+        <p class="empty-description">Create your first project to get started with organizing your research and experiments.</p>
+        <a href="/app/projects/create" class="btn btn-primary">
             Create Project
         </a>
-         </div>
-     {% endif %}
- </div>
+    </div>
+    {% endif %}
+</div>
 
- <style>
- .progress-bar {
-     transition: width 0.3s ease;
- }
- </style>
+<style>
+/* Enhanced Page Header */
+.page-header {
+    background: linear-gradient(135deg, var(--secondary), var(--primary));
+    border-radius: var(--radius-xl);
+    position: relative;
+    overflow: hidden;
+    padding: var(--space-8);
+    margin-bottom: var(--space-8);
+}
 
- <script>
- // Set progress bar widths
- document.addEventListener('DOMContentLoaded', function() {
-     document.querySelectorAll('.progress-bar').forEach(bar => {
-         const progress = bar.getAttribute('data-progress');
-         bar.style.width = progress + '%';
-     });
- });
- </script>
+.page-header::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+}
 
- {% endblock %} 
+.page-header::after {
+    content: '';
+    position: absolute;
+    bottom: -30px;
+    left: -30px;
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+.page-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 10;
+}
+
+.page-title {
+    color: var(--text-inverse);
+    font-size: var(--font-size-4xl);
+    font-weight: 700;
+    margin-bottom: var(--space-2);
+}
+
+.page-subtitle {
+    color: rgba(255,255,255,0.9);
+    font-size: var(--font-size-lg);
+    font-weight: 400;
+}
+
+.header-actions {
+    display: flex;
+    gap: var(--space-4);
+}
+
+/* Enhanced Controls */
+.controls-section {
+    background: var(--bg-elevated);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    padding: var(--space-6);
+    margin-bottom: var(--space-6);
+    border: 1px solid var(--border-light);
+}
+
+.controls-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.search-filters {
+    display: flex;
+    gap: var(--space-4);
+    align-items: center;
+}
+
+.search-box {
+    position: relative;
+}
+
+.search-input {
+    padding: var(--space-3) var(--space-4) var(--space-3) var(--space-10);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-lg);
+    width: 300px;
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(106, 255, 147, 0.1);
+}
+
+.search-icon {
+    position: absolute;
+    left: var(--space-3);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-tertiary);
+}
+
+.filter-select {
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-lg);
+    background: var(--bg-primary);
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(106, 255, 147, 0.1);
+}
+
+.view-toggles {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.view-toggle {
+    padding: var(--space-2);
+    border: 1px solid var(--border-medium);
+    background: var(--bg-primary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    font-size: var(--font-size-lg);
+}
+
+.view-toggle.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--text-inverse);
+}
+
+.view-toggle:hover {
+    border-color: var(--primary);
+}
+
+/* Enhanced Project Cards */
+.projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: var(--space-6);
+}
+
+.project-card {
+    background: var(--bg-elevated);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    transition: all var(--transition-normal);
+    border: 1px solid var(--border-light);
+}
+
+.project-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary);
+}
+
+.project-header {
+    padding: var(--space-6);
+    position: relative;
+}
+
+.project-status {
+    position: absolute;
+    top: var(--space-4);
+    right: var(--space-4);
+    padding: var(--space-1) var(--space-3);
+    border-radius: 20px;
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+}
+
+.status-active {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.status-planning {
+    background: var(--warning-light);
+    color: var(--warning);
+}
+
+.status-completed {
+    background: var(--info-light);
+    color: var(--info);
+}
+
+.status-on_hold {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+.status-archived {
+    background: var(--bg-tertiary);
+    color: var(--text-tertiary);
+}
+
+.project-org {
+    color: var(--text-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    margin-bottom: var(--space-2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.project-name {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.project-description {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+    margin-bottom: var(--space-4);
+}
+
+.project-progress {
+    margin-bottom: var(--space-4);
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+}
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--bg-tertiary);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    transition: width 0.3s ease;
+}
+
+.project-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-6);
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-light);
+}
+
+.stat {
+    text-align: center;
+}
+
+.stat-number {
+    display: block;
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.stat-label {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.project-footer {
+    padding: var(--space-4) var(--space-6);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.project-team {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.team-label {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+}
+
+.team-avatars {
+    display: flex;
+    margin-left: var(--space-2);
+}
+
+.avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-primary);
+    margin-left: -8px;
+    font-size: var(--font-size-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.avatar:first-child {
+    margin-left: 0;
+}
+
+.avatar.bg-green {
+    background: var(--primary);
+    color: var(--text-inverse);
+}
+
+.avatar.bg-blue {
+    background: var(--info);
+    color: var(--text-inverse);
+}
+
+.avatar.bg-purple {
+    background: #a78bfa;
+    color: var(--text-inverse);
+}
+
+.avatar.bg-pink {
+    background: #f472b6;
+    color: var(--text-inverse);
+}
+
+.avatar.bg-gray {
+    background: var(--text-tertiary);
+    color: var(--text-inverse);
+}
+
+.project-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.action-btn {
+    padding: var(--space-2);
+    border: 1px solid var(--border-medium);
+    background: var(--bg-primary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    color: var(--text-secondary);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-1px);
+}
+
+/* List View */
+.projects-list {
+    background: var(--bg-elevated);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    border: 1px solid var(--border-light);
+}
+
+.list-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 120px 120px 100px 80px;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-6);
+    background: var(--bg-secondary);
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.project-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 120px 120px 100px 80px;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-6);
+    border-bottom: 1px solid var(--border-light);
+    align-items: center;
+    transition: all var(--transition-normal);
+}
+
+.project-row:hover {
+    background: var(--bg-secondary);
+}
+
+.project-info strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.project-desc {
+    color: var(--text-secondary);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: var(--space-16) var(--space-8);
+}
+
+.empty-icon {
+    width: 96px;
+    height: 96px;
+    background: var(--bg-secondary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--space-6);
+    color: var(--text-tertiary);
+}
+
+.empty-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.empty-description {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-6);
+    font-size: var(--font-size-lg);
+}
+
+/* Alert Styles */
+.alert {
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-6);
+}
+
+.alert-error {
+    background: var(--danger-light);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-header-content {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-4);
+    }
+    
+    .controls-content {
+        flex-direction: column;
+        gap: var(--space-4);
+    }
+    
+    .search-filters {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+    
+    .search-input {
+        width: 200px;
+    }
+    
+    .projects-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .project-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .list-header,
+    .project-row {
+        grid-template-columns: 1fr;
+        gap: var(--space-2);
+    }
+    
+    .list-header {
+        display: none;
+    }
+    
+    .project-row {
+        padding: var(--space-4);
+        border-bottom: 1px solid var(--border-light);
+    }
+}
+
+@media (max-width: 480px) {
+    .search-filters {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .search-input {
+        width: 100%;
+    }
+    
+    .filter-select {
+        width: 100%;
+    }
+    
+    .header-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+// View toggle functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const gridView = document.getElementById('grid-view');
+    const listView = document.getElementById('list-view');
+    const projectsGrid = document.getElementById('projects-grid');
+    const projectsList = document.getElementById('projects-list');
+
+    if (gridView && listView && projectsGrid && projectsList) {
+        gridView.addEventListener('click', () => {
+            gridView.classList.add('active');
+            listView.classList.remove('active');
+            projectsGrid.style.display = 'grid';
+            projectsList.style.display = 'none';
+        });
+
+        listView.addEventListener('click', () => {
+            listView.classList.add('active');
+            gridView.classList.remove('active');
+            projectsGrid.style.display = 'none';
+            projectsList.style.display = 'block';
+        });
+    }
+});
+</script>
+{% endblock %} 

@@ -67,6 +67,7 @@ backend/
 │   │   ├── reading.py         # Sensor readings model
 │   │   ├── alert.py           # Alerts and rules model
 │   │   ├── organization.py    # Organization model
+│   │   ├── project.py         # Project model
 │   │   ├── billing.py         # Billing model
 │   │   └── command.py         # Device commands model
 │   ├── schemas/               # Pydantic validation schemas
@@ -76,6 +77,7 @@ backend/
 │   │   ├── reading.py        # Reading schemas
 │   │   ├── alert.py          # Alert schemas
 │   │   ├── organization.py   # Organization schemas
+│   │   ├── project.py        # Project schemas
 │   │   ├── billing.py        # Billing schemas
 │   │   └── command.py        # Command schemas
 │   ├── services/             # Business logic layer
@@ -85,6 +87,7 @@ backend/
 │   │   ├── reading_service.py # Data processing service
 │   │   ├── alert_service.py # Alert management service
 │   │   ├── organization_service.py # Organization service
+│   │   ├── project_service.py # Project service
 │   │   ├── billing_service.py # Billing service
 │   │   ├── command_service.py # Command service
 │   │   ├── analytics_service.py # Analytics service

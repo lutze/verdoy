@@ -18,7 +18,7 @@
     </div>
 
     <!-- Error Message -->
-    {% if error %}
+    {% if form_errors and form_errors.general %}
     <div class="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
         <div class="flex">
             <div class="flex-shrink-0">
@@ -27,7 +27,7 @@
                 </svg>
             </div>
             <div class="ml-3">
-                <p class="text-sm text-red-700">{{ error }}</p>
+                <p class="text-sm text-red-700">{{ form_errors.general }}</p>
             </div>
         </div>
     </div>
