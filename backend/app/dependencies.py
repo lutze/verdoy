@@ -458,7 +458,7 @@ def get_web_user(
         if user_id is None:
             raise CredentialsException()
         from .models.user import User
-        user = db.query(User).options(joinedload(User.entity)).filter(User.id == user_id).first()
+        user = db.query(User).filter(User.id == user_id).first()
         if user is None:
             raise CredentialsException()
         return user

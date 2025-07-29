@@ -7,9 +7,9 @@
     <!-- Header -->
     <div class="mb-8">
         <nav class="text-sm text-gray-600 mb-4">
-            <a href="{{ url_for('web_projects.list_projects_page') }}" class="hover:text-blue-600">Projects</a>
+            <a href="/app/projects" class="hover:text-blue-600">Projects</a>
             <span class="mx-2">/</span>
-            <a href="{{ url_for('web_projects.project_detail_page', project_id=project.id) }}" class="hover:text-blue-600">{{ project.name }}</a>
+            <a href="/app/projects/{{ project.id }}" class="hover:text-blue-600">{{ project.name }}</a>
             <span class="mx-2">/</span>
             <span class="text-gray-900">Edit</span>
         </nav>
@@ -20,7 +20,7 @@
                 <p class="text-gray-600">Update project information and settings</p>
             </div>
             <div class="flex space-x-3">
-                <a href="{{ url_for('web_projects.project_detail_page', project_id=project.id) }}" 
+                <a href="/app/projects/{{ project.id }}" 
                    class="btn btn-secondary">
                     Cancel
                 </a>
@@ -30,7 +30,7 @@
 
     <!-- Edit Form -->
     <div class="bg-white rounded-lg shadow-lg border border-gray-200">
-        <form method="POST" action="{{ url_for('web_projects.project_update', project_id=project.id) }}" class="p-6">
+        <form method="POST" action="/app/projects/{{ project.id }}/update" class="p-6">
             <!-- Basic Information -->
             <div class="mb-8">
                 <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
@@ -207,7 +207,7 @@
                         </svg>
                         Update Project
                     </button>
-                    <a href="{{ url_for('web_projects.project_detail_page', project_id=project.id) }}" 
+                    <a href="/app/projects/{{ project.id }}" 
                        class="btn btn-secondary">
                         Cancel
                     </a>
@@ -227,7 +227,7 @@
         </form>
         
         <!-- Archive Form (Hidden) -->
-        <form id="archive-form" method="POST" action="{{ url_for('web_projects.project_archive', project_id=project.id) }}" class="hidden">
+        <form id="archive-form" method="POST" action="/app/projects/{{ project.id }}/archive" class="hidden">
         </form>
     </div>
 </div>

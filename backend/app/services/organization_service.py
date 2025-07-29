@@ -153,15 +153,15 @@ class OrganizationService(BaseService[Organization]):
             # Verify organization exists
             organization = self.get_by_id_or_raise(organization_id)
             
-            # Add user to organization by updating user's entity
+            # Add user to organization by updating user's organization_id
             user = self.db.query(User).filter(User.id == user_id).first()
-            if user and user.entity:
-                user.entity.organization_id = organization_id
-                # Store role in entity properties
-                if not user.entity.properties:
-                    user.entity.properties = {}
-                user.entity.properties['organization_role'] = role
-                user.entity.properties['organization_joined_at'] = datetime.utcnow().isoformat()
+            if user:
+                user.organization_id = organization_id
+                # Store role in user properties
+                if not user.properties:
+                    user.properties = {}
+                user.properties['organization_role'] = role
+                user.properties['organization_joined_at'] = datetime.utcnow().isoformat()
             
             self.db.commit()
             
@@ -205,14 +205,14 @@ class OrganizationService(BaseService[Organization]):
             # Verify organization exists
             organization = self.get_by_id_or_raise(organization_id)
             
-            # Remove user from organization by updating user's entity
+            # Remove user from organization by updating user's organization_id
             user = self.db.query(User).filter(User.id == user_id).first()
-            if user and user.entity and user.entity.organization_id == organization_id:
-                user.entity.organization_id = None
+            if user and user.organization_id == organization_id:
+                user.organization_id = None
                 # Remove organization-related properties
-                if user.entity.properties:
-                    user.entity.properties.pop('organization_role', None)
-                    user.entity.properties.pop('organization_joined_at', None)
+                if user.properties:
+                    user.properties.pop('organization_role', None)
+                    user.properties.pop('organization_joined_at', None)
                 
                 self.db.commit()
                 
@@ -245,14 +245,16 @@ class OrganizationService(BaseService[Organization]):
             List of users in the organization
         """
         try:
-            # Get users through their entity's organization_id
-            query = self.db.query(User).join(Entity).filter(
-                Entity.organization_id == organization_id
+            # Get users through their organization_id
+            query = self.db.query(User).filter(
+                User.organization_id == organization_id
             )
             
             if role:
-                # Filter by role stored in entity properties
-                query = query.filter(Entity.properties['organization_role'].astext == role)
+                # Filter by role stored in user properties
+                # Use Python filtering instead of JSONB operators to avoid SQLAlchemy issues
+                users = query.all()
+                return [user for user in users if user.get_property('organization_role') == role]
             
             users = query.all()
             logger.debug(f"Retrieved {len(users)} users for organization {organization_id}")
@@ -273,14 +275,14 @@ class OrganizationService(BaseService[Organization]):
             List of organizations the user belongs to
         """
         try:
-            # Get user's entity and find organizations through organization_id
+            # Get user and find organizations through organization_id
             user = self.db.query(User).filter(User.id == user_id).first()
-            if not user or not user.entity or not user.entity.organization_id:
+            if not user or not user.organization_id:
                 return []
             
             # Get the organization the user belongs to
             organization = self.db.query(Organization).filter(
-                Organization.id == user.entity.organization_id
+                Organization.id == user.organization_id
             ).first()
             
             organizations = [organization] if organization else []

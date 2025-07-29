@@ -7,75 +7,199 @@ and help with organization, permissions, and data management.
 """
 
 from datetime import datetime
-from sqlalchemy import Column, String, Text, DateTime, Boolean, ForeignKey, Integer
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
+from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import relationship
-from uuid import uuid4
+from uuid import UUID
 
-from .base import BaseModel
-from ..database import JSONType
+from .entity import Entity
 
 
-class Project(BaseModel):
+class Project(Entity):
     """
     Project model for organizing laboratory work and experiments.
     
-    Projects provide:
-    - Organization and structure for related experiments
-    - Collaboration boundaries and permissions
-    - Resource allocation and tracking
-    - Progress monitoring and reporting
-    - Data organization and archival
+    Maps to the entities table with entity_type = 'project'
+    and stores project-specific fields in the properties JSONB column.
     """
     
-    __tablename__ = "projects"
+    __mapper_args__ = {
+        'polymorphic_identity': 'project',
+    }
     
-    # Project inherits from entities table - name and description are in entities
-    # id is the foreign key to entities table
+    def __init__(self, *args, **kwargs):
+        # Set default entity_type for projects
+        if 'entity_type' not in kwargs:
+            kwargs['entity_type'] = 'project'
+        super().__init__(*args, **kwargs)
     
-    # Organization relationship
-    organization_id = Column(PostgresUUID(as_uuid=True), ForeignKey("entities.id"), nullable=False, index=True)
+    # Project-specific property accessors
+    @property
+    def start_date(self) -> Optional[datetime]:
+        """Get project start date from properties."""
+        start_date_str = self.get_property('start_date')
+        if start_date_str:
+            return datetime.fromisoformat(start_date_str)
+        return None
     
-    # Project status and lifecycle
-    status = Column(String(50), default="active", nullable=False, index=True)  # active, on_hold, completed, archived
-    priority = Column(String(20), default="medium", nullable=False)  # low, medium, high, critical
-    
-    # Project timeline
-    start_date = Column(DateTime, nullable=True)
-    end_date = Column(DateTime, nullable=True)
-    expected_completion = Column(DateTime, nullable=True)
-    actual_completion = Column(DateTime, nullable=True)
-    
-    # Project management
-    project_lead_id = Column(PostgresUUID(as_uuid=True), ForeignKey("entities.id"), nullable=True, index=True)
-    budget = Column(String(100), nullable=True)  # Stored as string for flexibility with currencies
-    progress_percentage = Column(Integer, default=0, nullable=False)
-    
-    # Project metadata and configuration
-    tags = Column(JSONType, default=list, nullable=False)  # List of tags for categorization
-    project_metadata = Column(JSONType, default=dict, nullable=False)  # Additional metadata
-    settings = Column(JSONType, default=dict, nullable=False)  # Project-specific settings
-    
-    # Relationships
-    organization = relationship("Entity", foreign_keys=[organization_id])
-    project_lead = relationship("Entity", foreign_keys=[project_lead_id])
-    entity = relationship("Entity", foreign_keys=[BaseModel.id])  # Link to entity for name/description
-    # experiments = relationship("Experiment", back_populates="project")  # Will be added when Experiment model exists
-    # members = relationship("ProjectMember", back_populates="project")  # For project team management
-    
-    def __repr__(self):
-        return f"<Project(id={self.id}, name='{self.entity.name if self.entity else 'Unknown'}', status='{self.status}')>"
+    @start_date.setter
+    def start_date(self, value: Optional[datetime]):
+        """Set project start date in properties."""
+        if value:
+            self.set_property('start_date', value.isoformat())
+        else:
+            self.set_property('start_date', None)
     
     @property
-    def name(self) -> str:
-        """Get project name from associated entity."""
-        return self.entity.name if self.entity else "Unknown"
+    def end_date(self) -> Optional[datetime]:
+        """Get project end date from properties."""
+        end_date_str = self.get_property('end_date')
+        if end_date_str:
+            return datetime.fromisoformat(end_date_str)
+        return None
+    
+    @end_date.setter
+    def end_date(self, value: Optional[datetime]):
+        """Set project end date in properties."""
+        if value:
+            self.set_property('end_date', value.isoformat())
+        else:
+            self.set_property('end_date', None)
     
     @property
-    def description(self) -> str:
-        """Get project description from associated entity."""
-        return self.entity.description if self.entity else ""
+    def expected_completion(self) -> Optional[datetime]:
+        """Get expected completion date from properties."""
+        completion_str = self.get_property('expected_completion')
+        if completion_str:
+            return datetime.fromisoformat(completion_str)
+        return None
     
+    @expected_completion.setter
+    def expected_completion(self, value: Optional[datetime]):
+        """Set expected completion date in properties."""
+        if value:
+            self.set_property('expected_completion', value.isoformat())
+        else:
+            self.set_property('expected_completion', None)
+    
+    @property
+    def actual_completion(self) -> Optional[datetime]:
+        """Get actual completion date from properties."""
+        completion_str = self.get_property('actual_completion')
+        if completion_str:
+            return datetime.fromisoformat(completion_str)
+        return None
+    
+    @actual_completion.setter
+    def actual_completion(self, value: Optional[datetime]):
+        """Set actual completion date in properties."""
+        if value:
+            self.set_property('actual_completion', value.isoformat())
+        else:
+            self.set_property('actual_completion', None)
+    
+    @property
+    def budget(self) -> Optional[str]:
+        """Get project budget from properties."""
+        return self.get_property('budget')
+    
+    @budget.setter
+    def budget(self, value: Optional[str]):
+        """Set project budget in properties."""
+        self.set_property('budget', value)
+    
+    @property
+    def progress_percentage(self) -> int:
+        """Get project progress percentage from properties."""
+        return self.get_property('progress_percentage', 0)
+    
+    @progress_percentage.setter
+    def progress_percentage(self, value: int):
+        """Set project progress percentage in properties."""
+        self.set_property('progress_percentage', value)
+    
+    @property
+    def tags(self) -> List[str]:
+        """Get project tags from properties."""
+        return self.get_property('tags', [])
+    
+    @tags.setter
+    def tags(self, value: List[str]):
+        """Set project tags in properties."""
+        self.set_property('tags', value)
+    
+    @property
+    def project_metadata(self) -> Dict[str, Any]:
+        """Get project metadata from properties."""
+        return self.get_property('project_metadata', {})
+    
+    @project_metadata.setter
+    def project_metadata(self, value: Dict[str, Any]):
+        """Set project metadata in properties."""
+        self.set_property('project_metadata', value)
+    
+    @property
+    def settings(self) -> Dict[str, Any]:
+        """Get project settings from properties."""
+        return self.get_property('settings', {})
+    
+    @settings.setter
+    def settings(self, value: Dict[str, Any]):
+        """Set project settings in properties."""
+        self.set_property('settings', value)
+    
+    # Note: organization_id is inherited from Entity base class
+    # and stored in the actual database column, not in properties
+    
+    @property
+    def project_lead_id(self) -> Optional[UUID]:
+        """Get project lead ID from properties."""
+        lead_id_str = self.get_property('project_lead_id')
+        if lead_id_str:
+            return UUID(lead_id_str)
+        return None
+    
+    @project_lead_id.setter
+    def project_lead_id(self, value: Optional[UUID]):
+        """Set project lead ID in properties."""
+        if value:
+            self.set_property('project_lead_id', str(value))
+        else:
+            self.set_property('project_lead_id', None)
+    
+    @property
+    def priority(self) -> str:
+        """Get project priority from properties."""
+        return self.get_property('priority', 'medium')
+    
+    @priority.setter
+    def priority(self, value: str):
+        """Set project priority in properties."""
+        self.set_property('priority', value)
+    
+    @property
+    def members(self) -> List[Any]:
+        """
+        Get project team members.
+        
+        TODO: Implement proper project-member relationship.
+        For now, returns empty list as placeholder.
+        """
+        # TODO: Implement proper relationship with User model
+        # This should query a project_members junction table
+        return []
+    
+    @property
+    def member_count(self) -> int:
+        """
+        Get count of project team members.
+        
+        TODO: Implement proper project-member relationship.
+        For now, returns 0 as placeholder.
+        """
+        # TODO: Implement proper count from project_members table
+        return 0
+    
+    # Business logic methods
     @property
     def is_active(self) -> bool:
         """Check if project is currently active."""
@@ -111,15 +235,17 @@ class Project(BaseModel):
     
     def add_tag(self, tag: str):
         """Add a tag to the project."""
-        if not self.tags:
-            self.tags = []
-        if tag not in self.tags:
-            self.tags = self.tags + [tag]
+        current_tags = self.tags
+        if tag not in current_tags:
+            current_tags.append(tag)
+            self.tags = current_tags
     
     def remove_tag(self, tag: str):
         """Remove a tag from the project."""
-        if self.tags and tag in self.tags:
-            self.tags = [t for t in self.tags if t != tag]
+        current_tags = self.tags
+        if tag in current_tags:
+            current_tags.remove(tag)
+            self.tags = current_tags
     
     def to_dict(self):
         """Convert project to dictionary representation."""
@@ -127,7 +253,7 @@ class Project(BaseModel):
             "id": str(self.id),
             "name": self.name,
             "description": self.description,
-            "organization_id": str(self.organization_id),
+            "organization_id": str(self.organization_id) if self.organization_id else None,
             "status": self.status,
             "priority": self.priority,
             "start_date": self.start_date.isoformat() if self.start_date else None,
@@ -137,9 +263,9 @@ class Project(BaseModel):
             "project_lead_id": str(self.project_lead_id) if self.project_lead_id else None,
             "budget": self.budget,
             "progress_percentage": self.progress_percentage,
-            "tags": self.tags or [],
-            "project_metadata": self.project_metadata or {},
-            "settings": self.settings or {},
+            "tags": self.tags,
+            "project_metadata": self.project_metadata,
+            "settings": self.settings,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
             "is_active": self.is_active,

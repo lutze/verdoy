@@ -52,7 +52,7 @@ async def get_readings(
     Supports filtering by device, sensor type, time range, and organization.
     """
     # Get user's organization
-    organization_id = current_user.entity.organization_id if current_user.entity else None
+    organization_id = current_user.organization_id
     
     # Get readings with filters
     readings = Reading.get_readings(
@@ -99,7 +99,7 @@ async def get_latest_readings(
     Returns the most recent sensor readings from all devices or a specific device.
     """
     # Get user's organization
-    organization_id = current_user.entity.organization_id if current_user.entity else None
+    organization_id = current_user.organization_id
     
     # Get latest readings
     readings = Reading.get_latest_readings(
@@ -130,7 +130,7 @@ async def get_reading_stats(
     averages, min/max values, and data quality metrics.
     """
     # Get user's organization
-    organization_id = current_user.entity.organization_id if current_user.entity else None
+    organization_id = current_user.organization_id
     
     # Get statistics
     stats = Reading.get_reading_stats(
@@ -170,7 +170,7 @@ async def get_reading_aggregation(
         raise ValidationException(detail=f"Invalid aggregation type. Must be one of: {valid_types}")
     
     # Get user's organization
-    organization_id = current_user.entity.organization_id if current_user.entity else None
+    organization_id = current_user.organization_id
     
     # Get aggregated data
     aggregation = Reading.get_aggregated_readings(
@@ -207,7 +207,7 @@ async def export_readings(
     Returns a download link or initiates a background export job.
     """
     # Get user's organization
-    organization_id = current_user.entity.organization_id if current_user.entity else None
+    organization_id = current_user.organization_id
     
     # Validate export format
     valid_formats = ["csv", "json", "excel"]
@@ -240,7 +240,7 @@ async def get_data_quality(
     and consistency metrics for sensor readings.
     """
     # Get user's organization
-    organization_id = current_user.entity.organization_id if current_user.entity else None
+    organization_id = current_user.organization_id
     
     # Get quality metrics
     quality_metrics = Reading.get_data_quality(
@@ -272,7 +272,7 @@ async def get_reading_trends(
     trend direction, and seasonal patterns.
     """
     # Get user's organization
-    organization_id = current_user.entity.organization_id if current_user.entity else None
+    organization_id = current_user.organization_id
     
     # Validate trend period
     valid_periods = ["1d", "7d", "30d", "90d"]
@@ -357,7 +357,7 @@ async def bulk_delete_readings(
     This action cannot be undone.
     """
     # Get user's organization
-    organization_id = current_user.entity.organization_id if current_user.entity else None
+    organization_id = current_user.organization_id
     
     # Validate that at least one filter is provided
     if not any([device_id, sensor_type, start_time, end_time]):

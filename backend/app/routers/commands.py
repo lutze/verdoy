@@ -58,7 +58,7 @@ async def list_commands(
     Returns a paginated list of commands with filtering options.
     """
     # Get user's organization
-    organization_id = current_user.entity.organization_id if current_user.entity else None
+    organization_id = current_user.organization_id
     
     # Get commands with filters
     commands = Command.get_commands(
@@ -101,7 +101,7 @@ async def create_command(
     Queues a command for execution on one or more devices.
     """
     # Get user's organization
-    organization_id = current_user.entity.organization_id if current_user.entity else None
+    organization_id = current_user.organization_id
     
     # Create command
     command = Command.create_command(
@@ -542,7 +542,7 @@ async def create_bulk_commands(
     Queues the same command for multiple devices simultaneously.
     """
     # Get user's organization
-    organization_id = current_user.entity.organization_id if current_user.entity else None
+    organization_id = current_user.organization_id
     
     # Create bulk commands
     commands = Command.create_bulk_commands(

@@ -98,12 +98,23 @@ async def project_detail_page(
     db: Session = Depends(get_db)
 ):
     project_service = ProjectService(db)
+    org_service = OrganizationService(db)
+    
     project = project_service.get_by_id(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Fetch organization data
+    organization = None
+    if project.organization_id:
+        organization = org_service.get_by_id(project.organization_id)
+    
     return templates.TemplateResponse(
         "pages/projects/detail.html",
         {
             "request": request,
             "project": project,
+            "organization": organization,
             "current_user": current_user,
             "page_title": project.name if project else "Project Detail"
         }
@@ -146,6 +157,17 @@ async def project_create(
     db: Session = Depends(get_db)
 ):
     """Create a new project."""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # Debug logging
+    logger.info(f"Project creation form data:")
+    logger.info(f"  name: {name}")
+    logger.info(f"  description: {description}")
+    logger.info(f"  organization_id: {organization_id}")
+    logger.info(f"  status: {status}")
+    logger.info(f"  priority: {priority}")
+    
     project_service = ProjectService(db)
     org_service = OrganizationService(db)
     
@@ -175,6 +197,9 @@ async def project_create(
         # Validate organization access
         user_organizations = org_service.get_user_organizations(current_user.id)
         org_ids = [str(org.id) for org in user_organizations]
+        logger.info(f"User organizations: {org_ids}")
+        logger.info(f"Requested organization: {str(organization_id)}")
+        
         if str(organization_id) not in org_ids:
             raise HTTPException(status_code=403, detail="Access denied to organization")
         
@@ -182,12 +207,15 @@ async def project_create(
         project_create_data = ProjectCreate(**form_data)
         project = project_service.create_project(project_create_data, current_user.id)
         
+        logger.info(f"Project created successfully: {project.name} with organization_id: {project.organization_id}")
+        
         return RedirectResponse(
             url=f"/app/projects/{project.id}",
             status_code=302
         )
         
     except Exception as e:
+        logger.error(f"Error creating project: {e}")
         # Get organizations for form re-render
         organizations = org_service.get_user_organizations(current_user.id)
         

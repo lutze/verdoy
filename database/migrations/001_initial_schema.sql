@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS events (
 SELECT create_hypertable('events', 'timestamp', chunk_time_interval => INTERVAL '1 day');
 
 -- Entities table: Current state of all "things" in the digital twin
+-- Pure entity approach: All entities stored here with specialized fields in properties JSONB
 CREATE TABLE IF NOT EXISTS entities (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     entity_type VARCHAR(100) NOT NULL,
@@ -23,6 +24,7 @@ CREATE TABLE IF NOT EXISTS entities (
     description TEXT,
     properties JSONB NOT NULL DEFAULT '{}',
     status VARCHAR(50) DEFAULT 'active',
+    organization_id UUID, -- Self-reference for organization membership
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     is_active BOOLEAN NOT NULL DEFAULT TRUE
@@ -87,29 +89,15 @@ CREATE TABLE IF NOT EXISTS process_instances (
     results JSONB DEFAULT '{}'
 );
 
--- Projects table: Project-specific fields, inheriting from entities
-CREATE TABLE IF NOT EXISTS projects (
-    id UUID PRIMARY KEY REFERENCES entities(id) ON DELETE CASCADE, -- Inherits from entities
-    organization_id UUID NOT NULL REFERENCES entities(id), -- Organization entity
-    project_lead_id UUID REFERENCES entities(id), -- User entity as project lead
-    status VARCHAR(50) DEFAULT 'active',
-    priority VARCHAR(20) DEFAULT 'medium',
-    start_date DATE,
-    end_date DATE,
-    expected_completion DATE,
-    actual_completion DATE,
-    budget VARCHAR(100),
-    progress_percentage INTEGER DEFAULT 0,
-    tags JSONB DEFAULT '[]', -- List of tags
-    project_metadata JSONB DEFAULT '{}', -- Project-specific metadata
-    settings JSONB DEFAULT '{}', -- Project-specific settings
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT fk_project_organization FOREIGN KEY (organization_id) REFERENCES entities(id),
-    CONSTRAINT fk_project_lead FOREIGN KEY (project_lead_id) REFERENCES entities(id)
-);
+-- Add foreign key constraint for organization_id
+ALTER TABLE entities ADD CONSTRAINT fk_entities_organization 
+    FOREIGN KEY (organization_id) REFERENCES entities(id);
 
--- Indexes for project queries
-CREATE INDEX IF NOT EXISTS idx_projects_organization ON projects(organization_id);
-CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
-CREATE INDEX IF NOT EXISTS idx_projects_lead ON projects(project_lead_id);
+-- Indexes for entity queries
+CREATE INDEX IF NOT EXISTS idx_entities_type ON entities(entity_type);
+CREATE INDEX IF NOT EXISTS idx_entities_organization ON entities(organization_id);
+CREATE INDEX IF NOT EXISTS idx_entities_status ON entities(status);
+CREATE INDEX IF NOT EXISTS idx_entities_active ON entities(is_active);
+CREATE INDEX IF NOT EXISTS idx_entities_properties_gin ON entities USING GIN (properties);
+CREATE INDEX IF NOT EXISTS idx_entities_type_org ON entities(entity_type, organization_id);
+CREATE INDEX IF NOT EXISTS idx_entities_type_status ON entities(entity_type, status);

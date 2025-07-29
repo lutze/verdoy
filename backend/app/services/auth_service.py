@@ -52,7 +52,7 @@ class AuthService(BaseService[User]):
     
     def register_user(self, user_data: UserCreate) -> User:
         """
-        Register a new user account.
+        Register a new user account using pure entity approach.
         
         Args:
             user_data: User registration data
@@ -75,32 +75,15 @@ class AuthService(BaseService[User]):
             if self.user_exists_by_email(user_data.email):
                 raise UserAlreadyExistsException(f"User with email {user_data.email} already exists")
             
-            # Create user with hashed password
-            hashed_password = User.hash_password(user_data.password)
-            
-            # Create associated entity for user profile first
-            user_entity = Entity(
-                entity_type='user',
+            # Create user using pure entity approach
+            user = User(
                 name=user_data.name,
                 description=f"User profile for {user_data.email}",
-                organization_id=user_data.organization_id,
-                properties={
-                    'email': user_data.email,
-                    'user_type': 'standard'
-                }
-            )
-            
-            # Save entity first to get the ID
-            self.db.add(user_entity)
-            self.db.flush()  # Flush to get the entity ID
-            
-            # Create user record with entity_id reference
-            user = User(
-                entity_id=user_entity.id,
                 email=user_data.email,
-                hashed_password=hashed_password,
-                is_active=True,
-                is_superuser=False
+                hashed_password=User.hash_password(user_data.password),
+                is_superuser=user_data.is_superuser or False,
+                organization_id=user_data.organization_id,
+                status="active"
             )
             
             # Save user and commit
@@ -190,8 +173,8 @@ class AuthService(BaseService[User]):
                 "user": {
                     "id": user.id,
                     "email": user.email,
-                    "name": user.entity.name if user.entity else "Unknown",
-                    "organization_id": user.entity.organization_id if user.entity else None,
+                    "name": user.name,
+                    "organization_id": user.organization_id,
                     "is_active": user.is_active,
                     "created_at": user.created_at
                 }
@@ -246,8 +229,8 @@ class AuthService(BaseService[User]):
                 "user": {
                     "id": user.id,
                     "email": user.email,
-                    "name": user.entity.name if user.entity else "Unknown",
-                    "organization_id": user.entity.organization_id if user.entity else None,
+                    "name": user.name,
+                    "organization_id": user.organization_id,
                     "is_active": user.is_active,
                     "created_at": user.created_at
                 }
@@ -282,13 +265,18 @@ class AuthService(BaseService[User]):
             # Validate update data
             self.validate_update_data(user_data)
             
-            # Update user entity if name is provided
-            if user_data.name and user.entity:
-                user.entity.name = user_data.name
-                user.entity.last_updated = datetime.utcnow()
+            # Update user name if provided
+            if user_data.name:
+                user.name = user_data.name
+                user.updated_at = datetime.utcnow()
             
-            # Update password if provided
-            if user_data.password:
+            # Update organization_id if provided
+            if user_data.organization_id is not None:  # Allow setting to None to remove from organization
+                user.organization_id = user_data.organization_id
+                user.updated_at = datetime.utcnow()
+            
+            # Update password if provided (only if password field exists in schema)
+            if hasattr(user_data, 'password') and user_data.password:
                 user.hashed_password = User.hash_password(user_data.password)
             
             # Save changes
@@ -444,7 +432,7 @@ class AuthService(BaseService[User]):
             User if found, None otherwise
         """
         try:
-            return self.db.query(User).filter(User.email == email).first()
+            return User.get_by_email(self.db, email)
         except Exception as e:
             logger.error(f"Error getting user by email: {e}")
             return None
@@ -460,7 +448,7 @@ class AuthService(BaseService[User]):
             True if user exists, False otherwise
         """
         try:
-            return self.db.query(User).filter(User.email == email).first() is not None
+            return User.get_by_email(self.db, email) is not None
         except Exception as e:
             logger.error(f"Error checking user existence by email: {e}")
             return False
@@ -505,7 +493,8 @@ class AuthService(BaseService[User]):
         Raises:
             ValidationException: If data validation fails
         """
-        if user_data.password and len(user_data.password) < 8:
+        # Only validate password if the field exists and has a value
+        if hasattr(user_data, 'password') and user_data.password and len(user_data.password) < 8:
             raise ValidationException("Password must be at least 8 characters long")
         
         return True
@@ -542,13 +531,21 @@ class AuthService(BaseService[User]):
             Dictionary containing user statistics
         """
         try:
-            total_users = self.db.query(User).count()
-            active_users = self.db.query(User).filter(User.is_active == True).count()
-            inactive_users = self.db.query(User).filter(User.is_active == False).count()
+            # Query users using entity_type filter
+            total_users = self.db.query(User).filter(User.entity_type == "user").count()
+            active_users = self.db.query(User).filter(
+                User.entity_type == "user",
+                User.is_active == True
+            ).count()
+            inactive_users = self.db.query(User).filter(
+                User.entity_type == "user",
+                User.is_active == False
+            ).count()
             
             # Get users created in last 30 days
             thirty_days_ago = datetime.utcnow() - timedelta(days=30)
             new_users = self.db.query(User).filter(
+                User.entity_type == "user",
                 User.created_at >= thirty_days_ago
             ).count()
             

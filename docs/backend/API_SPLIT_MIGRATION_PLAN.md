@@ -88,6 +88,13 @@ This document details the plan to refactor the backend so that:
 - [Step 2] Migrated and refactored organizations endpoints into `api/api_organizations.py` and `web/web_organizations.py`.
 - [Step 2] Registered new API and Web routers in `main.py` for all split resources.
 - [Step 3] Implemented strict authentication separation: API endpoints require JWT/Bearer token, web endpoints require session cookie. All new routers updated to use the correct dependency.
+- [Step 4] Completed project CRUD implementation with full Create, Read, Update, Archive operations, form processing, and mobile navigation support.
+- [Step 4] Removed old dual-purpose routers (`auth.py`, `dashboard.py`, `projects.py`, `organizations.py`) from `backend/app/routers/`.
+- [Step 4] Eliminated all `accepts_json` and dual return logic from the codebase; all endpoints are now strictly API or web.
+- [Step 4] Verified all API endpoints return JSON and all web endpoints return HTML with `include_in_schema=False`. Step 4 is complete.
+- [Step 5] Reviewed and updated all navigation links and forms to use `/app/` endpoints. Step 5 is complete.
+- [Step 6] Updated all Playwright tests to only test `/app/` routes. Documented main issues and next steps. API test updates and dual-purpose endpoint cleanup are still pending.
+- [Step 7] **COMPLETED** - Router Layer Consistency Review: Removed all `user.entity` references, updated database query patterns, and ensured pure entity approach consistency across all routers and services. Backend restart successful with no mapper errors. 
 
 ---
 
@@ -201,6 +208,12 @@ backend/app/routers/
 - [Step 2] Registered new API and Web routers in `main.py` for all split resources.
 - [Step 3] Implemented strict authentication separation: API endpoints require JWT/Bearer token, web endpoints require session cookie. All new routers updated to use the correct dependency.
 - [Step 4] Completed project CRUD implementation with full Create, Read, Update, Archive operations, form processing, and mobile navigation support.
+- [Step 4] Removed old dual-purpose routers (`auth.py`, `dashboard.py`, `projects.py`, `organizations.py`) from `backend/app/routers/`.
+- [Step 4] Eliminated all `accepts_json` and dual return logic from the codebase; all endpoints are now strictly API or web.
+- [Step 4] Verified all API endpoints return JSON and all web endpoints return HTML with `include_in_schema=False`. Step 4 is complete.
+- [Step 5] Reviewed and updated all navigation links and forms to use `/app/` endpoints. Step 5 is complete.
+- [Step 6] Updated all Playwright tests to only test `/app/` routes. Documented main issues and next steps. API test updates and dual-purpose endpoint cleanup are still pending.
+- [Step 7] **COMPLETED** - Router Layer Consistency Review: Removed all `user.entity` references, updated database query patterns, and ensured pure entity approach consistency across all routers and services. Backend restart successful with no mapper errors. 
 
 ---
 
@@ -245,6 +258,32 @@ backend/app/routers/
 - See `FRONTEND_TESTING_STRATEGY.md` for a detailed "To improve" section and action items.
 - API tests and dual-purpose endpoint cleanup are still pending.
 
-## Semantic Changelog
+## Step 7 Progress (Router Layer Consistency Review - COMPLETED 21 July 2025)
 
-- [Step 6] Updated all Playwright tests to only test `/app/` routes. Documented main issues and next steps. API test updates and dual-purpose endpoint cleanup are still pending. 
+- ✅ **Comprehensive Router Review**: Completed thorough review of all router files to ensure consistency with pure entity approach
+- ✅ **Entity Reference Cleanup**: Removed all `user.entity` and `current_user.entity` references across all routers
+- ✅ **Direct Property Access**: Updated all routers to use direct property access (e.g., `user.organization_id` instead of `user.entity.organization_id`)
+- ✅ **Database Query Patterns**: Updated routers to use consistent query patterns with User model class methods
+- ✅ **Service Layer Updates**: Updated `OrganizationService` and `AuthService` to work with pure entity approach
+- ✅ **Backend Restart**: Successfully restarted backend with all changes applied, confirming no SQLAlchemy mapper errors
+
+### **Router Files Updated**
+- ✅ `backend/app/routers/web/web_auth.py` - Updated entity references and organization assignment
+- ✅ `backend/app/routers/api/api_auth.py` - Updated user queries and response formatting
+- ✅ `backend/app/routers/web/web_dashboard.py` - Updated user name access
+- ✅ `backend/app/routers/api/api_dashboard.py` - Updated user name access
+- ✅ `backend/app/routers/readings.py` - Updated organization_id access (8 occurrences)
+- ✅ `backend/app/routers/devices.py` - Updated organization_id access (2 occurrences)
+- ✅ `backend/app/routers/commands.py` - Updated organization_id access (3 occurrences)
+- ✅ `backend/app/services/organization_service.py` - Updated user entity references
+- ✅ `backend/app/services/auth_service.py` - Updated user entity references
+- ✅ `backend/app/dependencies.py` - Removed `joinedload(User.entity)` as User inherits from Entity
+
+### **Key Improvements**
+- **Consistent Architecture**: All routers now treat User as inheriting from Entity
+- **Clean Code**: No more separate `user.entity` references since User IS an Entity
+- **Database Efficiency**: Consistent use of User model class methods for queries
+- **Service Integration**: Organization and Auth services work directly with User properties
+- **Error Prevention**: Eliminated potential SQLAlchemy mapper errors from outdated relationships
+
+## Semantic Changelog 

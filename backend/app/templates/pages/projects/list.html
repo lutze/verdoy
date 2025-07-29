@@ -76,8 +76,11 @@
 
     <!-- Projects Grid View -->
     {% if projects %}
+    <!-- DEBUG: Number of projects = {{ projects|length }} -->
     <div class="projects-grid" id="projects-grid">
         {% for project in projects %}
+        <!-- DEBUG: Project type = {{ project.__class__.__name__ }} -->
+        <!-- DEBUG: Project name = {{ project.name }} -->
         <div class="project-card">
             <div class="project-header">
                 <div class="project-status status-{{ project.status }}">

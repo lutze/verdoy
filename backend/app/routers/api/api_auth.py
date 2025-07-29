@@ -48,7 +48,7 @@ async def api_register_user(
             organization_id=user_data.organization_id,
             is_active=user.is_active,
             is_superuser=user.is_superuser,
-            entity_id=user.entity.id if user.entity else user.id,
+            entity_id=user.id,
             created_at=user.created_at,
             updated_at=user.updated_at
         )
@@ -72,7 +72,7 @@ async def api_login_user(
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid JSON data")
 
-    user = db.query(User).filter(User.email == user_credentials.email).first()
+    user = User.get_by_email(db, user_credentials.email)
     if not user or not user.check_password(user_credentials.password):
         raise CredentialsException()
     if not user.is_active:
@@ -95,7 +95,7 @@ async def api_login_user(
             "user": {
                 "id": str(user.id),
                 "email": user.email,
-                "name": user.entity.name if user.entity else "Unknown User",
+                "name": user.name,
                 "is_active": user.is_active
             }
         }
@@ -116,11 +116,11 @@ async def api_profile(
     return UserResponse(
         id=current_user.id,
         email=current_user.email,
-        name=current_user.entity.name if current_user.entity else "Unknown User",
-        organization_id=current_user.entity.organization_id if current_user.entity else None,
+        name=current_user.name,
+        organization_id=current_user.organization_id,
         is_active=current_user.is_active,
         is_superuser=current_user.is_superuser,
-        entity_id=current_user.entity.id if current_user.entity else current_user.id,
+        entity_id=current_user.id,
         created_at=current_user.created_at,
         updated_at=current_user.updated_at
     ) 

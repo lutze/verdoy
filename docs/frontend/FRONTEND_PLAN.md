@@ -212,6 +212,10 @@ To ensure all frontend pages continue to load and function correctly after futur
 - [x] Organization edit page loads
 - [x] Organization archive/delete UI loads
 
+- [] An Organization can have a user assigned as the Administrator
+- [] The Administrator of an Organization can add and remove Users from the Organization's members. 
+- [] A User can be in 1 to many Organizations' member lists. 
+
 #### Project Management (COMPLETED)
 - [x] Project list and detail pages load
 - [x] Create project form is visible

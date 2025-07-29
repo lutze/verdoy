@@ -67,7 +67,7 @@ async def list_devices(
     Returns a paginated list of devices with filtering and sorting options.
     """
     # Get user's organization
-    organization_id = current_user.entity.organization_id if current_user.entity else None
+    organization_id = current_user.organization_id
     
     # Calculate pagination
     skip = (params.page - 1) * params.per_page
@@ -117,7 +117,7 @@ async def create_device(
     Registers a new device in the system with the provided configuration.
     """
     # Get user's organization
-    organization_id = current_user.entity.organization_id if current_user.entity else None
+    organization_id = current_user.organization_id
     
     # Create device
     device = Device.create_device(

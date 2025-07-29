@@ -54,7 +54,7 @@ class Device(Entity):
     @classmethod
     def get_by_device_id(cls, db, device_id: str):
         """
-        Get device by device ID (stored in properties).
+        Get device by device ID.
         
         Args:
             db: Database session
@@ -63,10 +63,12 @@ class Device(Entity):
         Returns:
             Device instance or None
         """
-        return db.query(cls).filter(
-            cls.entity_type == "device.esp32",
-            cls.properties['name'].astext == device_id
-        ).first()
+        # Get all devices and filter in Python to avoid JSONB operator issues
+        devices = db.query(cls).filter(cls.entity_type == "device.esp32").all()
+        for device in devices:
+            if device.get_property('name') == device_id:
+                return device
+        return None
     
     @classmethod
     def get_by_api_key(cls, db, api_key: str):
@@ -80,10 +82,12 @@ class Device(Entity):
         Returns:
             Device instance or None
         """
-        return db.query(cls).filter(
-            cls.entity_type == "device.esp32",
-            cls.properties['apiKey'].astext == api_key
-        ).first()
+        # Get all devices and filter in Python to avoid JSONB operator issues
+        devices = db.query(cls).filter(cls.entity_type == "device.esp32").all()
+        for device in devices:
+            if device.get_property('apiKey') == api_key:
+                return device
+        return None
     
     @classmethod
     def get_online_devices(cls, db, user_id=None, organization_id=None):
@@ -98,18 +102,20 @@ class Device(Entity):
         Returns:
             List of online device instances
         """
-        query = db.query(cls).filter(
-            cls.entity_type == "device.esp32",
-            cls.properties['status'].astext == "online"
-        )
+        # Get all devices and filter in Python to avoid JSONB operator issues
+        devices = db.query(cls).filter(cls.entity_type == "device.esp32").all()
         
+        # Filter by status
+        online_devices = [device for device in devices if device.get_property('status') == "online"]
+        
+        # Apply additional filters
         if user_id:
-            query = query.filter(cls.organization_id == user_id)
+            online_devices = [device for device in online_devices if device.organization_id == user_id]
         
         if organization_id:
-            query = query.filter(cls.organization_id == organization_id)
+            online_devices = [device for device in online_devices if device.organization_id == organization_id]
         
-        return query.all()
+        return online_devices
     
     @classmethod
     def get_user_devices(cls, db, user_id, skip: int = 0, limit: int = 100):

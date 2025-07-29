@@ -10,6 +10,8 @@ alwaysApply: false
 
 The database is a multi-modal knowledge graph + real-time streaming data store. You value rich connections between data and interoperable standards. 
 
+All first-order objects (users, organizations, projects, hardware devices, sensors, actuators, experiments, things like this) are Entities. 
+
 ## Key Design Principles
 
 1. **Single-Table Inheritance**: All entities use the same `entities` table with `entity_type` differentiation

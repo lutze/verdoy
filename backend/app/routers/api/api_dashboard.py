@@ -25,7 +25,7 @@ async def get_dashboard_data(
         "user": {
             "id": str(current_user.id),
             "email": current_user.email,
-            "name": current_user.entity.name if current_user.entity else "Unknown User",
+            "name": current_user.name,
             "is_active": current_user.is_active
         },
         "organizations": [

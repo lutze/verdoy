@@ -38,9 +38,9 @@ class Event(BaseModel):
     data = Column(JSONType, nullable=False)
     event_metadata = Column(JSONType, default={})
     
-    # Relationships
-    user_id = Column(PostgresUUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
-    user = relationship("User")
+    # Note: In pure entity approach, users are stored in entities table
+    # user_id references entities table, not a separate users table
+    user_id = Column(PostgresUUID(as_uuid=True), nullable=True)  # References entities table
     
     def get_data_value(self, key, default=None):
         """

@@ -1,3 +1,183 @@
+-- Define sample organizations using pure entity approach
+DO $$
+DECLARE
+    org1_id UUID;
+    org2_id UUID;
+BEGIN
+    -- Insert first organization if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM entities WHERE name = 'Acme Research Labs' AND entity_type = 'organization') THEN
+        INSERT INTO entities (id, entity_type, name, description, properties, status) VALUES
+        (
+            uuid_generate_v4(),
+            'organization',
+            'Acme Research Labs',
+            'Leading biotechnology research laboratory',
+            '{
+                "contact_email": "info@acmeresearch.com",
+                "contact_phone": "+1-555-1234",
+                "website": "https://acmeresearch.com",
+                "address": "123 Science Blvd",
+                "city": "Research City",
+                "state": "CA",
+                "country": "USA",
+                "postal_code": "90210",
+                "timezone": "America/Los_Angeles",
+                "member_count": 25,
+                "industry": "biotechnology",
+                "founded": "2020-01-01"
+            }'::jsonb,
+            'active'
+        ) RETURNING id INTO org1_id;
+    ELSE
+        SELECT id INTO org1_id FROM entities WHERE name = 'Acme Research Labs' AND entity_type = 'organization';
+    END IF;
+
+    -- Insert second organization if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM entities WHERE name = 'BioTech Innovations' AND entity_type = 'organization') THEN
+        INSERT INTO entities (id, entity_type, name, description, properties, status) VALUES
+        (
+            uuid_generate_v4(),
+            'organization',
+            'BioTech Innovations',
+            'Innovative biotech startup focusing on fermentation',
+            '{
+                "contact_email": "hello@biotechinnovations.com",
+                "contact_phone": "+1-555-5678",
+                "website": "https://biotechinnovations.com",
+                "address": "456 Innovation Drive",
+                "city": "Startup City",
+                "state": "CA",
+                "country": "USA",
+                "postal_code": "90211",
+                "timezone": "America/Los_Angeles",
+                "member_count": 12,
+                "industry": "biotechnology",
+                "founded": "2022-06-01"
+            }'::jsonb,
+            'active'
+        ) RETURNING id INTO org2_id;
+    ELSE
+        SELECT id INTO org2_id FROM entities WHERE name = 'BioTech Innovations' AND entity_type = 'organization';
+    END IF;
+END $$;
+
+-- Define sample projects using pure entity approach
+DO $$
+DECLARE
+    org1_id UUID;
+    org2_id UUID;
+BEGIN
+    -- Get organization IDs
+    SELECT id INTO org1_id FROM entities WHERE name = 'Acme Research Labs' AND entity_type = 'organization';
+    SELECT id INTO org2_id FROM entities WHERE name = 'BioTech Innovations' AND entity_type = 'organization';
+    
+    -- Insert sample projects if they don't exist
+    IF NOT EXISTS (SELECT 1 FROM entities WHERE name = 'Bioreactor Optimization Study' AND entity_type = 'project') THEN
+        INSERT INTO entities (id, entity_type, name, description, properties, organization_id, status) VALUES
+        (
+            uuid_generate_v4(),
+            'project',
+            'Bioreactor Optimization Study',
+            'Study to optimize bioreactor parameters for maximum yield',
+            '{
+                "start_date": "2024-01-15",
+                "end_date": "2024-06-15",
+                "expected_completion": "2024-05-15",
+                "actual_completion": null,
+                "budget": "$50,000",
+                "progress_percentage": 25,
+                "project_lead_id": null,
+                "priority": "high",
+                "tags": ["optimization", "bioreactor", "yield"],
+                "project_metadata": {
+                    "research_area": "biotechnology",
+                    "funding_source": "internal",
+                    "team_size": 5
+                },
+                "settings": {
+                    "data_retention_days": 365,
+                    "alert_thresholds": {
+                        "temperature": {"min": 20, "max": 30},
+                        "ph": {"min": 6.5, "max": 7.5}
+                    }
+                }
+            }'::jsonb,
+            org1_id,
+            'active'
+        );
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM entities WHERE name = 'Fermentation Process Development' AND entity_type = 'project') THEN
+        INSERT INTO entities (id, entity_type, name, description, properties, organization_id, status) VALUES
+        (
+            uuid_generate_v4(),
+            'project',
+            'Fermentation Process Development',
+            'Develop new fermentation processes for biofuel production',
+            '{
+                "start_date": "2024-02-01",
+                "end_date": "2024-08-01",
+                "expected_completion": "2024-07-15",
+                "actual_completion": null,
+                "budget": "$75,000",
+                "progress_percentage": 40,
+                "project_lead_id": null,
+                "priority": "medium",
+                "tags": ["fermentation", "biofuel", "process-development"],
+                "project_metadata": {
+                    "research_area": "biofuels",
+                    "funding_source": "grant",
+                    "team_size": 8
+                },
+                "settings": {
+                    "data_retention_days": 730,
+                    "alert_thresholds": {
+                        "temperature": {"min": 25, "max": 35},
+                        "pressure": {"min": 1.0, "max": 1.2}
+                    }
+                }
+            }'::jsonb,
+            org2_id,
+            'active'
+        );
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM entities WHERE name = 'Sensor Network Deployment' AND entity_type = 'project') THEN
+        INSERT INTO entities (id, entity_type, name, description, properties, organization_id, status) VALUES
+        (
+            uuid_generate_v4(),
+            'project',
+            'Sensor Network Deployment',
+            'Deploy IoT sensor network for environmental monitoring',
+            '{
+                "start_date": "2024-03-01",
+                "end_date": "2024-05-01",
+                "expected_completion": "2024-04-30",
+                "actual_completion": null,
+                "budget": "$25,000",
+                "progress_percentage": 60,
+                "project_lead_id": null,
+                "priority": "low",
+                "tags": ["iot", "sensors", "monitoring"],
+                "project_metadata": {
+                    "research_area": "iot",
+                    "funding_source": "internal",
+                    "team_size": 3
+                },
+                "settings": {
+                    "data_retention_days": 180,
+                    "alert_thresholds": {
+                        "temperature": {"min": 15, "max": 25},
+                        "humidity": {"min": 40, "max": 60}
+                    }
+                }
+            }'::jsonb,
+            org1_id,
+            'active'
+        );
+    END IF;
+END $$;
+
 -- Define your production equipment
 DO $$
 DECLARE

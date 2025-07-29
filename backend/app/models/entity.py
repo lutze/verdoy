@@ -38,8 +38,8 @@ class Entity(BaseModel):
     status = Column(String(50), default="active")
     organization_id = Column(PostgresUUID(as_uuid=True), nullable=True)
     
-    # Bi-directional one-to-one relationship to User (for user entities)
-    user = relationship("User", back_populates="entity", uselist=False, foreign_keys="User.entity_id")  # Only applies if this entity is a user
+    # Note: In pure entity approach, User and Entity are the same table
+    # No separate relationships needed since User inherits from Entity
     
     def get_property(self, key, default=None):
         """

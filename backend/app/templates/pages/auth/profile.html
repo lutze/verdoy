@@ -16,7 +16,7 @@
             <p>Update your personal information and account details</p>
         </div>
         
-        <form action="/auth/me" method="post" class="profile-form" id="profile-form">
+        <form action="/app/admin/profile" method="post" class="profile-form" id="profile-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
             <input type="hidden" name="form_type" value="profile">
             
@@ -50,15 +50,20 @@
             
             <div class="form-row">
                 <div class="form-group">
-                    <label for="organization" class="form-label">Organization</label>
-                    <input 
-                        type="text" 
-                        id="organization" 
-                        name="organization" 
-                        class="form-input" 
-                        value="{{ organization.name if organization else 'No organization' }}"
-                        readonly
+                    <label for="organization_id" class="form-label">Organization</label>
+                    <select 
+                        id="organization_id" 
+                        name="organization_id" 
+                        class="form-input"
                     >
+                        <option value="">No Organization</option>
+                        {% for org in organizations %}
+                        <option value="{{ org.id }}" {% if user.organization_id and user.organization_id == org.id %}selected{% endif %}>
+                            {{ org.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-hint">Select the organization you belong to</div>
                 </div>
                 
                 <div class="form-group">

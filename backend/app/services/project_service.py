@@ -52,7 +52,7 @@ class ProjectService(BaseService[Project]):
     
     def create_project(self, project_data: ProjectCreate, created_by: Optional[UUID] = None) -> Project:
         """
-        Create a new project.
+        Create a new project using pure entity approach.
         
         Args:
             project_data: Project creation data
@@ -88,23 +88,10 @@ class ProjectService(BaseService[Project]):
                 if not project_lead:
                     raise UserNotFoundException(f"User {project_data.project_lead_id} not found")
             
-            # Create entity record first (for name and description)
-            from ..models.entity import Entity
-            entity = Entity(
-                entity_type="project",
+            # Create project using pure entity approach
+            project = Project(
                 name=project_data.name,
                 description=project_data.description,
-                organization_id=project_data.organization_id,
-                status="active"
-            )
-            
-            # Save entity to get the ID
-            self.db.add(entity)
-            self.db.flush()  # Get the ID without committing
-            
-            # Create project record
-            project = Project(
-                id=entity.id,  # Use the same ID as the entity
                 organization_id=project_data.organization_id,
                 status=project_data.status.value,
                 priority=project_data.priority.value,
@@ -119,7 +106,7 @@ class ProjectService(BaseService[Project]):
                 settings=project_data.settings
             )
             
-            # Save project to database
+            # Save to database
             self.db.add(project)
             self.db.commit()
             self.db.refresh(project)
@@ -158,7 +145,10 @@ class ProjectService(BaseService[Project]):
             List of projects
         """
         try:
-            query = self.db.query(Project).filter(Project.organization_id == organization_id)
+            query = self.db.query(Project).filter(
+                Project.organization_id == organization_id,
+                Project.entity_type == 'project'
+            )
             
             if status:
                 query = query.filter(Project.status == status)

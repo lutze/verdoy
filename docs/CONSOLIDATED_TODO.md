@@ -139,6 +139,16 @@ Based on comparison between `API plan.md` and current `backend/app` implementati
 
 ## 🚨 Critical Issues (Fix Immediately)
 
+### ✅ **RESOLVED** - Entity Migration to Pure Entity Approach (Fixed 21 July 2025)
+- ✅ **Pure Entity Implementation**: Successfully migrated from hybrid approach (separate tables for projects, users, organizations) to pure entity approach where all entities are stored in the `entities` table with specialized fields in the `properties` JSONB column
+- ✅ **Database Schema Migration**: Updated initial migrations (`001_initial_schema.sql`, `004_initial_data.sql`, `006_add_users_table.sql`) to implement pure entity approach directly
+- ✅ **Model Layer Refactoring**: Updated `Project` and `User` models to inherit from `Entity` and use property accessors for JSONB fields
+- ✅ **Service Layer Updates**: Updated `ProjectService` and `AuthService` to work with pure entity approach
+- ✅ **Router Layer Consistency**: Completed comprehensive review and updates of all router files to ensure consistent database calls for entities
+- ✅ **Entity Reference Cleanup**: Removed all `user.entity` and `current_user.entity` references, replaced with direct property access
+- ✅ **Database Query Patterns**: Updated all routers to use consistent query patterns with User model class methods
+- ✅ **Backend Restart**: Successfully restarted backend with all changes applied, confirming no SQLAlchemy mapper errors
+
 ### ✅ **RESOLVED** - Authentication & Session Management (Fixed 21 July 2025)
 - ✅ **Dual Authentication System**: Implemented JWT Bearer tokens for API clients and HTTP-only session cookies for web browsers
 - ✅ **Session Security**: Secure cookie handling with httponly, secure, and samesite flags

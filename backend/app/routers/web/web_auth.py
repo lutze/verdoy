@@ -3,7 +3,7 @@ Web-only authentication router for /app/auth endpoints.
 Handles all HTML-based authentication for web browser clients (session/cookie auth).
 """
 
-from fastapi import APIRouter, Depends, Request, Form, HTTPException, status
+from fastapi import APIRouter, Depends, Request, Form, HTTPException, status, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -41,7 +41,7 @@ async def login_user(
             "email": email
         })
     auth_service = AuthService(db)
-    user = db.query(User).filter(User.email == email).first()
+    user = User.get_by_email(db, email)
     if not user or not user.check_password(password):
         return templates.TemplateResponse("pages/auth/login.html", {
             "request": request,
@@ -140,15 +140,14 @@ async def register_user(
                 organization_type="small_business"
             )
             organization = org_service.create_organization(org_data, user.id)
-            if user.entity:
-                user.entity.organization_id = organization.id
+            if organization:
+                user.organization_id = organization.id
                 db.commit()
                 final_organization_id = organization.id
         elif org_id:
-            if user.entity:
-                user.entity.organization_id = org_id
-                db.commit()
-                final_organization_id = org_id
+            user.organization_id = org_id
+            db.commit()
+            final_organization_id = org_id
         return RedirectResponse(
             url="/app/auth/login?message=Account created successfully! Please sign in.",
             status_code=303
@@ -175,13 +174,116 @@ async def logout_user(request: Request):
     return response
 
 @router.get("/admin/profile", response_class=HTMLResponse, include_in_schema=False)
-async def profile_page(request: Request, current_user: User = Depends(get_web_user)):
+async def profile_page(
+    request: Request, 
+    success: Optional[str] = Query(None),
+    current_user: User = Depends(get_web_user),
+    db: Session = Depends(get_db)
+):
     """Display user profile page for web browsers."""
-    # TODO: Implement actual user/profile loading
+    from ...services.organization_service import OrganizationService
+    
+    # Get user's current organization
+    organization = None
+    if current_user.organization_id:
+        org_service = OrganizationService(db)
+        organization = org_service.get_by_id(current_user.organization_id)
+    
+    # Get all available organizations for the dropdown
+    org_service = OrganizationService(db)
+    organizations = org_service.get_all_organizations()
+    
     return templates.TemplateResponse("pages/auth/profile.html", {
         "request": request,
-        "user": {"name": current_user.entity.name if current_user.entity else current_user.email, "email": current_user.email},
-        "organization": current_user.entity.organization_id if current_user.entity else None,
+        "user": current_user,
+        "organization": organization,
+        "organizations": organizations,
         "api_keys": [],
-        "current_user": current_user
-    }) 
+        "current_user": current_user,
+        "profile_errors": None,
+        "profile_success": success,
+        "password_errors": None,
+        "password_success": None
+    })
+
+@router.post("/admin/profile", response_class=HTMLResponse, include_in_schema=False)
+async def update_profile(
+    request: Request,
+    name: str = Form(...),
+    organization_id: Optional[str] = Form(None),
+    current_user: User = Depends(get_web_user),
+    db: Session = Depends(get_db)
+):
+    """Update user profile including organization membership."""
+    from ...services.auth_service import AuthService
+    from ...services.organization_service import OrganizationService
+    from ...schemas.user import UserUpdate
+    import uuid
+    
+    auth_service = AuthService(db)
+    org_service = OrganizationService(db)
+    
+    try:
+        # Parse organization_id if provided
+        org_id = None
+        if organization_id:
+            try:
+                org_id = uuid.UUID(organization_id)
+                # Verify organization exists
+                org = org_service.get_by_id(org_id)
+                if not org:
+                    raise ValueError("Selected organization does not exist")
+            except ValueError as e:
+                # Get organizations for form re-render
+                organizations = org_service.get_all_organizations()
+                organization = None
+                if current_user.organization_id:
+                    organization = org_service.get_by_id(current_user.organization_id)
+                
+                return templates.TemplateResponse("pages/auth/profile.html", {
+                    "request": request,
+                    "user": current_user,
+                    "organization": organization,
+                    "organizations": organizations,
+                    "api_keys": [],
+                    "current_user": current_user,
+                    "profile_errors": [f"Invalid organization: {str(e)}"],
+                    "profile_success": None,
+                    "password_errors": None,
+                    "password_success": None
+                })
+        
+        # Update user profile
+        user_update_data = UserUpdate(
+            name=name,
+            organization_id=org_id
+        )
+        
+        updated_user = auth_service.update_user_profile(current_user.id, user_update_data)
+        
+        # Redirect with success message
+        response = RedirectResponse(
+            url="/app/admin/profile?success=Profile updated successfully",
+            status_code=302
+        )
+        return response
+        
+    except Exception as e:
+        # Get organizations for form re-render
+        organizations = org_service.get_all_organizations()
+        organization = None
+        if current_user.organization_id:
+            organization = org_service.get_by_id(current_user.organization_id)
+        
+        return templates.TemplateResponse("pages/auth/profile.html", {
+            "request": request,
+            "user": current_user,
+            "organization": organization,
+            "organizations": organizations,
+            "api_keys": [],
+            "current_user": current_user,
+            "profile_errors": [f"Failed to update profile: {str(e)}"],
+            "profile_success": None,
+            "password_errors": None,
+            "password_success": None
+        }) 

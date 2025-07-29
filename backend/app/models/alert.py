@@ -206,10 +206,9 @@ class AlertRule(Entity):
         Returns:
             List of alert rule instances
         """
-        return db.query(cls).filter(
-            cls.entity_type == "alert.rule",
-            cls.properties['deviceId'].astext == str(device_id)
-        ).all()
+        # Get all alert rules and filter in Python to avoid JSONB operator issues
+        rules = db.query(cls).filter(cls.entity_type == "alert.rule").all()
+        return [rule for rule in rules if rule.get_property('deviceId') == str(device_id)]
     
     @classmethod
     def get_active_rules(cls, db):
@@ -222,10 +221,9 @@ class AlertRule(Entity):
         Returns:
             List of active alert rule instances
         """
-        return db.query(cls).filter(
-            cls.entity_type == "alert.rule",
-            cls.properties['enabled'].astext == 'true'
-        ).all()
+        # Get all alert rules and filter in Python to avoid JSONB operator issues
+        rules = db.query(cls).filter(cls.entity_type == "alert.rule").all()
+        return [rule for rule in rules if rule.get_property('enabled') == True]
     
     def get_device_id(self) -> str:
         """

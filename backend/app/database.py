@@ -11,6 +11,7 @@ from sqlalchemy import create_engine, text, Column, TypeDecorator, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool, StaticPool
+from sqlalchemy.dialects.postgresql import JSONB
 import json
 
 from .config import settings
@@ -20,13 +21,20 @@ class JSONType(TypeDecorator):
     """
     Custom JSON type that works with both PostgreSQL and SQLite.
     
-    In PostgreSQL, this will use JSONB for better performance.
+    In PostgreSQL, this will use JSONB for better performance and operator support.
     In SQLite, this will use TEXT with JSON validation.
     """
     impl = String
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+    
+    def load_dialect_impl(self, dialect):
+        """Use JSONB for PostgreSQL, String for SQLite."""
+        if dialect.name == 'postgresql':
+            return dialect.type_descriptor(JSONB())
+        else:
+            return dialect.type_descriptor(String())
     
     def process_bind_param(self, value, dialect):
         """Convert Python dict/list to JSON string for storage."""
