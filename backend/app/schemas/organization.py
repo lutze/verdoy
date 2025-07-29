@@ -59,7 +59,7 @@ class OrganizationCreate(BaseModel):
     @validator('website')
     def validate_website(cls, v):
         """Validate website URL."""
-        if v is not None:
+        if v is not None and v.strip():
             import re
             url_pattern = re.compile(
                 r'^https?://'  # http:// or https://
@@ -70,7 +70,7 @@ class OrganizationCreate(BaseModel):
                 r'(?:/?|[/?]\S+)$', re.IGNORECASE)
             if not url_pattern.match(v):
                 raise ValueError('Invalid website URL format')
-        return v
+        return v.strip() if v and v.strip() else None
 
 
 class OrganizationUpdate(BaseModel):
@@ -100,7 +100,7 @@ class OrganizationUpdate(BaseModel):
     @validator('website')
     def validate_website(cls, v):
         """Validate website URL."""
-        if v is not None:
+        if v is not None and v.strip():
             import re
             url_pattern = re.compile(
                 r'^https?://'  # http:// or https://
@@ -111,7 +111,7 @@ class OrganizationUpdate(BaseModel):
                 r'(?:/?|[/?]\S+)$', re.IGNORECASE)
             if not url_pattern.match(v):
                 raise ValueError('Invalid website URL format')
-        return v
+        return v.strip() if v and v.strip() else None
 
 
 class OrganizationResponse(BaseResponseSchema):

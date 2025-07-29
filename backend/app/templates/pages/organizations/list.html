@@ -4,8 +4,8 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
-    <!-- Page Header with Scientific Gradient -->
-    <div class="page-header scientific-accent mb-8">
+    <!-- Enhanced Page Header -->
+    <div class="page-header mb-8">
         <div class="page-header-content">
             <div>
                 <h1 class="page-title">Organizations</h1>
@@ -15,111 +15,156 @@
                 <button class="btn btn-secondary">
                     📊 Analytics
                 </button>
+                <button class="btn btn-secondary">
+                    📋 Templates
+                </button>
                 <a href="/app/admin/organization/create" class="btn btn-primary">
-                    ➕ New Organization
+                    ➕ Add Organization
                 </a>
             </div>
         </div>
     </div>
 
-    <!-- Controls Section -->
-    <div class="controls-section mb-8">
-        <div class="search-filters">
-            <div class="search-box">
-                <div class="search-icon">🔍</div>
-                <input type="text" class="search-input" placeholder="Search organizations...">
+    <!-- Enhanced Controls -->
+    <form method="get" class="controls-section mb-6">
+        <div class="controls-content">
+            <div class="search-filters">
+                <div class="search-box">
+                    <div class="search-icon">🔍</div>
+                    <input type="text" class="search-input" placeholder="Search organizations..." name="search" value="{{ selected_search or '' }}">
+                </div>
+                <select name="status" class="filter-select">
+                    <option value="">All Status</option>
+                    <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option>
+                    <option value="archived" {% if selected_status == 'archived' %}selected{% endif %}>Archived</option>
+                </select>
+                <select name="organization_type" class="filter-select">
+                    <option value="">All Types</option>
+                    <option value="enterprise" {% if selected_type == 'enterprise' %}selected{% endif %}>Enterprise</option>
+                    <option value="educational" {% if selected_type == 'educational' %}selected{% endif %}>Educational</option>
+                    <option value="small_business" {% if selected_type == 'small_business' %}selected{% endif %}>Small Business</option>
+                    <option value="research_lab" {% if selected_type == 'research_lab' %}selected{% endif %}>Research Lab</option>
+                </select>
+                <button type="submit" class="btn btn-primary">
+                    Filter
+                </button>
             </div>
-            <select class="filter-select">
-                <option>All Organizations</option>
-                <option>Active Only</option>
-                <option>Inactive Only</option>
-            </select>
-            <select class="filter-select">
-                <option>All Types</option>
-                <option>Research Labs</option>
-                <option>Universities</option>
-                <option>Companies</option>
-            </select>
+            <div class="view-toggles">
+                <button type="button" class="view-toggle active" id="hierarchy-view" title="Hierarchy View">📋</button>
+                <button type="button" class="view-toggle" id="grid-view" title="Grid View">🏢</button>
+                <button type="button" class="view-toggle" id="list-view" title="List View">📊</button>
+            </div>
         </div>
-        <div class="view-toggles">
-            <button class="view-toggle active" data-view="hierarchy">📋</button>
-            <button class="view-toggle" data-view="grid">🏢</button>
-            <button class="view-toggle" data-view="list">📊</button>
-        </div>
-    </div>
+    </form>
 
-    <!-- Organization Hierarchy View -->
-    <div id="hierarchy-view" class="org-hierarchy">
-        {% if organizations %}
-            {% for org in organizations %}
-            <div class="org-node">
-                <div class="org-content">
-                    <div class="org-indent">
-                        <button class="expand-toggle" data-org-id="{{ org.id }}">▼</button>
+    <!-- Organizations Grid View -->
+    {% if organizations %}
+    <div class="organizations-grid" id="organizations-grid">
+        {% for org in organizations %}
+        <div class="organization-card">
+            <div class="organization-header">
+                <div class="organization-status status-{{ org.status }}">
+                    ● {{ org.status|title }}
+                </div>
+                <div class="organization-type">{{ org.organization_type|replace('_', ' ')|title }}</div>
+                <h3 class="organization-name">{{ org.name }}</h3>
+                {% if org.description %}
+                <p class="organization-description">{{ org.description }}</p>
+                {% endif %}
+                <div class="organization-progress">
+                    <div class="progress-label">
+                        <span>Activity</span>
+                        <span>{{ org.device_count|default(0) }} Online</span>
                     </div>
-                    <div class="org-icon {% if org.organization_type == 'enterprise' %}primary{% elif org.organization_type == 'educational' %}secondary{% else %}tertiary{% endif %}">
-                        {% if org.organization_type == 'enterprise' %}🏢
-                        {% elif org.organization_type == 'educational' %}🎓
-                        {% elif org.organization_type == 'small_business' %}🏭
-                        {% else %}🏢{% endif %}
-                    </div>
-                    <div class="org-info">
-                        <h3 class="org-name">{{ org.name }}</h3>
-                        <p class="org-description">{{ org.description or 'Research organization focused on biotechnology innovation' }}</p>
-                        <div class="org-stats">
-                            <div class="stat">
-                                <span>👥</span>
-                                <span class="stat-number">{{ org.member_count|default(0) }}</span>
-                                <span>Members</span>
-                            </div>
-                            <div class="stat">
-                                <span>🧪</span>
-                                <span class="stat-number">{{ org.device_count|default(0) }}</span>
-                                <span>Devices</span>
-                            </div>
-                            <div class="stat">
-                                <span>📁</span>
-                                <span class="stat-number">0</span>
-                                <span>Projects</span>
-                            </div>
-                            <div class="stat">
-                                <span>⚗️</span>
-                                <span class="stat-number">0</span>
-                                <span>Bioreactors</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="org-status">
-                        <div class="status-indicator {% if org.status == 'active' %}status-online{% else %}status-offline{% endif %}">
-                            ● {{ org.device_count|default(0) }} Online
-                        </div>
-                        <div class="org-actions">
-                            <a href="/app/admin/organization/{{ org.id }}" class="action-btn" title="View Details">👁️</a>
-                            <a href="/app/admin/organization/{{ org.id }}/edit" class="action-btn" title="Edit">✏️</a>
-                            <button class="action-btn" title="Members">👥</button>
-                            <button class="action-btn" title="Settings">⚙️</button>
-                        </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ (org.device_count|default(0) / (org.member_count|default(1) if org.member_count|default(1) > 0 else 1)) * 100 }}%"></div>
                     </div>
                 </div>
             </div>
-            {% endfor %}
-        {% else %}
-        <!-- Empty State -->
-        <div class="empty-state">
-            <div class="empty-icon">
-                <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                </svg>
+            
+            <div class="organization-stats">
+                <div class="stat">
+                    <span class="stat-number">{{ org.member_count|default(0) }}</span>
+                    <span class="stat-label">Members</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">{{ org.device_count|default(0) }}</span>
+                    <span class="stat-label">Devices</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">{{ org.project_count|default(0) }}</span>
+                    <span class="stat-label">Projects</span>
+                </div>
             </div>
-            <h3 class="empty-title">No organizations yet</h3>
-            <p class="empty-description">Create your first organization to get started with team collaboration and device management.</p>
-            <a href="/app/admin/organization/create" class="btn btn-primary">
-                Create Organization
-            </a>
+            
+            <div class="organization-footer">
+                <div class="organization-team">
+                    <span class="team-label">Type:</span>
+                    <div class="organization-type-badge">
+                        {% if org.organization_type == 'enterprise' %}🏢 Enterprise
+                        {% elif org.organization_type == 'educational' %}🎓 Educational
+                        {% elif org.organization_type == 'small_business' %}🏭 Small Business
+                        {% elif org.organization_type == 'research_lab' %}🧪 Research Lab
+                        {% else %}🏢 Organization{% endif %}
+                    </div>
+                </div>
+                <div class="organization-actions">
+                    <a href="/app/admin/organization/{{ org.id }}" class="action-btn" title="View Details">👁️</a>
+                    <a href="/app/admin/organization/{{ org.id }}/edit" class="action-btn" title="Edit">✏️</a>
+                    <a href="/app/admin/organization/{{ org.id }}/members" class="action-btn" title="Members">👥</a>
+                </div>
+            </div>
         </div>
-        {% endif %}
+        {% endfor %}
     </div>
+
+    <!-- Organizations List View -->
+    <div class="organizations-list" id="organizations-list" style="display: none;">
+        <div class="list-header">
+            <div>Organization Name</div>
+            <div>Type</div>
+            <div>Status</div>
+            <div>Members</div>
+            <div>Devices</div>
+            <div>Actions</div>
+        </div>
+        {% for org in organizations %}
+        <div class="organization-row">
+            <div class="organization-info">
+                <strong>{{ org.name }}</strong>
+                {% if org.description %}
+                <br>
+                <small class="organization-desc">{{ org.description[:50] }}{% if org.description|length > 50 %}...{% endif %}</small>
+                {% endif %}
+            </div>
+            <div>{{ org.organization_type|replace('_', ' ')|title }}</div>
+            <div><span class="status-{{ org.status }}">● {{ org.status|title }}</span></div>
+            <div>{{ org.member_count|default(0) }}</div>
+            <div>{{ org.device_count|default(0) }}</div>
+            <div class="organization-actions">
+                <a href="/app/admin/organization/{{ org.id }}" class="action-btn" title="View">👁️</a>
+                <a href="/app/admin/organization/{{ org.id }}/edit" class="action-btn" title="Edit">✏️</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Enhanced Empty State -->
+    <div class="empty-state">
+        <div class="empty-icon">
+            <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+            </svg>
+        </div>
+        <h3 class="empty-title">No organizations yet</h3>
+        <p class="empty-description">Create your first organization to get started with team collaboration and device management.</p>
+        <a href="/app/admin/organization/create" class="btn btn-primary">
+            Create Organization
+        </a>
+    </div>
+    {% endif %}
 
     <!-- Grid View (Hidden by default) -->
     <div id="grid-view" class="org-grid hidden">

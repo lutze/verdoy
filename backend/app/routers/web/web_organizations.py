@@ -19,20 +19,57 @@ router = APIRouter(prefix="/app/admin/organization", tags=["Web Organizations"])
 @router.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def list_organizations_page(
     request: Request,
+    search: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    organization_type: Optional[str] = Query(None),
     current_user: User = Depends(get_web_user),
     db: Session = Depends(get_db)
 ):
     """List organizations page for web interface (HTML only)."""
     org_service = OrganizationService(db)
-    organizations = org_service.get_user_organizations(current_user.id)
+    organizations = org_service.get_all_organizations()
+    
+    # Apply search filter if provided
+    if search:
+        search_lower = search.lower()
+        organizations = [org for org in organizations if 
+                       search_lower in org.name.lower() or 
+                       (org.description and search_lower in org.description.lower())]
+    
+    # Apply status filter if provided
+    if status:
+        organizations = [org for org in organizations if org.status == status]
+    
+    # Apply organization type filter if provided
+    if organization_type:
+        organizations = [org for org in organizations if org.organization_type == organization_type]
+    
     return templates.TemplateResponse(
         "pages/organizations/list.html",
         {
             "request": request,
             "user": current_user,
             "organizations": organizations,
+            "selected_search": search,
+            "selected_status": status,
+            "selected_type": organization_type,
             "page_title": "Organizations",
             "current_user": current_user
+        }
+    )
+
+@router.get("/create", response_class=HTMLResponse, include_in_schema=False)
+async def organization_create_page(
+    request: Request,
+    current_user: User = Depends(get_web_user),
+    db: Session = Depends(get_db)
+):
+    return templates.TemplateResponse(
+        "pages/organizations/create.html",
+        {
+            "request": request,
+            "current_user": current_user,
+            "page_title": "Create Organization"
         }
     )
 
@@ -57,21 +94,6 @@ async def organization_detail_page(
         }
     )
 
-@router.get("/create", response_class=HTMLResponse, include_in_schema=False)
-async def organization_create_page(
-    request: Request,
-    current_user: User = Depends(get_web_user),
-    db: Session = Depends(get_db)
-):
-    return templates.TemplateResponse(
-        "pages/organizations/create.html",
-        {
-            "request": request,
-            "current_user": current_user,
-            "page_title": "Create Organization"
-        }
-    )
-
 @router.post("/create", response_class=HTMLResponse, include_in_schema=False)
 async def organization_create(
     request: Request,
@@ -93,7 +115,9 @@ async def organization_create(
     """Create a new organization."""
     org_service = OrganizationService(db)
     try:
-        organization = org_service.create_organization(
+        # Create OrganizationCreate object from form data
+        from ...schemas.organization import OrganizationCreate
+        org_data = OrganizationCreate(
             name=name,
             organization_type=organization_type,
             description=description,
@@ -105,9 +129,10 @@ async def organization_create(
             state=state,
             country=country,
             postal_code=postal_code,
-            timezone=timezone,
-            created_by=current_user.id
+            timezone=timezone
         )
+        
+        organization = org_service.create_organization(org_data, created_by=current_user.id)
         return RedirectResponse(url=f"/app/admin/organization/{organization.id}", status_code=302)
     except Exception as e:
         return templates.TemplateResponse(
