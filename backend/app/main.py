@@ -82,6 +82,7 @@ from app.routers.web.web_auth import router as web_auth_router
 from app.routers.web.web_dashboard import router as web_dashboard_router
 from app.routers.web.web_projects import router as web_projects_router
 from app.routers.web.web_organizations import router as web_organizations_router
+from app.routers.web.web_bioreactors import router as web_bioreactors_router
 from app.routers.web_landing import router as web_landing_router
 
 # Import user dependency
@@ -367,6 +368,7 @@ def register_routers(app: FastAPI) -> None:
     app.include_router(web_dashboard_router)
     app.include_router(web_projects_router)
     app.include_router(web_organizations_router)
+    app.include_router(web_bioreactors_router)
     # API routers (JSON endpoints)
     app.include_router(api_auth_router)
     app.include_router(api_dashboard_router)

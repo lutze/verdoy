@@ -1,0 +1,1080 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Enhanced Page Header -->
+    <div class="page-header mb-8">
+        <div class="page-header-content">
+            <div>
+                <h1 class="page-title">Bioreactors</h1>
+                <p class="page-subtitle">Manage and monitor your laboratory bioreactors</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary">
+                    📊 Analytics
+                </button>
+                <button class="btn btn-secondary">
+                    ⚙️ Settings
+                </button>
+                <a href="/app/bioreactors/enroll" class="btn btn-primary">
+                    ➕ Enroll Bioreactor
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Controls -->
+    <form method="get" class="controls-section mb-6">
+        <div class="controls-content">
+            <div class="search-filters">
+                <div class="search-box">
+                    <div class="search-icon">🔍</div>
+                    <input type="text" class="search-input" placeholder="Search bioreactors..." name="search" value="{{ filters.search or '' }}">
+                </div>
+                <select name="organization_id" class="filter-select">
+                    <option value="">All Organizations</option>
+                    {% for org in organizations %}
+                    <option value="{{ org.id }}" {% if selected_org and selected_org.id == org.id %}selected{% endif %}>
+                        {{ org.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <select name="status" class="filter-select">
+                    <option value="">All Status</option>
+                    <option value="online" {% if filters.status == 'online' %}selected{% endif %}>Online</option>
+                    <option value="offline" {% if filters.status == 'offline' %}selected{% endif %}>Offline</option>
+                    <option value="maintenance" {% if filters.status == 'maintenance' %}selected{% endif %}>Maintenance</option>
+                    <option value="error" {% if filters.status == 'error' %}selected{% endif %}>Error</option>
+                </select>
+                <select name="bioreactor_type" class="filter-select">
+                    <option value="">All Types</option>
+                    <option value="stirred_tank" {% if filters.bioreactor_type == 'stirred_tank' %}selected{% endif %}>Stirred Tank</option>
+                    <option value="airlift" {% if filters.bioreactor_type == 'airlift' %}selected{% endif %}>Airlift</option>
+                    <option value="packed_bed" {% if filters.bioreactor_type == 'packed_bed' %}selected{% endif %}>Packed Bed</option>
+                    <option value="fluidized_bed" {% if filters.bioreactor_type == 'fluidized_bed' %}selected{% endif %}>Fluidized Bed</option>
+                </select>
+                <button type="submit" class="btn btn-primary">
+                    Filter
+                </button>
+            </div>
+            <div class="view-toggles">
+                <button type="button" class="view-toggle active" id="grid-view" title="Grid View">⚏</button>
+                <button type="button" class="view-toggle" id="list-view" title="List View">☰</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Statistics Section -->
+    {% if stats %}
+    <div class="stats-section mb-6">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🔬</div>
+                <div class="stat-content">
+                    <span class="stat-value">{{ stats.total_bioreactors }}</span>
+                    <span class="stat-label">Total Bioreactors</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">🟢</div>
+                <div class="stat-content">
+                    <span class="stat-value">{{ stats.online_bioreactors }}</span>
+                    <span class="stat-label">Online</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">🔴</div>
+                <div class="stat-content">
+                    <span class="stat-value">{{ stats.offline_bioreactors }}</span>
+                    <span class="stat-label">Offline</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">🧪</div>
+                <div class="stat-content">
+                    <span class="stat-value">{{ stats.running_experiments }}</span>
+                    <span class="stat-label">Running Experiments</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <span class="stat-value">{{ "%.1f"|format(stats.average_vessel_volume) }}L</span>
+                    <span class="stat-label">Avg Vessel Volume</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Error Message -->
+    {% if error %}
+    <div class="alert alert-error mb-6">
+        <p>{{ error }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Bioreactors Grid View -->
+    {% if bioreactors %}
+    <div class="bioreactors-grid" id="bioreactors-grid">
+        {% for bioreactor in bioreactors %}
+        <div class="bioreactor-card">
+            <div class="bioreactor-header">
+                <div class="bioreactor-status status-{{ bioreactor.get_status() }}">
+                    ● {{ bioreactor.get_status()|title }}
+                </div>
+                <div class="bioreactor-org">{{ bioreactor.organization.name if bioreactor.organization else 'No Organization' }}</div>
+                <h3 class="bioreactor-name">{{ bioreactor.name }}</h3>
+                {% if bioreactor.description %}
+                <p class="bioreactor-description">{{ bioreactor.description }}</p>
+                {% endif %}
+                <div class="bioreactor-progress">
+                    <div class="progress-label">
+                        <span>Status</span>
+                        <span>{{ bioreactor.get_status()|title }}</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {% if bioreactor.get_status() == 'online' %}100{% elif bioreactor.get_status() == 'offline' %}0{% else %}50{% endif %}%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bioreactor-stats">
+                <div class="stat">
+                    <span class="stat-number">{{ bioreactor.get_vessel_volume()|round(1) }}</span>
+                    <span class="stat-label">Vessel (L)</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">{{ bioreactor.get_working_volume()|round(1) if bioreactor.get_working_volume() else 0 }}</span>
+                    <span class="stat-label">Working (L)</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">{{ bioreactor.get_sensors()|length }}</span>
+                    <span class="stat-label">Sensors</span>
+                </div>
+            </div>
+            
+            <div class="bioreactor-details">
+                <div class="detail-item">
+                    <span class="detail-label">Type:</span>
+                    <span class="detail-value">{{ bioreactor.get_bioreactor_type()|title }}</span>
+                </div>
+                
+                <div class="detail-item">
+                    <span class="detail-label">Control Mode:</span>
+                    <span class="detail-value">{{ bioreactor.get_control_mode()|title }}</span>
+                </div>
+                
+                {% if bioreactor.get_location() %}
+                <div class="detail-item">
+                    <span class="detail-label">Location:</span>
+                    <span class="detail-value">{{ bioreactor.get_location() }}</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="bioreactor-sensors">
+                <h4>Sensors</h4>
+                <div class="sensors-list">
+                    {% for sensor in bioreactor.get_sensors() %}
+                    <span class="sensor-badge">{{ sensor.type|title }}</span>
+                    {% endfor %}
+                    {% if not bioreactor.get_sensors() %}
+                    <span class="sensor-badge empty">No sensors</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="bioreactor-actuators">
+                <h4>Actuators</h4>
+                <div class="actuators-list">
+                    {% for actuator in bioreactor.get_actuators() %}
+                    <span class="actuator-badge">{{ actuator.type|title }}</span>
+                    {% endfor %}
+                    {% if not bioreactor.get_actuators() %}
+                    <span class="actuator-badge empty">No actuators</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="bioreactor-footer">
+                <div class="bioreactor-info">
+                    {% if bioreactor.is_running_experiment() %}
+                    <span class="experiment-badge">Running Experiment</span>
+                    {% endif %}
+                    
+                    {% if bioreactor.get_last_seen() %}
+                    <span class="last-seen">Last seen: {{ bioreactor.get_last_seen()|timeago }}</span>
+                    {% endif %}
+                </div>
+                <div class="bioreactor-actions">
+                    <a href="/app/bioreactors/{{ bioreactor.id }}" class="action-btn" title="View Details">👁️</a>
+                    <a href="/app/bioreactors/{{ bioreactor.id }}/control" class="action-btn" title="Control">🎮</a>
+                    <a href="/app/bioreactors/{{ bioreactor.id }}/edit" class="action-btn" title="Edit">✏️</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Bioreactors List View -->
+    <div class="bioreactors-list" id="bioreactors-list" style="display: none;">
+        <div class="list-header">
+            <div>Bioreactor Name</div>
+            <div>Organization</div>
+            <div>Status</div>
+            <div>Type</div>
+            <div>Volume</div>
+            <div>Actions</div>
+        </div>
+        {% for bioreactor in bioreactors %}
+        <div class="bioreactor-row">
+            <div class="bioreactor-info">
+                <strong>{{ bioreactor.name }}</strong>
+                {% if bioreactor.description %}
+                <br>
+                <small class="bioreactor-desc">{{ bioreactor.description[:50] }}{% if bioreactor.description|length > 50 %}...{% endif %}</small>
+                {% endif %}
+            </div>
+            <div>{{ bioreactor.organization.name if bioreactor.organization else 'No Organization' }}</div>
+            <div><span class="status-{{ bioreactor.get_status() }}">● {{ bioreactor.get_status()|title }}</span></div>
+            <div>{{ bioreactor.get_bioreactor_type()|title }}</div>
+            <div>{{ "%.1f"|format(bioreactor.get_vessel_volume()) }}L</div>
+            <div class="bioreactor-actions">
+                <a href="/app/bioreactors/{{ bioreactor.id }}" class="action-btn" title="View">👁️</a>
+                <a href="/app/bioreactors/{{ bioreactor.id }}/control" class="action-btn" title="Control">🎮</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if pagination.total_pages > 1 %}
+    <div class="pagination">
+        <div class="pagination-info">
+            Showing {{ (pagination.page - 1) * 20 + 1 }} to 
+            {{ pagination.page * 20 if pagination.page * 20 < pagination.total_count else pagination.total_count }} 
+            of {{ pagination.total_count }} bioreactors
+        </div>
+        
+        <div class="pagination-controls">
+            {% if pagination.page > 1 %}
+            <a href="?page={{ pagination.page - 1 }}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.search %}&search={{ filters.search }}{% endif %}" 
+               class="btn btn-sm btn-outline">Previous</a>
+            {% endif %}
+            
+            <span class="page-info">Page {{ pagination.page }} of {{ pagination.total_pages }}</span>
+            
+            {% if pagination.page < pagination.total_pages %}
+            <a href="?page={{ pagination.page + 1 }}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.search %}&search={{ filters.search }}{% endif %}" 
+               class="btn btn-sm btn-outline">Next</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <!-- Enhanced Empty State -->
+    <div class="empty-state">
+        <div class="empty-icon">
+            <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+            </svg>
+        </div>
+        <h3 class="empty-title">No bioreactors yet</h3>
+        <p class="empty-description">
+            {% if filters.status or filters.search %}
+            No bioreactors match your current filters. Try adjusting your search criteria.
+            {% else %}
+            Enroll your first bioreactor to begin monitoring and controlling your experiments.
+            {% endif %}
+        </p>
+        <a href="/app/bioreactors/enroll" class="btn btn-primary">
+            Enroll Bioreactor
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+/* CSS Variables */
+:root {
+    --primary: #6aff93;
+    --primary-dark: #4ade80;
+    --primary-light: #86efac;
+    --secondary: #40e0d0;
+    --secondary-dark: #20b2aa;
+    --secondary-light: #5eead4;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-tertiary: #f1f5f9;
+    --bg-elevated: #ffffff;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --text-tertiary: #94a3b8;
+    --text-inverse: #ffffff;
+    --border-light: #e2e8f0;
+    --border-medium: #cbd5e1;
+    --danger: #ef4444;
+    --danger-light: #fef2f2;
+    --success: #22c55e;
+    --success-light: #f0fdf4;
+    --warning: #f59e0b;
+    --warning-light: #fffbeb;
+    --info: #3b82f6;
+    --info-light: #eff6ff;
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 3rem;
+    --space-3xl: 4rem;
+    --space-4xl: 6rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-16: 4rem;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.15);
+    --shadow-lg: 0 10px 30px rgba(106, 255, 147, 0.2);
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+    --font-size-4xl: 2.25rem;
+    --transition-normal: 0.3s ease;
+}
+
+/* Enhanced Page Header */
+.page-header {
+    background: linear-gradient(135deg, var(--secondary), var(--primary));
+    border-radius: var(--radius-xl);
+    position: relative;
+    overflow: hidden;
+    padding: var(--space-8);
+    margin-bottom: var(--space-8);
+}
+
+.page-header::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+.page-header::after {
+    content: '';
+    position: absolute;
+    bottom: -30px;
+    left: -30px;
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+.page-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 10;
+}
+
+.page-title {
+    color: var(--text-inverse);
+    font-size: var(--font-size-4xl);
+    font-weight: 700;
+    margin-bottom: var(--space-2);
+}
+
+.page-subtitle {
+    color: rgba(255,255,255,0.9);
+    font-size: var(--font-size-lg);
+    font-weight: 400;
+}
+
+.header-actions {
+    display: flex;
+    gap: var(--space-4);
+}
+
+/* Enhanced Controls */
+.controls-section {
+    background: var(--bg-elevated);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    padding: var(--space-6);
+    margin-bottom: var(--space-6);
+    border: 1px solid var(--border-light);
+}
+
+.controls-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.search-filters {
+    display: flex;
+    gap: var(--space-4);
+    align-items: center;
+}
+
+.search-box {
+    position: relative;
+}
+
+.search-input {
+    padding: var(--space-3) var(--space-4) var(--space-3) var(--space-10);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-lg);
+    width: 300px;
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(106, 255, 147, 0.1);
+}
+
+.search-icon {
+    position: absolute;
+    left: var(--space-3);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-tertiary);
+}
+
+.filter-select {
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-lg);
+    background: var(--bg-primary);
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(106, 255, 147, 0.1);
+}
+
+.view-toggles {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.view-toggle {
+    padding: var(--space-2);
+    border: 1px solid var(--border-medium);
+    background: var(--bg-primary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    font-size: var(--font-size-lg);
+}
+
+.view-toggle.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--text-inverse);
+}
+
+.view-toggle:hover {
+    border-color: var(--primary);
+}
+
+/* Statistics Section */
+.stats-section {
+    margin-bottom: var(--space-6);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-4);
+}
+
+.stat-card {
+    background: var(--bg-elevated);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    padding: var(--space-6);
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    border: 1px solid var(--border-light);
+    transition: all var(--transition-normal);
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.stat-icon {
+    font-size: var(--font-size-2xl);
+    opacity: 0.8;
+}
+
+.stat-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.stat-label {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin-top: var(--space-1);
+}
+
+/* Enhanced Bioreactor Cards */
+.bioreactors-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: var(--space-6);
+}
+
+.bioreactor-card {
+    background: var(--bg-elevated);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    transition: all var(--transition-normal);
+    border: 1px solid var(--border-light);
+}
+
+.bioreactor-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary);
+}
+
+.bioreactor-header {
+    padding: var(--space-6);
+    position: relative;
+}
+
+.bioreactor-status {
+    position: absolute;
+    top: var(--space-4);
+    right: var(--space-4);
+    padding: var(--space-1) var(--space-3);
+    border-radius: 20px;
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+}
+
+.status-online {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.status-offline {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+.status-maintenance {
+    background: var(--warning-light);
+    color: var(--warning);
+}
+
+.status-error {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+.bioreactor-org {
+    color: var(--text-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    margin-bottom: var(--space-2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.bioreactor-name {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.bioreactor-description {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+    margin-bottom: var(--space-4);
+}
+
+.bioreactor-progress {
+    margin-bottom: var(--space-4);
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+}
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--bg-tertiary);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    transition: width 0.3s ease;
+}
+
+.bioreactor-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-6);
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-light);
+}
+
+.stat {
+    text-align: center;
+}
+
+.stat-number {
+    display: block;
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.stat-label {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.bioreactor-details {
+    padding: var(--space-4) var(--space-6);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--space-4);
+    border-top: 1px solid var(--border-light);
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.detail-label {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.detail-value {
+    font-size: var(--font-size-sm);
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.bioreactor-sensors,
+.bioreactor-actuators {
+    padding: var(--space-4) var(--space-6);
+    border-top: 1px solid var(--border-light);
+}
+
+.bioreactor-sensors h4,
+.bioreactor-actuators h4 {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin: 0 0 var(--space-2) 0;
+    font-weight: 600;
+}
+
+.sensors-list,
+.actuators-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.sensor-badge,
+.actuator-badge {
+    padding: var(--space-1) var(--space-2);
+    background: var(--info-light);
+    color: var(--info);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+}
+
+.sensor-badge.empty,
+.actuator-badge.empty {
+    background: var(--bg-tertiary);
+    color: var(--text-tertiary);
+    border-color: var(--border-light);
+}
+
+.bioreactor-footer {
+    padding: var(--space-4) var(--space-6);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border-light);
+}
+
+.bioreactor-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.experiment-badge {
+    display: inline-block;
+    padding: var(--space-1) var(--space-2);
+    background: rgba(168, 85, 247, 0.1);
+    color: #a855f7;
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+}
+
+.last-seen {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+}
+
+.bioreactor-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.action-btn {
+    padding: var(--space-2);
+    border: 1px solid var(--border-medium);
+    background: var(--bg-primary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    color: var(--text-secondary);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-1px);
+}
+
+/* List View */
+.bioreactors-list {
+    background: var(--bg-elevated);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    border: 1px solid var(--border-light);
+}
+
+.list-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 120px 120px 100px 80px;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-6);
+    background: var(--bg-secondary);
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.bioreactor-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 120px 120px 100px 80px;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-6);
+    border-bottom: 1px solid var(--border-light);
+    align-items: center;
+    transition: all var(--transition-normal);
+}
+
+.bioreactor-row:hover {
+    background: var(--bg-secondary);
+}
+
+.bioreactor-info strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.bioreactor-desc {
+    color: var(--text-secondary);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: var(--space-16) var(--space-8);
+}
+
+.empty-icon {
+    width: 96px;
+    height: 96px;
+    background: var(--bg-secondary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--space-6);
+    color: var(--text-tertiary);
+}
+
+.empty-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.empty-description {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-6);
+    font-size: var(--font-size-lg);
+}
+
+/* Alert Styles */
+.alert {
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-6);
+}
+
+.alert-error {
+    background: var(--danger-light);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+}
+
+/* Button Styles */
+.btn {
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-lg);
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-family);
+    text-decoration: none;
+    font-size: var(--font-size-base);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: var(--text-inverse);
+    border: 1px solid rgba(255,255,255,0.3);
+    backdrop-filter: blur(10px);
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-light);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-tertiary);
+    transform: translateY(-1px);
+}
+
+.btn-sm {
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--font-size-sm);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--border-medium);
+}
+
+.btn-outline:hover {
+    background: var(--bg-secondary);
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--space-8);
+    padding: var(--space-6) 0;
+    border-top: 1px solid var(--border-light);
+}
+
+.pagination-info {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.page-info {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-header-content {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-4);
+    }
+    
+    .controls-content {
+        flex-direction: column;
+        gap: var(--space-4);
+    }
+    
+    .search-filters {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+    
+    .search-input {
+        width: 200px;
+    }
+    
+    .bioreactors-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .bioreactor-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .list-header,
+    .bioreactor-row {
+        grid-template-columns: 1fr;
+        gap: var(--space-2);
+    }
+    
+    .list-header {
+        display: none;
+    }
+    
+    .bioreactor-row {
+        padding: var(--space-4);
+        border-bottom: 1px solid var(--border-light);
+    }
+}
+
+@media (max-width: 480px) {
+    .search-filters {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .search-input {
+        width: 100%;
+    }
+    
+    .filter-select {
+        width: 100%;
+    }
+    
+    .header-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+// View toggle functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const gridView = document.getElementById('grid-view');
+    const listView = document.getElementById('list-view');
+    const bioreactorsGrid = document.getElementById('bioreactors-grid');
+    const bioreactorsList = document.getElementById('bioreactors-list');
+
+    if (gridView && listView && bioreactorsGrid && bioreactorsList) {
+        gridView.addEventListener('click', () => {
+            gridView.classList.add('active');
+            listView.classList.remove('active');
+            bioreactorsGrid.style.display = 'grid';
+            bioreactorsList.style.display = 'none';
+        });
+
+        listView.addEventListener('click', () => {
+            listView.classList.add('active');
+            gridView.classList.remove('active');
+            bioreactorsGrid.style.display = 'none';
+            bioreactorsList.style.display = 'block';
+        });
+    }
+});
+</script>
+{% endblock %} 

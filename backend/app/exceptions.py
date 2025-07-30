@@ -301,6 +301,15 @@ class CommandNotFoundException(HTTPException):
         )
 
 
+class SafetyException(HTTPException):
+    """Exception raised when safety checks fail or safety operations are blocked."""
+    def __init__(self, detail: str = "Safety check failed"):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=detail
+        )
+
+
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """
     Global exception handler for unhandled exceptions.
