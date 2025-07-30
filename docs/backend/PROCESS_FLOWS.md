@@ -355,7 +355,125 @@ Permission checking process that determines user access rights based on roles an
 
 ---
 
-## Process Flow 5: User-Organization Association
+## Process Flow 5: Bioreactor Enrollment
+
+### Flow Description
+Multi-step bioreactor enrollment process that creates a new bioreactor entity with comprehensive configuration.
+
+### Prerequisites
+- User must be authenticated and belong to an organization
+- Organization must exist and be accessible to the user
+- User must have permission to create bioreactors in the organization
+
+### Steps
+1. **Step 1: Basic Information Collection**
+   ```python
+   # Validate organization access
+   if not user_has_org_access(current_user, organization_id):
+       raise PermissionException("Access denied to organization")
+   
+   # Collect basic bioreactor information
+   basic_info = {
+       'name': name,  # Required
+       'description': description,  # Optional
+       'location': location,  # Optional
+       'bioreactor_type': bioreactor_type or 'stirred_tank'
+   }
+   ```
+
+2. **Step 2: Hardware Configuration**
+   ```python
+   # Validate required hardware parameters
+   if not vessel_volume:
+       raise ValidationException("Vessel volume is required")
+   
+   hardware_config = {
+       'vessel_volume': vessel_volume,  # Required
+       'working_volume': working_volume,  # Optional
+       'sensors': sensors or [],  # Selected sensor types
+       'actuators': actuators or []  # Selected actuator types
+   }
+   ```
+
+3. **Step 3: Device Configuration**
+   ```python
+   # Set device-specific parameters with defaults
+   device_config = {
+       'firmware_version': firmware_version or '1.0.0',
+       'hardware_model': hardware_model or 'Generic Bioreactor',
+       'mac_address': mac_address or '00:00:00:00:00:00',
+       'reading_interval': reading_interval or 300
+   }
+   ```
+
+4. **Step 4: Review and Database Creation**
+   ```python
+   # Create bioreactor entity
+   bioreactor = Bioreactor(
+       name=name,
+       description=description,
+       organization_id=organization_id,
+       entity_type='device.bioreactor',
+       status='offline'
+   )
+   
+   # Store optional fields in properties
+   if location:
+       bioreactor.set_property('location', location)
+   
+   # Set bioreactor-specific properties
+   bioreactor.set_bioreactor_type(bioreactor_type or "stirred_tank")
+   bioreactor.set_vessel_volume(vessel_volume)
+   if working_volume:
+       bioreactor.set_working_volume(working_volume)
+   
+   # Set hardware configuration
+   hardware_config = {
+       'model': hardware_model or 'Generic Bioreactor',
+       'macAddress': mac_address or '00:00:00:00:00:00',
+       'sensors': [{"type": sensor, "unit": "standard", "status": "active"} 
+                   for sensor in (sensors or [])],
+       'actuators': [{"type": actuator, "unit": "standard", "status": "active"} 
+                     for actuator in (actuators or [])]
+   }
+   bioreactor.set_property('hardware', hardware_config)
+   
+   # Set firmware configuration
+   firmware_config = {
+       'version': firmware_version or '1.0.0',
+       'lastUpdate': datetime.utcnow().isoformat()
+   }
+   bioreactor.set_property('firmware', firmware_config)
+   
+   # Set reading interval
+   bioreactor.set_property('reading_interval', reading_interval or 300)
+   
+   # Save to database
+   db.add(bioreactor)
+   db.commit()
+   db.refresh(bioreactor)
+   ```
+
+### Data Persistence Strategy
+- **URL Parameters**: Form data passed between steps via URL query parameters
+- **Hidden Inputs**: Each step includes hidden form fields to preserve previous data
+- **Template Context**: Organization and form data maintained across validation errors
+
+### Error Handling
+- **Missing Required Fields**: Return to current step with error message
+- **Invalid Organization Access**: Return 403 Forbidden
+- **Database Errors**: Rollback transaction and return error
+- **Validation Errors**: Preserve form data and display specific error messages
+
+### Security Considerations
+- **Organization Access Control**: Verify user has permission to create bioreactors
+- **Input Validation**: Sanitize all user inputs
+- **Transaction Safety**: Ensure database operations are atomic
+- **Audit Logging**: Log all bioreactor creation events
+
+---
+
+## Process Flow 6: User-Organization Association
 
 ### Flow Description
 Process for adding existing users to organizations or changing user organization membership.
@@ -483,4 +601,16 @@ Entity (base table)
 - [ ] User leaving organization
 - [ ] Organization deletion with members
 - [ ] Permission inheritance
-- [ ] Audit trail verification 
+- [ ] Audit trail verification
+
+### Bioreactor Enrollment Tests
+- [ ] Valid bioreactor enrollment (all 4 steps)
+- [ ] Missing required fields handling
+- [ ] Optional fields with defaults
+- [ ] Organization access validation
+- [ ] Form data persistence across steps
+- [ ] Database creation with proper properties
+- [ ] Error recovery with context preservation
+- [ ] Mobile responsive design validation
+- [ ] Progressive enhancement (no-JS mode)
+- [ ] Template context availability during errors 

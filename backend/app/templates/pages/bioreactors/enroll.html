@@ -1,0 +1,947 @@
+{% extends "base.html" %}
+
+{% block title %}Enroll Bioreactor{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Page Header -->
+    <div class="page-header mb-8">
+        <div class="page-header-content">
+            <div>
+                <h1 class="page-title">Enroll Bioreactor</h1>
+                <p class="page-subtitle">Add a new bioreactor to your laboratory</p>
+            </div>
+            <div class="header-actions">
+                <a href="/app/bioreactors" class="btn btn-secondary">
+                    ← Back to Bioreactors
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Indicator -->
+    <div class="progress-indicator mb-8">
+        <div class="progress-steps">
+            <div class="progress-step {% if step >= 1 %}active{% endif %}">
+                <div class="step-number">1</div>
+                <div class="step-label">Basic Information</div>
+            </div>
+            <div class="progress-step {% if step >= 2 %}active{% endif %}">
+                <div class="step-number">2</div>
+                <div class="step-label">Hardware Configuration</div>
+            </div>
+            <div class="progress-step {% if step >= 3 %}active{% endif %}">
+                <div class="step-number">3</div>
+                <div class="step-label">Device Configuration</div>
+            </div>
+            <div class="progress-step {% if step >= 4 %}active{% endif %}">
+                <div class="step-number">4</div>
+                <div class="step-label">Review & Complete</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Message -->
+    {% if error %}
+    <div class="alert alert-error mb-6">
+        <p>{{ error }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Step 1: Basic Information -->
+    {% if step == 1 %}
+    <div class="enrollment-form">
+        <div class="form-section">
+            <h2 class="section-title">Basic Information</h2>
+            <p class="section-description">Provide the fundamental details about your bioreactor.</p>
+            
+            <form method="post" action="/app/bioreactors/enroll">
+                <input type="hidden" name="step" value="1">
+                
+                <div class="form-group">
+                    <label for="organization_id" class="form-label">Organization *</label>
+                    <select name="organization_id" id="organization_id" class="form-select" required>
+                        <option value="">Select an organization</option>
+                        {% for org in organizations %}
+                        <option value="{{ org.id }}" {% if selected_org and selected_org.id == org.id %}selected{% endif %}>
+                            {{ org.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="name" class="form-label">Bioreactor Name *</label>
+                    <input type="text" name="name" id="name" class="form-input" 
+                           value="{{ form_data.name or '' }}" required
+                           placeholder="e.g., BR-001, Lab Reactor Alpha">
+                </div>
+
+                <div class="form-group">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea name="description" id="description" class="form-textarea" rows="3"
+                              placeholder="Optional description of the bioreactor">{{ form_data.description or '' }}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="location" class="form-label">Location</label>
+                    <input type="text" name="location" id="location" class="form-input"
+                           value="{{ form_data.location or '' }}"
+                           placeholder="e.g., Lab 101, Building A">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="bioreactor_type" class="form-label">Bioreactor Type *</label>
+                        <select name="bioreactor_type" id="bioreactor_type" class="form-select" required>
+                            <option value="stirred_tank" {% if form_data.bioreactor_type == 'stirred_tank' %}selected{% endif %}>Stirred Tank</option>
+                            <option value="airlift" {% if form_data.bioreactor_type == 'airlift' %}selected{% endif %}>Airlift</option>
+                            <option value="packed_bed" {% if form_data.bioreactor_type == 'packed_bed' %}selected{% endif %}>Packed Bed</option>
+                            <option value="fluidized_bed" {% if form_data.bioreactor_type == 'fluidized_bed' %}selected{% endif %}>Fluidized Bed</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="vessel_volume" class="form-label">Vessel Volume (L) *</label>
+                        <input type="number" name="vessel_volume" id="vessel_volume" class="form-input" 
+                               value="{{ form_data.vessel_volume or '' }}" required min="0.1" step="0.1"
+                               placeholder="e.g., 5.0">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="working_volume" class="form-label">Working Volume (L)</label>
+                    <input type="number" name="working_volume" id="working_volume" class="form-input"
+                           value="{{ form_data.working_volume or '' }}" min="0" step="0.1"
+                           placeholder="e.g., 3.5">
+                    <small class="form-help">Leave empty to use 70% of vessel volume</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        Continue to Hardware Configuration →
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Step 2: Hardware Configuration -->
+    {% if step == 2 %}
+    <div class="enrollment-form">
+        <div class="form-section">
+            <h2 class="section-title">Hardware Configuration</h2>
+            <p class="section-description">Configure sensors and actuators for your bioreactor.</p>
+            
+            <form method="post" action="/app/bioreactors/enroll">
+                <input type="hidden" name="step" value="2">
+                <input type="hidden" name="organization_id" value="{{ selected_org.id }}">
+                <input type="hidden" name="name" value="{{ form_data.name or '' }}">
+                <input type="hidden" name="description" value="{{ form_data.description or '' }}">
+                <input type="hidden" name="location" value="{{ form_data.location or '' }}">
+                <input type="hidden" name="bioreactor_type" value="{{ form_data.bioreactor_type or 'stirred_tank' }}">
+                <input type="hidden" name="vessel_volume" value="{{ form_data.vessel_volume or '' }}">
+                <input type="hidden" name="working_volume" value="{{ form_data.working_volume or '' }}">
+                
+                <div class="hardware-section">
+                    <h3 class="subsection-title">Sensors</h3>
+                    <div class="sensor-grid">
+                        <div class="sensor-item">
+                            <input type="checkbox" name="sensors" value="temperature" id="sensor_temp" class="sensor-checkbox">
+                            <label for="sensor_temp" class="sensor-label">
+                                <div class="sensor-icon">🌡️</div>
+                                <div class="sensor-info">
+                                    <div class="sensor-name">Temperature</div>
+                                    <div class="sensor-desc">Temperature sensor</div>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <div class="sensor-item">
+                            <input type="checkbox" name="sensors" value="ph" id="sensor_ph" class="sensor-checkbox">
+                            <label for="sensor_ph" class="sensor-label">
+                                <div class="sensor-icon">🧪</div>
+                                <div class="sensor-info">
+                                    <div class="sensor-name">pH</div>
+                                    <div class="sensor-desc">pH sensor</div>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <div class="sensor-item">
+                            <input type="checkbox" name="sensors" value="dissolved_oxygen" id="sensor_do" class="sensor-checkbox">
+                            <label for="sensor_do" class="sensor-label">
+                                <div class="sensor-icon">💧</div>
+                                <div class="sensor-info">
+                                    <div class="sensor-name">Dissolved Oxygen</div>
+                                    <div class="sensor-desc">DO sensor</div>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <div class="sensor-item">
+                            <input type="checkbox" name="sensors" value="pressure" id="sensor_pressure" class="sensor-checkbox">
+                            <label for="sensor_pressure" class="sensor-label">
+                                <div class="sensor-icon">📊</div>
+                                <div class="sensor-info">
+                                    <div class="sensor-name">Pressure</div>
+                                    <div class="sensor-desc">Pressure sensor</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hardware-section">
+                    <h3 class="subsection-title">Actuators</h3>
+                    <div class="actuator-grid">
+                        <div class="actuator-item">
+                            <input type="checkbox" name="actuators" value="heater" id="actuator_heater" class="actuator-checkbox">
+                            <label for="actuator_heater" class="actuator-label">
+                                <div class="actuator-icon">🔥</div>
+                                <div class="actuator-info">
+                                    <div class="actuator-name">Heater</div>
+                                    <div class="actuator-desc">Temperature control</div>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <div class="actuator-item">
+                            <input type="checkbox" name="actuators" value="stirrer" id="actuator_stirrer" class="actuator-checkbox">
+                            <label for="actuator_stirrer" class="actuator-label">
+                                <div class="actuator-icon">🌀</div>
+                                <div class="actuator-info">
+                                    <div class="actuator-name">Stirrer</div>
+                                    <div class="actuator-desc">Mixing control</div>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <div class="actuator-item">
+                            <input type="checkbox" name="actuators" value="pump" id="actuator_pump" class="actuator-checkbox">
+                            <label for="actuator_pump" class="actuator-label">
+                                <div class="actuator-icon">💦</div>
+                                <div class="actuator-info">
+                                    <div class="actuator-name">Pump</div>
+                                    <div class="actuator-desc">Flow control</div>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <div class="actuator-item">
+                            <input type="checkbox" name="actuators" value="valve" id="actuator_valve" class="actuator-checkbox">
+                            <label for="actuator_valve" class="actuator-label">
+                                <div class="actuator-icon">🔧</div>
+                                <div class="actuator-info">
+                                    <div class="actuator-name">Valve</div>
+                                    <div class="actuator-desc">Flow direction</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <a href="/app/bioreactors/enroll?step=1" class="btn btn-secondary">
+                        ← Back
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        Continue to Review →
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Step 3: Device Configuration -->
+    {% if step == 3 %}
+    <div class="enrollment-form">
+        <div class="form-section">
+            <h2 class="section-title">Device Configuration</h2>
+            <p class="section-description">Configure device-specific settings for your bioreactor.</p>
+            
+            <form method="post" action="/app/bioreactors/enroll">
+                <input type="hidden" name="step" value="3">
+                <input type="hidden" name="organization_id" value="{{ selected_org.id }}">
+                <input type="hidden" name="name" value="{{ form_data.name or '' }}">
+                <input type="hidden" name="description" value="{{ form_data.description or '' }}">
+                <input type="hidden" name="location" value="{{ form_data.location or '' }}">
+                <input type="hidden" name="bioreactor_type" value="{{ form_data.bioreactor_type or 'stirred_tank' }}">
+                <input type="hidden" name="vessel_volume" value="{{ form_data.vessel_volume or '' }}">
+                <input type="hidden" name="working_volume" value="{{ form_data.working_volume or '' }}">
+                {% if form_data.sensors %}
+                    {% for sensor in form_data.sensors %}
+                        <input type="hidden" name="sensors" value="{{ sensor }}">
+                    {% endfor %}
+                {% endif %}
+                {% if form_data.actuators %}
+                    {% for actuator in form_data.actuators %}
+                        <input type="hidden" name="actuators" value="{{ actuator }}">
+                    {% endfor %}
+                {% endif %}
+                
+                <div class="form-group">
+                    <label for="firmware_version" class="form-label">Firmware Version *</label>
+                    <input type="text" name="firmware_version" id="firmware_version" class="form-input" 
+                           value="{{ form_data.firmware_version or '1.0.0' }}" required
+                           placeholder="e.g., 1.0.0">
+                </div>
+
+                <div class="form-group">
+                    <label for="hardware_model" class="form-label">Hardware Model *</label>
+                    <input type="text" name="hardware_model" id="hardware_model" class="form-input" 
+                           value="{{ form_data.hardware_model or '' }}" required
+                           placeholder="e.g., BR-1000, LabReactor Pro">
+                </div>
+
+                <div class="form-group">
+                    <label for="mac_address" class="form-label">MAC Address *</label>
+                    <input type="text" name="mac_address" id="mac_address" class="form-input" 
+                           value="{{ form_data.mac_address or '' }}" required
+                           placeholder="e.g., 00:11:22:33:44:55">
+                    <small class="form-help">Device MAC address for network identification</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="reading_interval" class="form-label">Reading Interval (seconds) *</label>
+                    <input type="number" name="reading_interval" id="reading_interval" class="form-input" 
+                           value="{{ form_data.reading_interval or 300 }}" required min="60" max="3600"
+                           placeholder="300">
+                    <small class="form-help">How often to collect sensor readings (60-3600 seconds)</small>
+                </div>
+
+                <div class="form-actions">
+                    <a href="/app/bioreactors/enroll?step=2" class="btn btn-secondary">
+                        ← Back
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        Continue to Review →
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Step 4: Review & Complete -->
+    {% if step == 4 %}
+    <div class="enrollment-form">
+        <div class="form-section">
+            <h2 class="section-title">Review & Complete</h2>
+            <p class="section-description">Review your bioreactor configuration before completing enrollment.</p>
+            
+            <div class="review-summary">
+                <div class="summary-section">
+                    <h3 class="summary-title">Basic Information</h3>
+                    <div class="summary-content">
+                        <div class="summary-item">
+                            <span class="summary-label">Name:</span>
+                            <span class="summary-value">{{ form_data.name or 'Not specified' }}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Organization:</span>
+                            <span class="summary-value">{{ selected_org.name if selected_org else 'Not specified' }}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Type:</span>
+                            <span class="summary-value">{{ form_data.bioreactor_type or 'Not specified' }}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Vessel Volume:</span>
+                            <span class="summary-value">{{ form_data.vessel_volume or 'Not specified' }} L</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="summary-section">
+                    <h3 class="summary-title">Hardware Configuration</h3>
+                    <div class="summary-content">
+                        <div class="summary-item">
+                            <span class="summary-label">Sensors:</span>
+                            <span class="summary-value">
+                                {% if form_data.sensors and form_data.sensors|length > 0 %}
+                                    {{ form_data.sensors|join(', ') }}
+                                {% else %}
+                                    None selected
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Actuators:</span>
+                            <span class="summary-value">
+                                {% if form_data.actuators and form_data.actuators|length > 0 %}
+                                    {{ form_data.actuators|join(', ') }}
+                                {% else %}
+                                    None selected
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="summary-section">
+                    <h3 class="summary-title">Device Configuration</h3>
+                    <div class="summary-content">
+                        <div class="summary-item">
+                            <span class="summary-label">Firmware Version:</span>
+                            <span class="summary-value">{{ form_data.firmware_version or 'Not specified' }}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Hardware Model:</span>
+                            <span class="summary-value">{{ form_data.hardware_model or 'Not specified' }}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">MAC Address:</span>
+                            <span class="summary-value">{{ form_data.mac_address or 'Not specified' }}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Reading Interval:</span>
+                            <span class="summary-value">{{ form_data.reading_interval or '300' }} seconds</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <form method="post" action="/app/bioreactors/enroll">
+                <input type="hidden" name="step" value="4">
+                <input type="hidden" name="organization_id" value="{{ selected_org.id }}">
+                <input type="hidden" name="name" value="{{ form_data.name or '' }}">
+                <input type="hidden" name="description" value="{{ form_data.description or '' }}">
+                <input type="hidden" name="location" value="{{ form_data.location or '' }}">
+                <input type="hidden" name="bioreactor_type" value="{{ form_data.bioreactor_type or 'stirred_tank' }}">
+                <input type="hidden" name="vessel_volume" value="{{ form_data.vessel_volume or '' }}">
+                <input type="hidden" name="working_volume" value="{{ form_data.working_volume or '' }}">
+                {% if form_data.sensors %}
+                    {% for sensor in form_data.sensors %}
+                        <input type="hidden" name="sensors" value="{{ sensor }}">
+                    {% endfor %}
+                {% endif %}
+                {% if form_data.actuators %}
+                    {% for actuator in form_data.actuators %}
+                        <input type="hidden" name="actuators" value="{{ actuator }}">
+                    {% endfor %}
+                {% endif %}
+                <input type="hidden" name="firmware_version" value="{{ form_data.firmware_version or '1.0.0' }}">
+                <input type="hidden" name="hardware_model" value="{{ form_data.hardware_model or '' }}">
+                <input type="hidden" name="mac_address" value="{{ form_data.mac_address or '' }}">
+                <input type="hidden" name="reading_interval" value="{{ form_data.reading_interval or '300' }}">
+                
+                <div class="form-actions">
+                    <a href="/app/bioreactors/enroll?step=3" class="btn btn-secondary">
+                        ← Back
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        Complete Enrollment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+/* CSS Variables */
+:root {
+    --primary: #6aff93;
+    --primary-dark: #4ade80;
+    --primary-light: #86efac;
+    --secondary: #40e0d0;
+    --secondary-dark: #20b2aa;
+    --secondary-light: #5eead4;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-tertiary: #f1f5f9;
+    --bg-elevated: #ffffff;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --text-tertiary: #94a3b8;
+    --text-inverse: #ffffff;
+    --border-light: #e2e8f0;
+    --border-medium: #cbd5e1;
+    --danger: #ef4444;
+    --danger-light: #fef2f2;
+    --success: #22c55e;
+    --success-light: #f0fdf4;
+    --warning: #f59e0b;
+    --warning-light: #fffbeb;
+    --info: #3b82f6;
+    --info-light: #eff6ff;
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 3rem;
+    --space-3xl: 4rem;
+    --space-4xl: 6rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-16: 4rem;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.15);
+    --shadow-lg: 0 10px 30px rgba(106, 255, 147, 0.2);
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+    --font-size-4xl: 2.25rem;
+    --transition-normal: 0.3s ease;
+}
+
+/* Enhanced Page Header */
+.page-header {
+    background: linear-gradient(135deg, var(--secondary), var(--primary));
+    border-radius: var(--radius-xl);
+    position: relative;
+    overflow: hidden;
+    padding: var(--space-8);
+    margin-bottom: var(--space-8);
+}
+
+.page-header::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+.page-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 10;
+}
+
+.page-title {
+    color: var(--text-inverse);
+    font-size: var(--font-size-4xl);
+    font-weight: 700;
+    margin-bottom: var(--space-2);
+}
+
+.page-subtitle {
+    color: rgba(255,255,255,0.9);
+    font-size: var(--font-size-lg);
+    font-weight: 400;
+}
+
+.header-actions {
+    display: flex;
+    gap: var(--space-4);
+}
+
+/* Progress Indicator */
+.progress-indicator {
+    background: var(--bg-elevated);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    padding: var(--space-6);
+    border: 1px solid var(--border-light);
+}
+
+.progress-steps {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.progress-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    flex: 1;
+    position: relative;
+}
+
+.progress-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    width: 100%;
+    height: 2px;
+    background: var(--border-light);
+    z-index: 1;
+}
+
+.progress-step.active:not(:last-child)::after {
+    background: var(--primary);
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    border: 2px solid var(--border-light);
+    position: relative;
+    z-index: 2;
+    transition: all var(--transition-normal);
+}
+
+.progress-step.active .step-number {
+    background: var(--primary);
+    color: var(--text-inverse);
+    border-color: var(--primary);
+}
+
+.step-label {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    font-weight: 500;
+    text-align: center;
+}
+
+.progress-step.active .step-label {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* Form Styles */
+.enrollment-form {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.form-section {
+    background: var(--bg-elevated);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    padding: var(--space-8);
+    border: 1px solid var(--border-light);
+}
+
+.section-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.section-description {
+    color: var(--text-secondary);
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--space-6);
+}
+
+.form-group {
+    margin-bottom: var(--space-6);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-6);
+}
+
+.form-label {
+    display: block;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+    font-size: var(--font-size-sm);
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border-medium);
+    border-radius: var(--radius-lg);
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    transition: all var(--transition-normal);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(106, 255, 147, 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-help {
+    display: block;
+    font-size: var(--font-size-xs);
+    color: var(--text-tertiary);
+    margin-top: var(--space-1);
+}
+
+/* Hardware Configuration */
+.hardware-section {
+    margin-bottom: var(--space-8);
+}
+
+.subsection-title {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+}
+
+.sensor-grid,
+.actuator-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--space-4);
+}
+
+.sensor-item,
+.actuator-item {
+    position: relative;
+}
+
+.sensor-checkbox,
+.actuator-checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.sensor-label,
+.actuator-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border: 2px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    background: var(--bg-primary);
+}
+
+.sensor-label:hover,
+.actuator-label:hover {
+    border-color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.sensor-checkbox:checked + .sensor-label,
+.actuator-checkbox:checked + .actuator-label {
+    border-color: var(--primary);
+    background: var(--success-light);
+}
+
+.sensor-icon,
+.actuator-icon {
+    font-size: var(--font-size-2xl);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+}
+
+.sensor-info,
+.actuator-info {
+    flex: 1;
+}
+
+.sensor-name,
+.actuator-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-1);
+}
+
+.sensor-desc,
+.actuator-desc {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+/* Review Summary */
+.review-summary {
+    margin-bottom: var(--space-8);
+}
+
+.summary-section {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    margin-bottom: var(--space-4);
+}
+
+.summary-title {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+}
+
+.summary-content {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.summary-item:last-child {
+    border-bottom: none;
+}
+
+.summary-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.summary-value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--space-8);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--border-light);
+}
+
+/* Button Styles */
+.btn {
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-lg);
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-family);
+    text-decoration: none;
+    font-size: var(--font-size-base);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: var(--text-inverse);
+    border: 1px solid rgba(255,255,255,0.3);
+    backdrop-filter: blur(10px);
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-light);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-tertiary);
+    transform: translateY(-1px);
+}
+
+/* Alert Styles */
+.alert {
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-6);
+}
+
+.alert-error {
+    background: var(--danger-light);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-header-content {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-4);
+    }
+    
+    .progress-steps {
+        flex-direction: column;
+        gap: var(--space-4);
+    }
+    
+    .progress-step:not(:last-child)::after {
+        display: none;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .sensor-grid,
+    .actuator-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: var(--space-4);
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .form-section {
+        padding: var(--space-4);
+    }
+    
+    .section-title {
+        font-size: var(--font-size-xl);
+    }
+    
+    .section-description {
+        font-size: var(--font-size-base);
+    }
+}
+</style>
+{% endblock %} 

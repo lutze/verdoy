@@ -6,14 +6,16 @@ Handles all HTML-based bioreactor management for web browser clients.
 from fastapi import APIRouter, Depends, Request, Form, Query, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
+from datetime import datetime
 
 from ...dependencies import get_db, get_web_user
 from ...models.user import User
+from ...models.bioreactor import Bioreactor
 from ...services.bioreactor_service import BioreactorService
 from ...services.organization_service import OrganizationService
-from ...schemas.bioreactor import BioreactorCreate, BioreactorUpdate
+from ...schemas.bioreactor import BioreactorCreate, BioreactorUpdate, SensorConfig, ActuatorConfig
 from ...templates_config import templates
 
 router = APIRouter(prefix="/app/bioreactors", tags=["Web Bioreactors"])
@@ -92,7 +94,7 @@ async def list_bioreactors_page(
 async def enroll_bioreactor_page(
     request: Request,
     organization_id: Optional[UUID] = Query(None),
-    step: int = Query(1, ge=1, le=3),
+    step: int = Query(1, ge=1, le=4),
     current_user: User = Depends(get_web_user),
     db: Session = Depends(get_db)
 ):
@@ -114,8 +116,34 @@ async def enroll_bioreactor_page(
     # Pre-populate form data if available
     form_data = {}
     if step > 1:
-        # In a real implementation, you'd get this from session or temporary storage
-        form_data = {}
+        # Extract form data from URL parameters
+        form_data = {
+            "name": request.query_params.get("name"),
+            "description": request.query_params.get("description"),
+            "location": request.query_params.get("location"),
+            "bioreactor_type": request.query_params.get("bioreactor_type", "stirred_tank"),
+            "vessel_volume": request.query_params.get("vessel_volume"),
+            "working_volume": request.query_params.get("working_volume"),
+            "sensors": request.query_params.getlist("sensors") if request.query_params.get("sensors") else [],
+            "actuators": request.query_params.getlist("actuators") if request.query_params.get("actuators") else [],
+            "firmware_version": request.query_params.get("firmware_version", "1.0.0"),
+            "hardware_model": request.query_params.get("hardware_model"),
+            "mac_address": request.query_params.get("mac_address"),
+            "reading_interval": request.query_params.get("reading_interval", "300")
+        }
+        
+        # Convert numeric values
+        if form_data["vessel_volume"]:
+            try:
+                form_data["vessel_volume"] = float(form_data["vessel_volume"])
+            except ValueError:
+                form_data["vessel_volume"] = None
+        
+        if form_data["working_volume"]:
+            try:
+                form_data["working_volume"] = float(form_data["working_volume"])
+            except ValueError:
+                form_data["working_volume"] = None
     
     return templates.TemplateResponse("pages/bioreactors/enroll.html", {
         "request": request,
@@ -129,14 +157,20 @@ async def enroll_bioreactor_page(
 @router.post("/enroll", response_class=HTMLResponse, include_in_schema=False)
 async def enroll_bioreactor_post(
     request: Request,
-    step: int = Form(1, ge=1, le=3),
+    step: int = Form(1, ge=1, le=4),
     organization_id: UUID = Form(...),
-    name: str = Form(...),
+    name: Optional[str] = Form(None),
     description: Optional[str] = Form(None),
     location: Optional[str] = Form(None),
-    bioreactor_type: str = Form("standard"),
-    vessel_volume: float = Form(...),
+    bioreactor_type: Optional[str] = Form("stirred_tank"),
+    vessel_volume: Optional[float] = Form(None),
     working_volume: Optional[float] = Form(None),
+    sensors: Optional[list] = Form(None),
+    actuators: Optional[list] = Form(None),
+    firmware_version: Optional[str] = Form("1.0.0"),
+    hardware_model: Optional[str] = Form(None),
+    mac_address: Optional[str] = Form(None),
+    reading_interval: Optional[int] = Form(300),
     current_user: User = Depends(get_web_user),
     db: Session = Depends(get_db)
 ):
@@ -144,49 +178,176 @@ async def enroll_bioreactor_post(
     bioreactor_service = BioreactorService(db)
     
     try:
-        # For now, handle step 1 only
         if step == 1:
-            # Validate basic information
-            if vessel_volume <= 0:
+            # Validate step 1 data
+            if not name:
+                raise HTTPException(status_code=400, detail="Name is required")
+            if not vessel_volume or vessel_volume <= 0:
                 raise HTTPException(status_code=400, detail="Vessel volume must be greater than 0")
             
             if working_volume and working_volume > vessel_volume:
                 raise HTTPException(status_code=400, detail="Working volume cannot be greater than vessel volume")
             
-            # Store step 1 data (in a real implementation, use session or temporary storage)
-            # For now, redirect to step 2
-            return RedirectResponse(
-                url=f"/app/bioreactors/enroll?organization_id={organization_id}&step=2",
-                status_code=302
-            )
-        
-        # Handle other steps
-        elif step == 2:
-            # Handle hardware configuration
-            return RedirectResponse(
-                url=f"/app/bioreactors/enroll?organization_id={organization_id}&step=3",
-                status_code=302
-            )
-        
-        elif step == 3:
-            # Complete enrollment
-            # In a real implementation, you'd collect all data and create the bioreactor
-            return RedirectResponse(url="/app/bioreactors", status_code=302)
-    
-    except Exception as e:
-        # Return to enrollment page with error
-        return templates.TemplateResponse("pages/bioreactors/enroll.html", {
-            "request": request,
-            "step": step,
-            "error": str(e),
-            "form_data": {
+            # Store step 1 data and redirect to step 2
+            form_data = {
                 "name": name,
                 "description": description,
                 "location": location,
                 "bioreactor_type": bioreactor_type,
                 "vessel_volume": vessel_volume,
                 "working_volume": working_volume
-            },
+            }
+            
+            # In a real implementation, you'd store this in session or temporary storage
+            # For now, we'll pass it as URL parameters (not ideal but works for demo)
+            params = f"organization_id={organization_id}&step=2"
+            for key, value in form_data.items():
+                if value is not None:
+                    params += f"&{key}={value}"
+            
+            return RedirectResponse(url=f"/app/bioreactors/enroll?{params}", status_code=302)
+        
+        elif step == 2:
+            # Handle hardware configuration step
+            # For now, just redirect to step 3 with the data
+            form_data = {
+                "name": name,
+                "description": description,
+                "location": location,
+                "bioreactor_type": bioreactor_type,
+                "vessel_volume": vessel_volume,
+                "working_volume": working_volume,
+                "sensors": sensors,
+                "actuators": actuators
+            }
+            
+            params = f"organization_id={organization_id}&step=3"
+            for key, value in form_data.items():
+                if value is not None:
+                    if isinstance(value, list):
+                        for item in value:
+                            params += f"&{key}={item}"
+                    else:
+                        params += f"&{key}={value}"
+            
+            return RedirectResponse(url=f"/app/bioreactors/enroll?{params}", status_code=302)
+        
+        elif step == 3:
+            # Handle device configuration step
+            form_data = {
+                "name": name,
+                "description": description,
+                "location": location,
+                "bioreactor_type": bioreactor_type,
+                "vessel_volume": vessel_volume,
+                "working_volume": working_volume,
+                "sensors": sensors,
+                "actuators": actuators,
+                "firmware_version": firmware_version,
+                "hardware_model": hardware_model,
+                "mac_address": mac_address,
+                "reading_interval": reading_interval
+            }
+            
+            params = f"organization_id={organization_id}&step=4"
+            for key, value in form_data.items():
+                if value is not None:
+                    if isinstance(value, list):
+                        for item in value:
+                            params += f"&{key}={item}"
+                    else:
+                        params += f"&{key}={value}"
+            
+            return RedirectResponse(url=f"/app/bioreactors/enroll?{params}", status_code=302)
+        
+        elif step == 4:
+            # Complete enrollment
+            if not name or not vessel_volume:
+                raise HTTPException(status_code=400, detail="Missing required fields")
+            
+            try:
+                # Create bioreactor with complete data
+                bioreactor = Bioreactor(
+                    name=name,
+                    description=description,
+                    organization_id=organization_id,
+                    entity_type='device.bioreactor',
+                    status='offline'
+                )
+                
+                # Set location in properties if provided
+                if location:
+                    bioreactor.set_property('location', location)
+                
+                # Set bioreactor-specific properties
+                bioreactor.set_bioreactor_type(bioreactor_type or "stirred_tank")
+                bioreactor.set_vessel_volume(vessel_volume)
+                if working_volume:
+                    bioreactor.set_working_volume(working_volume)
+                
+                # Set hardware configuration
+                hardware_config = {
+                    'model': hardware_model or 'Generic Bioreactor',
+                    'macAddress': mac_address or '00:00:00:00:00:00',
+                    'sensors': [{"type": sensor, "unit": "standard", "status": "active"} for sensor in (sensors or [])],
+                    'actuators': [{"type": actuator, "unit": "standard", "status": "active"} for actuator in (actuators or [])]
+                }
+                bioreactor.set_property('hardware', hardware_config)
+                
+                # Set firmware configuration
+                firmware_config = {
+                    'version': firmware_version or '1.0.0',
+                    'lastUpdate': datetime.utcnow().isoformat()
+                }
+                bioreactor.set_property('firmware', firmware_config)
+                
+                # Set reading interval
+                bioreactor.set_property('reading_interval', reading_interval or 300)
+                
+                # Save to database
+                db.add(bioreactor)
+                db.commit()
+                db.refresh(bioreactor)
+                
+                return RedirectResponse(url="/app/bioreactors", status_code=302)
+                
+            except Exception as e:
+                db.rollback()
+                raise HTTPException(status_code=500, detail=f"Failed to create bioreactor: {str(e)}")
+    
+    except Exception as e:
+        # Return to enrollment page with error
+        form_data = {
+            "name": name,
+            "description": description,
+            "location": location,
+            "bioreactor_type": bioreactor_type,
+            "vessel_volume": vessel_volume,
+            "working_volume": working_volume,
+            "sensors": sensors,
+            "actuators": actuators,
+            "firmware_version": firmware_version,
+            "hardware_model": hardware_model,
+            "mac_address": mac_address,
+            "reading_interval": reading_interval
+        }
+        
+        # Get organization data for error context
+        org_service = OrganizationService(db)
+        user_organizations = org_service.get_user_organizations(current_user.id)
+        selected_org = None
+        if organization_id:
+            selected_org = org_service.get_by_id(organization_id)
+        elif user_organizations:
+            selected_org = user_organizations[0]
+        
+        return templates.TemplateResponse("pages/bioreactors/enroll.html", {
+            "request": request,
+            "step": step,
+            "error": str(e),
+            "form_data": form_data,
+            "organizations": user_organizations,
+            "selected_org": selected_org,
             "current_user": current_user
         })
 

@@ -40,7 +40,8 @@
 ### Key Components
 
 - **IoT Devices**: ESP32 microcontrollers with sensors
-- **Web Frontend**: Next.js dashboard for data visualization
+- **Bioreactor Systems**: Laboratory bioreactors with sensor/actuator networks
+- **Web Frontend**: HTML-first dashboard with server-side rendering (Jinja2 templates)
 - **API Backend**: FastAPI application with REST and WebSocket endpoints
 - **Database**: PostgreSQL with TimescaleDB extension for time-series data
 - **Real-time Communication**: WebSocket connections for live data streaming
@@ -518,6 +519,119 @@ class JSONType(TypeDecorator):
 ---
 
 ## 🔄 Recent Architectural Improvements (July 2025)
+
+### Entity-Based Model Architecture
+
+The LMS Core platform has been enhanced with a robust Entity-based inheritance system that provides flexibility while maintaining data integrity:
+
+### Bioreactor Management Architecture
+
+The bioreactor management system implements a comprehensive approach to laboratory bioreactor enrollment, monitoring, and control:
+
+#### **Multi-Step Enrollment Process**
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│   Step 1    │    │   Step 2    │    │   Step 3    │    │   Step 4    │
+│ Basic Info  │───▶│ Hardware    │───▶│ Device      │───▶│ Review &    │
+│             │    │ Config      │    │ Config      │    │ Complete    │
+└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+```
+
+**Data Persistence Strategy:**
+- **URL Parameters**: Form data passed between steps via URL query parameters
+- **Hidden Inputs**: Each step includes hidden form fields to preserve previous data
+- **Template Context**: Organization and form data maintained across validation errors
+
+#### **Entity-Based Bioreactor Model**
+```python
+class Bioreactor(Device):
+    """Bioreactor model extending Device with bioreactor-specific properties."""
+    
+    __mapper_args__ = {
+        'polymorphic_identity': 'device.bioreactor',
+    }
+    
+    def set_bioreactor_type(self, bioreactor_type: str):
+        """Set bioreactor type (stirred_tank, fed_batch, etc.)."""
+        self.set_property('bioreactor_type', bioreactor_type)
+    
+    def set_vessel_volume(self, volume: float):
+        """Set vessel volume in liters."""
+        self.set_property('vessel_volume', volume)
+    
+    def set_working_volume(self, volume: float):
+        """Set working volume in liters."""
+        self.set_property('working_volume', volume)
+```
+
+#### **Property-Based Configuration Storage**
+```python
+# Bioreactor properties stored in JSONB
+bioreactor_properties = {
+    "bioreactor_type": "stirred_tank",
+    "vessel_volume": 5.0,
+    "working_volume": 3.0,
+    "location": "Lab A",
+    "hardware": {
+        "model": "Generic Bioreactor",
+        "macAddress": "00:00:00:00:00:00",
+        "sensors": [
+            {"type": "temperature", "unit": "°C", "status": "active"},
+            {"type": "pH", "unit": "pH", "status": "active"}
+        ],
+        "actuators": [
+            {"type": "pump", "unit": "rpm", "status": "active"},
+            {"type": "heater", "unit": "W", "status": "active"}
+        ]
+    },
+    "firmware": {
+        "version": "1.0.0",
+        "lastUpdate": "2025-07-23T10:00:00Z"
+    },
+    "reading_interval": 300
+}
+```
+
+#### **Safety-First Design Principles**
+- **Confirmation Dialogs**: Critical operations require explicit user confirmation
+- **Emergency Stops**: Immediate halt capability for safety-critical situations
+- **Status Monitoring**: Real-time status tracking for all bioreactor components
+- **Audit Trail**: Complete logging of all control operations and safety events
+
+#### **Real-Time Data Architecture**
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  Bioreactor │    │   API       │    │  WebSocket  │    │   Frontend  │
+│   Sensors   │    │  Backend    │    │   Service   │    │  Dashboard  │
+└─────┬───────┘    └─────┬───────┘    └─────┬───────┘    └─────┬───────┘
+      │                  │                  │                  │
+      │ 1. Sensor Data   │                  │                  │
+      │─────────────────►│                  │                  │
+      │                  │                  │                  │
+      │                  │ 2. Process &     │                  │
+      │                  │    Store         │                  │
+      │                  │─────────────────►│                  │
+      │                  │                  │                  │
+      │                  │ 3. Broadcast     │                  │
+      │                  │    Updates       │                  │
+      │                  │─────────────────►│                  │
+      │                  │                  │                  │
+      │                  │ 4. Real-time     │                  │
+      │                  │    Display       │                  │
+      │                  │─────────────────►│                  │
+```
+
+#### **Mobile-First Responsive Design**
+- **Touch-Friendly Controls**: Large touch targets for mobile operation
+- **Progressive Enhancement**: Core functionality works without JavaScript
+- **HTMX Integration**: Dynamic updates without full page reloads
+- **Scientific Design System**: Consistent styling with laboratory-grade aesthetics
+
+#### **Error Handling & Recovery**
+- **Form Validation**: Comprehensive validation with context preservation
+- **Template Context**: Organization data always available for error recovery
+- **Transaction Safety**: Database operations wrapped in proper transactions
+- **Graceful Degradation**: System continues operating with reduced functionality
 
 ### Entity-Based Model Architecture
 
