@@ -523,94 +523,278 @@ Process for adding existing users to organizations or changing user organization
 
 ---
 
-## Data Model Relationships
+## Process Flow 7: Process Management
 
-### Entity Hierarchy
-```
-Entity (base table)
-├── User (entity_type='user')
-├── Organization (entity_type='organization')
-├── Device (entity_type='device.esp32')
-├── AlertRule (entity_type='alert.rule')
-└── Billing (entity_type='billing.account')
+### Flow Description
+Multi-step process creation and management system that supports process templates, instances, and comprehensive lifecycle management.
+
+### Prerequisites
+- User must be authenticated and belong to an organization
+- Organization must exist and be accessible to the user
+- User must have permission to create processes in the organization
+
+### Steps
+1. **Step 1: Basic Process Information**
+   ```python
+   # Validate organization access
+   if not user_has_org_access(current_user, organization_id):
+       raise PermissionException("Access denied to organization")
+   
+   # Collect basic process information
+   basic_info = {
+       'name': name,  # Required
+       'version': version,  # Required
+       'process_type': process_type,  # Required
+       'description': description,  # Optional
+       'is_template': is_template or False
+   }
+   ```
+
+2. **Step 2: Process Configuration**
+   ```python
+   # Validate process type and configuration
+   if not process_type:
+       raise ValidationException("Process type is required")
+   
+   process_config = {
+       'estimated_duration': estimated_duration,  # Optional
+       'target_volume': target_volume,  # Optional
+       'parameters': parameters or [],  # Process parameters
+       'notes': notes  # Optional notes
+   }
+   ```
+
+3. **Step 3: Process Steps and Review**
+   ```python
+   # Validate process steps
+   if not steps:
+       raise ValidationException("At least one process step is required")
+   
+   # Create process entity
+   process = Process(
+       name=name,
+       version=version,
+       process_type=process_type,
+       description=description,
+       organization_id=organization_id,
+       status='draft',
+       is_template=is_template
+   )
+   
+   # Store configuration in properties
+   if estimated_duration:
+       process.set_property('estimated_duration', estimated_duration)
+   if target_volume:
+       process.set_property('target_volume', target_volume)
+   if parameters:
+       process.set_property('parameters', parameters)
+   if notes:
+       process.set_property('notes', notes)
+   
+   # Save to database
+   db.add(process)
+   db.commit()
+   db.refresh(process)
+   ```
+
+### Process Instance Management
+```python
+# Create process instance for execution
+instance = ProcessInstance(
+    process_id=process.id,
+    organization_id=organization_id,
+    status='pending',
+    started_by=current_user.id
+)
+
+# Execute process instance
+instance.status = 'running'
+instance.started_at = datetime.utcnow()
+db.commit()
 ```
 
-### Key Relationships
-- **User ↔ Entity**: One-to-one via `entity_id`
-- **Entity ↔ Organization**: Many-to-one via `organization_id`
-- **Organization ↔ Members**: One-to-many via `organization_id` (reverse)
-- **Entity ↔ Entity**: Many-to-many via `relationships` table
+### Template System
+```python
+# Save process as template
+if is_template:
+    process.is_template = True
+    process.set_property('template_shared', True)
+    db.commit()
+
+# Create process from template
+template_process = db.query(Process).filter(
+    Process.id == template_id,
+    Process.is_template == True
+).first()
+
+new_process = Process(
+    name=f"{template_process.name} - Copy",
+    version=template_process.version,
+    process_type=template_process.process_type,
+    description=template_process.description,
+    organization_id=organization_id,
+    status='draft',
+    is_template=False
+)
+```
+
+### Error Handling
+- **Missing Required Fields**: Return to current step with error message
+- **Invalid Process Type**: Return validation error with available types
+- **Permission Denied**: Return 403 Forbidden
+- **Database Errors**: Rollback transaction and return error
+- **Validation Errors**: Preserve form data and display specific error messages
 
 ---
 
-## Implementation Notes
+## Process Flow 8: Bioreactor Control
 
-### Test User for Development & CI
-- A default test user is always created via migration (`test@example.com` / `testpassword123`).
-- The password hash is generated using the backend's bcrypt environment to ensure compatibility.
-- This user is guaranteed to work after every database rebuild and is used for Playwright/CI login tests.
-- The test user is created in the `006_add_users_table.sql` migration, after the users table exists.
+### Flow Description
+Safety-focused bioreactor control system with manual controls, emergency procedures, and real-time monitoring.
 
-### Password Hashing
-- All passwords are hashed using bcrypt (12 rounds) via passlib in the backend container.
-- Never store plain text passwords or hashes generated outside the backend environment.
+### Prerequisites
+- User must be authenticated and have access to the bioreactor
+- Bioreactor must exist and be accessible to the user
+- User must have permission to control the bioreactor
 
-### Registration & Login Flow
-- Registration and login are robust and tested end-to-end.
-- Registration creates both an Entity and a User, with proper foreign key relationships.
-- Login verifies the password using the User model's `check_password` method.
-- Post-login and logout redirects use `/auth/profile` and `/auth/login` (no `/api/v1/` prefix).
+### Steps
+1. **Control Interface Access**
+   ```python
+   # Validate bioreactor access
+   bioreactor = db.query(Bioreactor).filter(
+       Bioreactor.id == bioreactor_id,
+       Bioreactor.organization_id == current_user.organization_id
+   ).first()
+   
+   if not bioreactor:
+       raise PermissionException("Access denied to bioreactor")
+   ```
 
-### Migration Order
-- The test user is created only after the users table exists (in `006_add_users_table.sql`).
-- If you add new migrations, ensure the test user creation remains after the users table.
+2. **Safety Confirmation**
+   ```python
+   # Require safety confirmation for critical operations
+   if control_type in ['emergency_stop', 'shutdown', 'restart']:
+       if not safety_confirmation:
+           raise ValidationException("Safety confirmation required for critical operations")
+   ```
 
-### Testing
-- Playwright and API tests use the test user for login and registration flows.
-- The test user is always available for local development and CI.
+3. **Control Execution**
+   ```python
+   # Execute control command
+   control_result = {
+       'control_type': control_type,
+       'parameter': parameter,
+       'value': value,
+       'timestamp': datetime.utcnow(),
+       'executed_by': current_user.id,
+       'status': 'executing'
+   }
+   
+   # Update bioreactor status
+   bioreactor.set_property('last_control_action', control_result)
+   bioreactor.set_property('status', 'controlled')
+   db.commit()
+   ```
+
+4. **Real-time Monitoring**
+   ```python
+   # HTMX polling for real-time updates
+   def get_bioreactor_status(bioreactor_id):
+       bioreactor = db.query(Bioreactor).filter(Bioreactor.id == bioreactor_id).first()
+       return {
+           'status': bioreactor.get_property('status', 'unknown'),
+           'last_control': bioreactor.get_property('last_control_action'),
+           'sensor_data': bioreactor.get_property('latest_readings', []),
+           'timestamp': datetime.utcnow().isoformat()
+       }
+   ```
+
+### Emergency Procedures
+```python
+# Emergency stop procedure
+if control_type == 'emergency_stop':
+    # Immediate halt of all systems
+    emergency_result = {
+        'type': 'emergency_stop',
+        'timestamp': datetime.utcnow(),
+        'executed_by': current_user.id,
+        'status': 'emergency_stop_activated'
+    }
+    
+    # Update bioreactor status
+    bioreactor.set_property('emergency_stop', emergency_result)
+    bioreactor.set_property('status', 'emergency_stop')
+    db.commit()
+    
+    # Log emergency event
+    log_emergency_event(bioreactor_id, current_user.id, 'emergency_stop')
+```
+
+### Safety Features
+- **Emergency Stop**: Immediate halt of all bioreactor systems
+- **Safety Confirmations**: Required for critical operations
+- **Status Monitoring**: Real-time status tracking
+- **Audit Logging**: Complete logging of all control actions
+- **Mobile Interface**: Touch-friendly controls for mobile operation
+
+### Error Handling
+- **Permission Denied**: Return 403 Forbidden
+- **Safety Confirmation Missing**: Return validation error
+- **Control Execution Failure**: Return error with details
+- **Emergency Stop Activation**: Immediate system halt
+- **Real-time Update Failures**: Graceful degradation
 
 ---
 
-## Testing Scenarios
+## Process Flow 9: Real-time Data Integration
 
-### User Registration Tests
-- [ ] Valid user registration
-- [ ] Duplicate email handling
-- [ ] Invalid data validation
-- [ ] Password strength requirements
+### Flow Description
+HTMX-based real-time data integration for bioreactor monitoring and process tracking.
 
-### Organization Creation Tests
-- [ ] Valid organization creation
-- [ ] Organization creation without user
-- [ ] Duplicate organization names
-- [ ] User already in organization
+### Implementation
+```python
+# HTMX polling endpoints for real-time updates
+@router.get("/{bioreactor_id}/status", response_class=HTMLResponse)
+async def bioreactor_status_partial(request: Request, bioreactor_id: UUID):
+    """Real-time bioreactor status updates via HTMX."""
+    bioreactor = get_bioreactor_with_access(bioreactor_id, current_user)
+    
+    return templates.TemplateResponse(
+        "partials/bioreactor_status.html",
+        {
+            "request": request,
+            "bioreactor": bioreactor,
+            "status": bioreactor.get_property('status', 'unknown'),
+            "last_update": bioreactor.get_property('last_update')
+        }
+    )
 
-### Authentication Tests
-- [ ] Valid login
-- [ ] Invalid credentials
-- [ ] Deactivated account
-- [ ] Token refresh
+@router.get("/{bioreactor_id}/data", response_class=HTMLResponse)
+async def bioreactor_data_partial(request: Request, bioreactor_id: UUID):
+    """Real-time sensor data updates via HTMX."""
+    bioreactor = get_bioreactor_with_access(bioreactor_id, current_user)
+    
+    # Get latest sensor readings
+    readings = get_latest_readings(bioreactor_id)
+    
+    return templates.TemplateResponse(
+        "partials/bioreactor_data.html",
+        {
+            "request": request,
+            "readings": readings,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    )
+```
 
-### Permission Tests
-- [ ] Superuser access
-- [ ] Organization member access
-- [ ] Cross-organization access denial
-- [ ] Resource-level permissions
+### Mobile-First Design
+- **Touch-Friendly Controls**: Large touch targets for mobile operation
+- **Responsive Layout**: Adaptive design for different screen sizes
+- **Progressive Enhancement**: Core functionality works without JavaScript
+- **Real-time Updates**: HTMX polling for live data without page reloads
 
-### Edge Cases
-- [ ] User leaving organization
-- [ ] Organization deletion with members
-- [ ] Permission inheritance
-- [ ] Audit trail verification
-
-### Bioreactor Enrollment Tests
-- [ ] Valid bioreactor enrollment (all 4 steps)
-- [ ] Missing required fields handling
-- [ ] Optional fields with defaults
-- [ ] Organization access validation
-- [ ] Form data persistence across steps
-- [ ] Database creation with proper properties
-- [ ] Error recovery with context preservation
-- [ ] Mobile responsive design validation
-- [ ] Progressive enhancement (no-JS mode)
-- [ ] Template context availability during errors 
+### Error Handling
+- **Connection Failures**: Graceful degradation with cached data
+- **Update Failures**: Retry mechanism with exponential backoff
+- **Mobile Compatibility**: Fallback for unsupported mobile features
+- **Data Validation**: Real-time validation of sensor data 

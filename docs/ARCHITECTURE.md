@@ -633,6 +633,100 @@ bioreactor_properties = {
 - **Transaction Safety**: Database operations wrapped in proper transactions
 - **Graceful Degradation**: System continues operating with reduced functionality
 
+### Process Management Architecture
+
+The process management system implements a comprehensive approach to laboratory process design, execution, and monitoring:
+
+#### **Multi-Step Process Creation**
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│   Step 1    │    │   Step 2    │    │   Step 3    │
+│ Basic Info  │───▶│ Process     │───▶│ Steps &     │
+│             │    │ Config      │    │ Review      │
+└─────────────┘    └─────────────┘    └─────────────┘
+```
+
+#### **Process Template System**
+```python
+class Process(Entity):
+    """Process model with template and instance support."""
+    
+    __mapper_args__ = {
+        'polymorphic_identity': 'process',
+    }
+    
+    def set_process_type(self, process_type: str):
+        """Set process type (fermentation, cultivation, etc.)."""
+        self.set_property('process_type', process_type)
+    
+    def set_estimated_duration(self, duration: int):
+        """Set estimated duration in minutes."""
+        self.set_property('estimated_duration', duration)
+    
+    def set_target_volume(self, volume: float):
+        """Set target volume in liters."""
+        self.set_property('target_volume', volume)
+```
+
+#### **Process Instance Management**
+```python
+class ProcessInstance(Entity):
+    """Process instance for execution tracking."""
+    
+    __mapper_args__ = {
+        'polymorphic_identity': 'process.instance',
+    }
+    
+    def start_execution(self):
+        """Start process instance execution."""
+        self.set_property('status', 'running')
+        self.set_property('started_at', datetime.utcnow().isoformat())
+    
+    def complete_execution(self):
+        """Complete process instance execution."""
+        self.set_property('status', 'completed')
+        self.set_property('completed_at', datetime.utcnow().isoformat())
+```
+
+#### **Process Types and Step Types**
+```python
+# Supported process types
+PROCESS_TYPES = [
+    'fermentation',
+    'cultivation', 
+    'purification',
+    'analysis',
+    'calibration',
+    'cleaning',
+    'custom'
+]
+
+# Supported step types
+STEP_TYPES = [
+    'temperature_control',
+    'ph_control',
+    'dissolved_oxygen_control',
+    'stirring',
+    'feeding',
+    'sampling',
+    'analysis',
+    'wait',
+    'custom'
+]
+```
+
+#### **Status Management System**
+- **Draft**: Process in design phase
+- **Active**: Process ready for execution
+- **Inactive**: Process temporarily disabled
+- **Archived**: Process removed from active use
+
+#### **Template Sharing and Reuse**
+- **Organization Templates**: Templates shared within organization
+- **Template Versioning**: Version control for process templates
+- **Template Inheritance**: Create new processes from existing templates
+- **Template Validation**: Ensure template compatibility and safety
+
 ### Entity-Based Model Architecture
 
 The LMS Core platform has been enhanced with a robust Entity-based inheritance system that provides flexibility while maintaining data integrity:
