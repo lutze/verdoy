@@ -63,6 +63,7 @@ from app.routers import (
     analytics_router,
     alerts_router,
     billing_router,
+    processes_router,
     # System routers
     system_router,
     admin_router,
@@ -410,6 +411,10 @@ def register_routers(app: FastAPI) -> None:
     app.include_router(
         health_router,
         prefix=f"{settings.api_prefix}/health"
+    )
+    app.include_router(
+        processes_router,
+        prefix=f"{settings.api_prefix}/processes"
     )
     # WebSocket routers (no API prefix for WebSocket endpoints)
     app.include_router(live_data_ws_router)

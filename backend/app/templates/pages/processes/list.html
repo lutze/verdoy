@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Process Designer - LMS Core{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header Section -->
+    <div class="mb-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Process Designer</h1>
+                <p class="text-gray-600">Create, manage, and execute process workflows for your bioreactors</p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <a href="/app/processes/create" 
+                   class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Create Process
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+                <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                <input type="text" id="search" name="search" value="{{ filters.search or '' }}"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       placeholder="Search processes...">
+            </div>
+            
+            <div>
+                <label for="process_type" class="block text-sm font-medium text-gray-700 mb-1">Process Type</label>
+                <select id="process_type" name="process_type" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Types</option>
+                    {% for process_type in process_types %}
+                    <option value="{{ process_type }}" {% if filters.process_type == process_type %}selected{% endif %}>
+                        {{ process_type.replace('_', ' ').title() }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select id="status" name="status" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Statuses</option>
+                    {% for status in statuses %}
+                    <option value="{{ status }}" {% if filters.status == status %}selected{% endif %}>
+                        {{ status.replace('_', ' ').title() }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <label for="is_template" class="block text-sm font-medium text-gray-700 mb-1">Template</label>
+                <select id="is_template" name="is_template" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All</option>
+                    <option value="true" {% if filters.is_template == 'true' %}selected{% endif %}>Templates Only</option>
+                    <option value="false" {% if filters.is_template == 'false' %}selected{% endif %}>Processes Only</option>
+                </select>
+            </div>
+            
+            <div class="md:col-span-2 lg:col-span-4 flex gap-2">
+                <button type="submit" 
+                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                    Apply Filters
+                </button>
+                <a href="/app/processes" 
+                   class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
+                    Clear Filters
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Processes Grid -->
+    {% if processes %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for process in processes %}
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            <div class="p-6">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-1">
+                            <a href="/app/processes/{{ process.id }}" class="hover:text-blue-600 transition-colors">
+                                {{ process.name }}
+                            </a>
+                        </h3>
+                        <p class="text-sm text-gray-600 mb-2">{{ process.description or 'No description' }}</p>
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                       {% if process.status == 'active' %}bg-green-100 text-green-800
+                                       {% elif process.status == 'draft' %}bg-yellow-100 text-yellow-800
+                                       {% elif process.status == 'archived' %}bg-gray-100 text-gray-800
+                                       {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                {{ process.status.replace('_', ' ').title() }}
+                            </span>
+                            {% if process.is_template %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                Template
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="space-y-2 text-sm text-gray-600">
+                    <div class="flex justify-between">
+                        <span>Type:</span>
+                        <span class="font-medium">{{ process.process_type.replace('_', ' ').title() }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Version:</span>
+                        <span class="font-medium">{{ process.version }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Steps:</span>
+                        <span class="font-medium">{{ process.step_count }}</span>
+                    </div>
+                    {% if process.estimated_duration %}
+                    <div class="flex justify-between">
+                        <span>Duration:</span>
+                        <span class="font-medium">{{ process.estimated_duration }} min</span>
+                    </div>
+                    {% endif %}
+                    <div class="flex justify-between">
+                        <span>Updated:</span>
+                        <span class="font-medium">{{ process.updated_at.strftime('%Y-%m-%d') if process.updated_at else 'N/A' }}</span>
+                    </div>
+                </div>
+                
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="flex gap-2">
+                        <a href="/app/processes/{{ process.id }}" 
+                           class="flex-1 text-center px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                            View
+                        </a>
+                        <a href="/app/processes/{{ process.id }}/edit" 
+                           class="flex-1 text-center px-3 py-2 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
+                            Edit
+                        </a>
+                        {% if process.status != 'archived' %}
+                        <form method="POST" action="/app/processes/{{ process.id }}/archive" class="flex-1">
+                            <button type="submit" 
+                                    class="w-full px-3 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                                    onclick="return confirm('Are you sure you want to archive this process?')">
+                                Archive
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if total > per_page %}
+    <div class="mt-8 flex justify-center">
+        <nav class="flex items-center space-x-2">
+            {% if page > 1 %}
+            <a href="?page={{ page - 1 }}{% if filters.search %}&search={{ filters.search }}{% endif %}{% if filters.process_type %}&process_type={{ filters.process_type }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.is_template %}&is_template={{ filters.is_template }}{% endif %}" 
+               class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+                Previous
+            </a>
+            {% endif %}
+            
+            <span class="px-3 py-2 text-sm text-gray-700">
+                Page {{ page }} of {{ (total + per_page - 1) // per_page }}
+            </span>
+            
+            {% if page * per_page < total %}
+            <a href="?page={{ page + 1 }}{% if filters.search %}&search={{ filters.search }}{% endif %}{% if filters.process_type %}&process_type={{ filters.process_type }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.is_template %}&is_template={{ filters.is_template }}{% endif %}" 
+               class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+                Next
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                  d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No processes found</h3>
+        <p class="mt-1 text-sm text-gray-500">
+            {% if filters.search or filters.process_type or filters.status or filters.is_template %}
+            Try adjusting your filters to see more results.
+            {% else %}
+            Get started by creating your first process.
+            {% endif %}
+        </p>
+        <div class="mt-6">
+            <a href="/app/processes/create" 
+               class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Create Process
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

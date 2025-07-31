@@ -15,6 +15,7 @@ from .alert import Alert, AlertRule
 from .organization import Organization
 from .billing import Billing, Subscription
 from .command import Command
+from .process import Process, ProcessInstance
 
 __all__ = [
     "Base",
@@ -29,5 +30,7 @@ __all__ = [
     "Organization",
     "Billing",
     "Subscription",
-    "Command"
+    "Command",
+    "Process",
+    "ProcessInstance"
 ] 

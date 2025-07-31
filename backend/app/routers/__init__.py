@@ -23,6 +23,7 @@ from .billing import router as billing_router
 from .system import router as system_router
 from .admin import router as admin_router
 from .health import router as health_router
+from .processes import router as processes_router
 
 # WebSocket routers
 from .websocket.live_data import router as live_data_ws_router
@@ -39,6 +40,7 @@ __all__ = [
     "system_router",
     "admin_router",
     "health_router",
+    "processes_router",
     "live_data_ws_router",
     "device_status_ws_router",
     "alerts_ws_router",

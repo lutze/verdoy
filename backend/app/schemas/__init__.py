@@ -33,6 +33,11 @@ from .command import (
     CommandCreate, CommandUpdate, CommandResponse, CommandListResponse,
     CommandQueryParams
 )
+from .process import (
+    ProcessCreate, ProcessUpdate, ProcessResponse, ProcessListResponse,
+    ProcessInstanceCreate, ProcessInstanceUpdate, ProcessInstanceResponse, ProcessInstanceListResponse,
+    ProcessType, ProcessStatus, ProcessInstanceStatus, StepType, ProcessStep, ProcessDefinition
+)
 
 __all__ = [
     # Base schemas
@@ -93,5 +98,21 @@ __all__ = [
     "CommandUpdate",
     "CommandResponse",
     "CommandListResponse",
-    "CommandQueryParams"
+    "CommandQueryParams",
+    
+    # Process schemas
+    "ProcessCreate",
+    "ProcessUpdate",
+    "ProcessResponse",
+    "ProcessListResponse",
+    "ProcessInstanceCreate",
+    "ProcessInstanceUpdate",
+    "ProcessInstanceResponse",
+    "ProcessInstanceListResponse",
+    "ProcessType",
+    "ProcessStatus",
+    "ProcessInstanceStatus",
+    "StepType",
+    "ProcessStep",
+    "ProcessDefinition"
 ] 

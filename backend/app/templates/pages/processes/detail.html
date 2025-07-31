@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block title %}{{ process.name }} - Process Designer{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header Section -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <a href="/app/processes" class="text-blue-600 hover:text-blue-700 mr-4">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </a>
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">{{ process.name }}</h1>
+                    <p class="text-gray-600">{{ process.description or 'No description' }}</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <a href="/app/processes/{{ process.id }}/edit" 
+                   class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
+                    Edit Process
+                </a>
+                {% if process.status != 'archived' %}
+                <form method="POST" action="/app/processes/{{ process.id }}/archive" class="inline">
+                    <button type="submit" 
+                            class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                            onclick="return confirm('Are you sure you want to archive this process?')">
+                        Archive
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Process Status and Metadata -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Status</p>
+                    <p class="text-lg font-semibold text-gray-900">
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                   {% if process.status == 'active' %}bg-green-100 text-green-800
+                                   {% elif process.status == 'draft' %}bg-yellow-100 text-yellow-800
+                                   {% elif process.status == 'archived' %}bg-gray-100 text-gray-800
+                                   {% else %}bg-blue-100 text-blue-800{% endif %}">
+                            {{ process.status.replace('_', ' ').title() }}
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Type</p>
+                    <p class="text-lg font-semibold text-gray-900">{{ process.process_type.replace('_', ' ').title() }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Steps</p>
+                    <p class="text-lg font-semibold text-gray-900">{{ step_count }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-500">Duration</p>
+                    <p class="text-lg font-semibold text-gray-900">
+                        {% if estimated_duration %}
+                            {{ estimated_duration }} min
+                        {% else %}
+                            Not set
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Process Details Tabs -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div class="border-b border-gray-200">
+            <nav class="flex space-x-8 px-6" aria-label="Tabs">
+                <button class="border-blue-500 text-blue-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" 
+                        onclick="showTab('overview')">
+                    Overview
+                </button>
+                <button class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" 
+                        onclick="showTab('steps')">
+                    Steps
+                </button>
+                <button class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" 
+                        onclick="showTab('parameters')">
+                    Parameters
+                </button>
+                <button class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" 
+                        onclick="showTab('instances')">
+                    Recent Instances
+                </button>
+            </nav>
+        </div>
+
+        <div class="p-6">
+            <!-- Overview Tab -->
+            <div id="overview-tab" class="tab-content">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Process Information</h3>
+                        <dl class="space-y-4">
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Name</dt>
+                                <dd class="text-sm text-gray-900">{{ process.name }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Version</dt>
+                                <dd class="text-sm text-gray-900">{{ process.version }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Type</dt>
+                                <dd class="text-sm text-gray-900">{{ process.process_type.replace('_', ' ').title() }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Status</dt>
+                                <dd class="text-sm text-gray-900">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                               {% if process.status == 'active' %}bg-green-100 text-green-800
+                                               {% elif process.status == 'draft' %}bg-yellow-100 text-yellow-800
+                                               {% elif process.status == 'archived' %}bg-gray-100 text-gray-800
+                                               {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                        {{ process.status.replace('_', ' ').title() }}
+                                    </span>
+                                </dd>
+                            </div>
+                            {% if process.is_template %}
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Template</dt>
+                                <dd class="text-sm text-gray-900">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                        Template
+                                    </span>
+                                </dd>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Created</dt>
+                                <dd class="text-sm text-gray-900">{{ process.created_at.strftime('%Y-%m-%d %H:%M') if process.created_at else 'N/A' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Last Updated</dt>
+                                <dd class="text-sm text-gray-900">{{ process.updated_at.strftime('%Y-%m-%d %H:%M') if process.updated_at else 'N/A' }}</dd>
+                            </div>
+                        </dl>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Description</h3>
+                        <p class="text-sm text-gray-700">{{ process.description or 'No description provided.' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Steps Tab -->
+            <div id="steps-tab" class="tab-content hidden">
+                <div class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">No steps configured</h3>
+                    <p class="mt-1 text-sm text-gray-500">Process steps will be configured in the process designer.</p>
+                    <div class="mt-6">
+                        <a href="/app/processes/{{ process.id }}/edit" 
+                           class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                            Configure Steps
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parameters Tab -->
+            <div id="parameters-tab" class="tab-content hidden">
+                <div class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">No parameters configured</h3>
+                    <p class="mt-1 text-sm text-gray-500">Process parameters will be configured in the process designer.</p>
+                    <div class="mt-6">
+                        <a href="/app/processes/{{ process.id }}/edit" 
+                           class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                            Configure Parameters
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instances Tab -->
+            <div id="instances-tab" class="tab-content hidden">
+                {% if instances %}
+                <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-300">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Instance</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Started</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for instance in instances %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    {{ instance.batch_id or instance.id[:8] }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                               {% if instance.status == 'running' %}bg-green-100 text-green-800
+                                               {% elif instance.status == 'completed' %}bg-blue-100 text-blue-800
+                                               {% elif instance.status == 'failed' %}bg-red-100 text-red-800
+                                               {% elif instance.status == 'paused' %}bg-yellow-100 text-yellow-800
+                                               {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ instance.status.replace('_', ' ').title() }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ instance.started_at.strftime('%Y-%m-%d %H:%M') if instance.started_at else 'N/A' }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {% if instance.duration %}
+                                        {{ instance.duration }} min
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <a href="#" class="text-blue-600 hover:text-blue-900">View Details</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">No instances found</h3>
+                    <p class="mt-1 text-sm text-gray-500">This process hasn't been executed yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showTab(tabName) {
+    // Hide all tab contents
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabContents.forEach(content => content.classList.add('hidden'));
+    
+    // Show the selected tab content
+    const selectedTab = document.getElementById(tabName + '-tab');
+    if (selectedTab) {
+        selectedTab.classList.remove('hidden');
+    }
+    
+    // Update tab button styles
+    const tabButtons = document.querySelectorAll('nav button');
+    tabButtons.forEach(button => {
+        button.classList.remove('border-blue-500', 'text-blue-600');
+        button.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+    });
+    
+    // Highlight the active tab button
+    event.target.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+    event.target.classList.add('border-blue-500', 'text-blue-600');
+}
+</script>
+{% endblock %} 
