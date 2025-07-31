@@ -685,4 +685,559 @@ input:invalid, select:invalid, textarea:invalid {
   .org-actions {
     flex-direction: column;
   }
+}
+
+/* ============================================================================
+   BIOREACTOR DETAIL PAGE COMPONENTS
+   ============================================================================ */
+
+/* Status Banner */
+.status-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-6);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-6);
+  border: 1px solid var(--border-light);
+  transition: all var(--transition-normal);
+}
+
+.status-banner.online {
+  background: linear-gradient(135deg, var(--success-light), rgba(16, 185, 129, 0.1));
+  border-color: var(--success);
+}
+
+.status-banner.offline {
+  background: linear-gradient(135deg, var(--danger-light), rgba(239, 68, 68, 0.1));
+  border-color: var(--danger);
+}
+
+.status-banner.warning {
+  background: linear-gradient(135deg, var(--warning-light), rgba(245, 158, 11, 0.1));
+  border-color: var(--warning);
+}
+
+.status-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.status-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-banner.online .status-dot {
+  background: var(--success);
+}
+
+.status-banner.offline .status-dot {
+  background: var(--danger);
+}
+
+.status-banner.warning .status-dot {
+  background: var(--warning);
+}
+
+.status-text {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+
+.status-details {
+  display: flex;
+  gap: var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.status-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* Tab Navigation */
+.tab-navigation {
+  display: flex;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-6);
+  border: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+}
+
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  white-space: nowrap;
+}
+
+.tab-button:hover {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.tab-button.active {
+  background: var(--primary);
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-sm);
+}
+
+.tab-button:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Tab Content */
+.tab-content {
+  position: relative;
+}
+
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: block;
+}
+
+/* Info Grid */
+.info-grid {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.info-value {
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+/* Status Badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-badge.online {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.status-badge.offline {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
+.status-badge.warning {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+
+/* Hardware Section */
+.hardware-section {
+  margin-bottom: var(--space-4);
+}
+
+.hardware-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sensors-grid,
+.actuators-grid {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.sensor-item,
+.actuator-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+}
+
+.sensor-type,
+.actuator-type {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.sensor-status,
+.actuator-status {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sensor-status.online,
+.actuator-status.online {
+  color: var(--success);
+}
+
+.sensor-status.offline,
+.actuator-status.offline {
+  color: var(--danger);
+}
+
+.sensor-status.warning,
+.actuator-status.warning {
+  color: var(--warning);
+}
+
+/* Safety Grid */
+.safety-grid {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.safety-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.safety-item:last-child {
+  border-bottom: none;
+}
+
+.safety-label {
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.safety-value {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+
+.safety-value.ok {
+  color: var(--success);
+}
+
+.safety-value.warning {
+  color: var(--warning);
+}
+
+.safety-value.error {
+  color: var(--danger);
+}
+
+/* Experiment Status */
+.experiment-active {
+  text-align: center;
+  padding: var(--space-4);
+}
+
+.experiment-badge {
+  display: inline-block;
+  background: var(--success);
+  color: var(--text-inverse);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-3);
+}
+
+.experiment-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.experiment-inactive {
+  text-align: center;
+  padding: var(--space-4);
+}
+
+.experiment-actions {
+  margin-top: var(--space-3);
+}
+
+/* Data Section */
+.data-section {
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+}
+
+.data-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+}
+
+.data-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.auto-refresh {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.checkbox-label {
+  cursor: pointer;
+}
+
+.data-grid {
+  padding: var(--space-6);
+  min-height: 200px;
+}
+
+/* Controls Section */
+.controls-section {
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+}
+
+.controls-header {
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+}
+
+.safety-warning {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background: var(--warning-light);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--warning);
+}
+
+.controls-grid {
+  padding: var(--space-6);
+  min-height: 200px;
+}
+
+/* Settings Section */
+.settings-section {
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+}
+
+.settings-header {
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+}
+
+.settings-grid {
+  display: grid;
+  gap: var(--space-6);
+  padding: var(--space-6);
+}
+
+/* Params and Limits Grids */
+.params-grid,
+.limits-grid,
+.maintenance-grid {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.param-item,
+.limit-item,
+.maintenance-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.param-item:last-child,
+.limit-item:last-child,
+.maintenance-item:last-child {
+  border-bottom: none;
+}
+
+.param-label,
+.limit-label,
+.maintenance-label {
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.param-value,
+.limit-value,
+.maintenance-value {
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: var(--space-8);
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8);
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+/* Responsive Design for Bioreactor Detail */
+@media (max-width: 768px) {
+  .status-banner {
+    flex-direction: column;
+    gap: var(--space-3);
+    text-align: center;
+  }
+  
+  .status-content {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  
+  .status-details {
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+  
+  .tab-navigation {
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+  
+  .tab-button {
+    flex: 1;
+    min-width: 120px;
+    justify-content: center;
+  }
+  
+  .data-header,
+  .controls-header,
+  .settings-header {
+    flex-direction: column;
+    gap: var(--space-3);
+    align-items: flex-start;
+  }
+  
+  .data-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .tab-button {
+    min-width: 100px;
+    font-size: var(--font-size-xs);
+    padding: var(--space-2) var(--space-3);
+  }
+  
+  .info-item,
+  .safety-item,
+  .param-item,
+  .limit-item,
+  .maintenance-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+  }
+  
+  .info-value,
+  .safety-value,
+  .param-value,
+  .limit-value,
+  .maintenance-value {
+    text-align: left;
+  }
 } 

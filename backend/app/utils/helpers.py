@@ -11,6 +11,7 @@ import hashlib
 from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional, Union
 from statistics import mean, median, stdev
+from fastapi import Request
 
 
 def generate_device_id() -> str:
@@ -226,4 +227,18 @@ def truncate_text(text: str, max_length: int = 100, suffix: str = "...") -> str:
     """
     if len(text) <= max_length:
         return text
-    return text[:max_length - len(suffix)] + suffix 
+    return text[:max_length - len(suffix)] + suffix
+
+
+def accepts_json(request: Request) -> bool:
+    """
+    Check if the request accepts JSON response.
+    
+    Args:
+        request: FastAPI request object
+        
+    Returns:
+        True if request accepts JSON, False otherwise
+    """
+    accept_header = request.headers.get("accept", "")
+    return "application/json" in accept_header.lower() or "*/*" in accept_header.lower() 
