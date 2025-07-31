@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ bioreactor.name }} - Bioreactor{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Breadcrumb Navigation -->
+    <nav class="breadcrumb mb-6">
+        <a href="/app" class="breadcrumb-link">Home</a>
+        <span class="breadcrumb-separator">/</span>
+        <a href="/app/bioreactors" class="breadcrumb-link">Bioreactors</a>
+        <span class="breadcrumb-separator">/</span>
+        <a href="/app/bioreactors/{{ bioreactor.id }}" class="breadcrumb-link">{{ bioreactor.name }}</a>
+        <span class="breadcrumb-separator">/</span>
+        <span class="breadcrumb-current">Edit</span>
+    </nav>
+
+    <!-- Header Section -->
+    <div class="header-section">
+        <div class="header-content">
+            <h1 class="page-title">Edit Bioreactor</h1>
+            <p class="page-subtitle">Update configuration for {{ bioreactor.name }}</p>
+        </div>
+        <div class="header-actions">
+            <a href="/app/bioreactors/{{ bioreactor.id }}" class="btn btn-secondary">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                Back to Details
+            </a>
+        </div>
+    </div>
+
+    <!-- Error Display -->
+    {% if error %}
+    <div class="alert alert-error mb-6">
+        <div class="alert-content">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span>{{ error }}</span>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Edit Form -->
+    <form method="POST" class="edit-form">
+        <div class="form-sections">
+            <!-- Basic Information Section -->
+            <div class="form-section">
+                <div class="section-header">
+                    <h3 class="section-title">Basic Information</h3>
+                    <p class="section-description">Update bioreactor name, description, and location</p>
+                </div>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="name" class="form-label">Bioreactor Name *</label>
+                        <input 
+                            type="text" 
+                            id="name" 
+                            name="name" 
+                            value="{{ form_data.name if form_data else bioreactor.name }}"
+                            class="form-input {% if error and not form_data.name %}error{% endif %}"
+                            required
+                        >
+                        {% if error and not form_data.name %}
+                        <span class="form-error">Name is required</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea 
+                            id="description" 
+                            name="description" 
+                            class="form-textarea"
+                            rows="3"
+                        >{{ form_data.description if form_data else bioreactor.description or '' }}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location" class="form-label">Location</label>
+                        <input 
+                            type="text" 
+                            id="location" 
+                            name="location" 
+                            value="{{ form_data.location if form_data else bioreactor.get_location() or '' }}"
+                            class="form-input"
+                            placeholder="e.g., Lab 101, Building A"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="bioreactor_type" class="form-label">Bioreactor Type *</label>
+                        <select 
+                            id="bioreactor_type" 
+                            name="bioreactor_type" 
+                            class="form-select"
+                            required
+                        >
+                            <option value="stirred_tank" {% if (form_data.bioreactor_type if form_data else bioreactor.get_bioreactor_type()) == 'stirred_tank' %}selected{% endif %}>Stirred Tank</option>
+                            <option value="fed_batch" {% if (form_data.bioreactor_type if form_data else bioreactor.get_bioreactor_type()) == 'fed_batch' %}selected{% endif %}>Fed Batch</option>
+                            <option value="continuous" {% if (form_data.bioreactor_type if form_data else bioreactor.get_bioreactor_type()) == 'continuous' %}selected{% endif %}>Continuous</option>
+                            <option value="airlift" {% if (form_data.bioreactor_type if form_data else bioreactor.get_bioreactor_type()) == 'airlift' %}selected{% endif %}>Airlift</option>
+                            <option value="packed_bed" {% if (form_data.bioreactor_type if form_data else bioreactor.get_bioreactor_type()) == 'packed_bed' %}selected{% endif %}>Packed Bed</option>
+                            <option value="fluidized_bed" {% if (form_data.bioreactor_type if form_data else bioreactor.get_bioreactor_type()) == 'fluidized_bed' %}selected{% endif %}>Fluidized Bed</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Volume Configuration Section -->
+            <div class="form-section">
+                <div class="section-header">
+                    <h3 class="section-title">Volume Configuration</h3>
+                    <p class="section-description">Set vessel and working volumes</p>
+                </div>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="vessel_volume" class="form-label">Vessel Volume (L) *</label>
+                        <input 
+                            type="number" 
+                            id="vessel_volume" 
+                            name="vessel_volume" 
+                            value="{{ form_data.vessel_volume if form_data else bioreactor.get_vessel_volume() }}"
+                            class="form-input {% if error and not form_data.vessel_volume %}error{% endif %}"
+                            step="0.1"
+                            min="0.1"
+                            required
+                        >
+                        {% if error and not form_data.vessel_volume %}
+                        <span class="form-error">Vessel volume is required</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="working_volume" class="form-label">Working Volume (L)</label>
+                        <input 
+                            type="number" 
+                            id="working_volume" 
+                            name="working_volume" 
+                            value="{{ form_data.working_volume if form_data else bioreactor.get_working_volume() or '' }}"
+                            class="form-input"
+                            step="0.1"
+                            min="0.1"
+                            max="{{ form_data.vessel_volume if form_data else bioreactor.get_vessel_volume() }}"
+                        >
+                        <span class="form-help">Must be less than or equal to vessel volume</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hardware Configuration Section (Read-only) -->
+            <div class="form-section">
+                <div class="section-header">
+                    <h3 class="section-title">Hardware Configuration</h3>
+                    <p class="section-description">Hardware configuration cannot be changed after enrollment</p>
+                </div>
+                
+                <div class="readonly-grid">
+                    <div class="readonly-item">
+                        <span class="readonly-label">Sensors:</span>
+                        <span class="readonly-value">
+                            {% for sensor in bioreactor.get_sensors() %}
+                            <span class="badge badge-secondary">{{ sensor.type|title }}</span>
+                            {% else %}
+                            <span class="text-muted">No sensors</span>
+                            {% endfor %}
+                        </span>
+                    </div>
+
+                    <div class="readonly-item">
+                        <span class="readonly-label">Actuators:</span>
+                        <span class="readonly-value">
+                            {% for actuator in bioreactor.get_actuators() %}
+                            <span class="badge badge-secondary">{{ actuator.type|title }}</span>
+                            {% else %}
+                            <span class="text-muted">No actuators</span>
+                            {% endfor %}
+                        </span>
+                    </div>
+
+                    <div class="readonly-item">
+                        <span class="readonly-label">Firmware Version:</span>
+                        <span class="readonly-value">{{ bioreactor.get_property('firmware.version', 'Unknown') }}</span>
+                    </div>
+
+                    <div class="readonly-item">
+                        <span class="readonly-label">Hardware Model:</span>
+                        <span class="readonly-value">{{ bioreactor.get_property('hardware.model', 'Unknown') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Safety Configuration Section (Read-only) -->
+            <div class="form-section">
+                <div class="section-header">
+                    <h3 class="section-title">Safety Configuration</h3>
+                    <p class="section-description">Safety limits and interlocks</p>
+                </div>
+                
+                <div class="readonly-grid">
+                    {% set safety_limits = bioreactor.get_safety_limits() %}
+                    {% if safety_limits %}
+                        {% for limit, value in safety_limits.items() %}
+                        <div class="readonly-item">
+                            <span class="readonly-label">{{ limit|title }}:</span>
+                            <span class="readonly-value">{{ value }}</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="readonly-item">
+                            <span class="readonly-label">Safety Limits:</span>
+                            <span class="readonly-value text-muted">Not configured</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <div class="action-buttons">
+                <button type="submit" class="btn btn-primary">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Save Changes
+                </button>
+                
+                <a href="/app/bioreactors/{{ bioreactor.id }}" class="btn btn-secondary">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    Cancel
+                </a>
+            </div>
+            
+            <div class="danger-zone">
+                <div class="danger-header">
+                    <h4 class="danger-title">Danger Zone</h4>
+                    <p class="danger-description">Irreversible actions</p>
+                </div>
+                
+                <div class="danger-actions">
+                    <button type="button" class="btn btn-danger" onclick="confirmArchive()">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        Archive Bioreactor
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Archive Confirmation Modal -->
+<div id="archiveModal" class="modal hidden">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Archive Bioreactor</h3>
+            <button type="button" class="modal-close" onclick="closeArchiveModal()">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="warning-message">
+                <svg class="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                </svg>
+                <div class="warning-content">
+                    <h4 class="warning-title">Are you sure?</h4>
+                    <p class="warning-text">
+                        This will archive the bioreactor "{{ bioreactor.name }}". Archived bioreactors are hidden from the main list but can be restored later. All data and configuration will be preserved.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeArchiveModal()">Cancel</button>
+            <form method="POST" action="/app/bioreactors/{{ bioreactor.id }}/archive" class="inline">
+                <button type="submit" class="btn btn-danger">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                    Archive Bioreactor
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form validation
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('.edit-form');
+    const workingVolumeInput = document.getElementById('working_volume');
+    const vesselVolumeInput = document.getElementById('vessel_volume');
+    
+    // Validate working volume against vessel volume
+    function validateWorkingVolume() {
+        const vesselVolume = parseFloat(vesselVolumeInput.value);
+        const workingVolume = parseFloat(workingVolumeInput.value);
+        
+        if (workingVolume && workingVolume > vesselVolume) {
+            workingVolumeInput.setCustomValidity('Working volume cannot exceed vessel volume');
+        } else {
+            workingVolumeInput.setCustomValidity('');
+        }
+    }
+    
+    vesselVolumeInput.addEventListener('input', validateWorkingVolume);
+    workingVolumeInput.addEventListener('input', validateWorkingVolume);
+    
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        if (!form.checkValidity()) {
+            e.preventDefault();
+            return;
+        }
+        
+        // Show loading state
+        const submitButton = form.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.innerHTML = `
+            <svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Saving...
+        `;
+    });
+});
+
+// Archive modal functions
+function confirmArchive() {
+    document.getElementById('archiveModal').classList.remove('hidden');
+}
+
+function closeArchiveModal() {
+    document.getElementById('archiveModal').classList.add('hidden');
+}
+
+// Close modal when clicking overlay
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('archiveModal');
+    const overlay = modal.querySelector('.modal-overlay');
+    
+    overlay.addEventListener('click', closeArchiveModal);
+});
+</script>
+{% endblock %} 

@@ -89,6 +89,9 @@ class BioreactorCreate(BaseModel):
     @validator('working_volume')
     def validate_working_volume(cls, v, values):
         """Validate working volume is not greater than vessel volume."""
+        # Convert 0 to None to handle empty form submissions
+        if v == 0:
+            return None
         if v is not None and 'vessel_volume' in values and v > values['vessel_volume']:
             raise ValueError('Working volume cannot be greater than vessel volume')
         return v
@@ -117,6 +120,16 @@ class BioreactorUpdate(BaseModel):
     # Device configuration
     firmware_version: Optional[str] = Field(None, description="Firmware version")
     reading_interval: Optional[int] = Field(None, ge=60, le=3600, description="Reading interval in seconds")
+    
+    @validator('working_volume')
+    def validate_working_volume(cls, v, values):
+        """Validate working volume is not greater than vessel volume."""
+        # Convert 0 to None to handle empty form submissions
+        if v == 0:
+            return None
+        if v is not None and 'vessel_volume' in values and values['vessel_volume'] is not None and v > values['vessel_volume']:
+            raise ValueError('Working volume cannot be greater than vessel volume')
+        return v
 
 
 class BioreactorResponse(BaseModel):
@@ -185,6 +198,16 @@ class BioreactorEnrollmentStep1(BaseModel):
     bioreactor_type: str = Field("standard", description="Bioreactor type")
     vessel_volume: float = Field(..., gt=0, description="Vessel volume in liters")
     working_volume: Optional[float] = Field(None, gt=0, description="Working volume in liters")
+    
+    @validator('working_volume')
+    def validate_working_volume(cls, v, values):
+        """Validate working volume is not greater than vessel volume."""
+        # Convert 0 to None to handle empty form submissions
+        if v == 0:
+            return None
+        if v is not None and 'vessel_volume' in values and v > values['vessel_volume']:
+            raise ValueError('Working volume cannot be greater than vessel volume')
+        return v
 
 
 class BioreactorEnrollmentStep2(BaseModel):

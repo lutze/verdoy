@@ -1,0 +1,120 @@
+{% if error %}
+<div class="status-error">
+    <div class="error-message">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span>{{ error }}</span>
+    </div>
+</div>
+{% else %}
+<div class="status-grid">
+    <!-- Temperature Status -->
+    <div class="status-card">
+        <div class="status-header">
+            <h4 class="status-title">Temperature</h4>
+            <span class="status-badge status-{{ status.temperature_status|lower }}">{{ status.temperature_status|title }}</span>
+        </div>
+        <div class="status-values">
+            <div class="status-value">
+                <span class="value-label">Current:</span>
+                <span class="value-data">{{ status.current_temperature|default('--', true) }}°C</span>
+            </div>
+            <div class="status-value">
+                <span class="value-label">Set Point:</span>
+                <span class="value-data">{{ status.temperature_setpoint|default('--', true) }}°C</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agitation Status -->
+    <div class="status-card">
+        <div class="status-header">
+            <h4 class="status-title">Agitation</h4>
+            <span class="status-badge status-{{ status.agitation_status|lower }}">{{ status.agitation_status|title }}</span>
+        </div>
+        <div class="status-values">
+            <div class="status-value">
+                <span class="value-label">Current:</span>
+                <span class="value-data">{{ status.current_agitation|default('--', true) }} RPM</span>
+            </div>
+            <div class="status-value">
+                <span class="value-label">Set Point:</span>
+                <span class="value-data">{{ status.agitation_setpoint|default('--', true) }} RPM</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- pH Status -->
+    <div class="status-card">
+        <div class="status-header">
+            <h4 class="status-title">pH</h4>
+            <span class="status-badge status-{{ status.ph_status|lower }}">{{ status.ph_status|title }}</span>
+        </div>
+        <div class="status-values">
+            <div class="status-value">
+                <span class="value-label">Current:</span>
+                <span class="value-data">{{ status.current_ph|default('--', true) }}</span>
+            </div>
+            <div class="status-value">
+                <span class="value-label">Set Point:</span>
+                <span class="value-data">{{ status.ph_setpoint|default('--', true) }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dissolved Oxygen Status -->
+    <div class="status-card">
+        <div class="status-header">
+            <h4 class="status-title">Dissolved Oxygen</h4>
+            <span class="status-badge status-{{ status.do_status|lower }}">{{ status.do_status|title }}</span>
+        </div>
+        <div class="status-values">
+            <div class="status-value">
+                <span class="value-label">Current:</span>
+                <span class="value-data">{{ status.current_do|default('--', true) }}%</span>
+            </div>
+            <div class="status-value">
+                <span class="value-label">Set Point:</span>
+                <span class="value-data">{{ status.do_setpoint|default('--', true) }}%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pump Status -->
+    <div class="status-card">
+        <div class="status-header">
+            <h4 class="status-title">Pump</h4>
+            <span class="status-badge status-{{ status.pump_status|lower }}">{{ status.pump_status|title }}</span>
+        </div>
+        <div class="status-values">
+            <div class="status-value">
+                <span class="value-label">Current Flow:</span>
+                <span class="value-data">{{ status.current_flow|default('--', true) }} mL/min</span>
+            </div>
+            <div class="status-value">
+                <span class="value-label">Set Point:</span>
+                <span class="value-data">{{ status.flow_setpoint|default('--', true) }} mL/min</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Status -->
+    <div class="status-card">
+        <div class="status-header">
+            <h4 class="status-title">System</h4>
+            <span class="status-badge status-{{ status.status|lower }}">{{ status.status|title }}</span>
+        </div>
+        <div class="status-values">
+            <div class="status-value">
+                <span class="value-label">Uptime:</span>
+                <span class="value-data">{{ status.uptime|default('--', true) }}</span>
+            </div>
+            <div class="status-value">
+                <span class="value-label">Last Seen:</span>
+                <span class="value-data">{{ status.last_seen|timeago if status.last_seen else '--' }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %} 

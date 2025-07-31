@@ -1,0 +1,118 @@
+{% if error %}
+<div class="data-error">
+    <div class="error-message">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span>{{ error }}</span>
+    </div>
+</div>
+{% else %}
+<div class="data-grid">
+    <!-- Real-time Sensor Readings -->
+    <div class="data-section">
+        <h4 class="section-title">Sensor Readings</h4>
+        <div class="sensor-readings">
+            {% for sensor in bioreactor.get_sensors() %}
+            <div class="sensor-reading">
+                <div class="sensor-header">
+                    <span class="sensor-name">{{ sensor.type|title }}</span>
+                    <span class="sensor-status status-{{ sensor.status|lower }}">{{ sensor.status|title }}</span>
+                </div>
+                <div class="sensor-value">
+                    {% if sensor.type == 'temperature' %}
+                        <span class="value">{{ status.current_temperature|default('--', true) }}°C</span>
+                    {% elif sensor.type == 'ph' %}
+                        <span class="value">{{ status.current_ph|default('--', true) }}</span>
+                    {% elif sensor.type == 'dissolved_oxygen' %}
+                        <span class="value">{{ status.current_do|default('--', true) }}%</span>
+                    {% elif sensor.type == 'pressure' %}
+                        <span class="value">{{ status.current_pressure|default('--', true) }} bar</span>
+                    {% elif sensor.type == 'flow' %}
+                        <span class="value">{{ status.current_flow|default('--', true) }} mL/min</span>
+                    {% else %}
+                        <span class="value">{{ sensor.value|default('--', true) }}</span>
+                    {% endif %}
+                </div>
+                <div class="sensor-timestamp">
+                    <span class="timestamp">{{ status.last_update|timeago if status.last_update else '--' }}</span>
+                </div>
+            </div>
+            {% else %}
+            <div class="no-sensors">
+                <span class="no-data">No sensors configured</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Historical Data Chart -->
+    <div class="data-section">
+        <h4 class="section-title">Historical Data</h4>
+        <div class="chart-container">
+            <div class="chart-placeholder">
+                <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                <p class="chart-text">Historical data visualization will be available in a future update</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Export -->
+    <div class="data-section">
+        <h4 class="section-title">Data Export</h4>
+        <div class="export-controls">
+            <div class="export-options">
+                <label class="export-label">Time Range:</label>
+                <select class="export-select">
+                    <option value="1h">Last Hour</option>
+                    <option value="6h">Last 6 Hours</option>
+                    <option value="24h" selected>Last 24 Hours</option>
+                    <option value="7d">Last 7 Days</option>
+                    <option value="30d">Last 30 Days</option>
+                </select>
+            </div>
+            <div class="export-options">
+                <label class="export-label">Format:</label>
+                <select class="export-select">
+                    <option value="csv">CSV</option>
+                    <option value="json">JSON</option>
+                    <option value="excel">Excel</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="exportData()">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Export Data
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function exportData() {
+    const timeRange = document.querySelector('.export-select').value;
+    const format = document.querySelectorAll('.export-select')[1].value;
+    
+    // Show loading state
+    const button = document.querySelector('.btn-primary');
+    const originalText = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = `
+        <svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        Exporting...
+    `;
+    
+    // Simulate export (replace with actual endpoint)
+    setTimeout(() => {
+        button.disabled = false;
+        button.innerHTML = originalText;
+        alert(`Exporting data for ${timeRange} in ${format.toUpperCase()} format...`);
+    }, 2000);
+}
+</script>
+{% endif %} 

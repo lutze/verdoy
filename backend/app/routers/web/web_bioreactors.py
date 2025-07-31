@@ -164,7 +164,7 @@ async def enroll_bioreactor_post(
     location: Optional[str] = Form(None),
     bioreactor_type: Optional[str] = Form("stirred_tank"),
     vessel_volume: Optional[float] = Form(None),
-    working_volume: Optional[float] = Form(None),
+    working_volume: Optional[str] = Form(None),
     sensors: Optional[list] = Form(None),
     actuators: Optional[list] = Form(None),
     firmware_version: Optional[str] = Form("1.0.0"),
@@ -178,6 +178,14 @@ async def enroll_bioreactor_post(
     bioreactor_service = BioreactorService(db)
     
     try:
+        # Handle working_volume - convert string to float, handle empty string
+        working_volume_float = None
+        if working_volume and working_volume.strip():
+            try:
+                working_volume_float = float(working_volume)
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Working volume must be a valid number")
+        
         if step == 1:
             # Validate step 1 data
             if not name:
@@ -185,7 +193,7 @@ async def enroll_bioreactor_post(
             if not vessel_volume or vessel_volume <= 0:
                 raise HTTPException(status_code=400, detail="Vessel volume must be greater than 0")
             
-            if working_volume and working_volume > vessel_volume:
+            if working_volume_float and working_volume_float > vessel_volume:
                 raise HTTPException(status_code=400, detail="Working volume cannot be greater than vessel volume")
             
             # Store step 1 data and redirect to step 2
@@ -195,7 +203,7 @@ async def enroll_bioreactor_post(
                 "location": location,
                 "bioreactor_type": bioreactor_type,
                 "vessel_volume": vessel_volume,
-                "working_volume": working_volume
+                "working_volume": working_volume_float
             }
             
             # In a real implementation, you'd store this in session or temporary storage
@@ -216,7 +224,7 @@ async def enroll_bioreactor_post(
                 "location": location,
                 "bioreactor_type": bioreactor_type,
                 "vessel_volume": vessel_volume,
-                "working_volume": working_volume,
+                "working_volume": working_volume_float,
                 "sensors": sensors,
                 "actuators": actuators
             }
@@ -240,7 +248,7 @@ async def enroll_bioreactor_post(
                 "location": location,
                 "bioreactor_type": bioreactor_type,
                 "vessel_volume": vessel_volume,
-                "working_volume": working_volume,
+                "working_volume": working_volume_float,
                 "sensors": sensors,
                 "actuators": actuators,
                 "firmware_version": firmware_version,
@@ -282,8 +290,14 @@ async def enroll_bioreactor_post(
                 # Set bioreactor-specific properties
                 bioreactor.set_bioreactor_type(bioreactor_type or "stirred_tank")
                 bioreactor.set_vessel_volume(vessel_volume)
-                if working_volume:
-                    bioreactor.set_working_volume(working_volume)
+                
+                # Set working volume - use 70% of vessel volume as default if not provided
+                if working_volume_float:
+                    bioreactor.set_working_volume(working_volume_float)
+                else:
+                    # Default to 70% of vessel volume
+                    default_working_volume = vessel_volume * 0.7
+                    bioreactor.set_working_volume(default_working_volume)
                 
                 # Set hardware configuration
                 hardware_config = {
@@ -323,7 +337,7 @@ async def enroll_bioreactor_post(
             "location": location,
             "bioreactor_type": bioreactor_type,
             "vessel_volume": vessel_volume,
-            "working_volume": working_volume,
+            "working_volume": working_volume_float,
             "sensors": sensors,
             "actuators": actuators,
             "firmware_version": firmware_version,
@@ -363,7 +377,22 @@ async def bioreactor_detail_page(
     
     try:
         bioreactor = bioreactor_service.get_bioreactor(bioreactor_id)
-        status = bioreactor_service.get_bioreactor_status(bioreactor_id)
+        print(f"Found bioreactor: {bioreactor.id} - {bioreactor.name}")
+        
+        try:
+            status = bioreactor_service.get_bioreactor_status(bioreactor_id)
+            print(f"Got status for bioreactor: {status}")
+        except Exception as status_error:
+            print(f"Error getting status: {status_error}")
+            # Create a basic status if the full status fails
+            status = {
+                "id": bioreactor.id,
+                "name": bioreactor.name,
+                "status": "offline",
+                "control_mode": "manual",
+                "is_operational": False,
+                "is_running_experiment": False
+            }
         
         return templates.TemplateResponse("pages/bioreactors/detail.html", {
             "request": request,
@@ -372,6 +401,7 @@ async def bioreactor_detail_page(
             "current_user": current_user
         })
     except Exception as e:
+        print(f"Error in bioreactor detail page: {e}")
         raise HTTPException(status_code=404, detail="Bioreactor not found")
 
 @router.get("/{bioreactor_id}/edit", response_class=HTMLResponse, include_in_schema=False)
@@ -548,4 +578,54 @@ async def archive_bioreactor_post(
         return RedirectResponse(
             url=f"/app/bioreactors/{bioreactor_id}?error={str(e)}",
             status_code=302
-        ) 
+        )
+
+@router.get("/{bioreactor_id}/data", response_class=HTMLResponse, include_in_schema=False)
+async def bioreactor_data_partial(
+    request: Request,
+    bioreactor_id: UUID,
+    current_user: User = Depends(get_web_user),
+    db: Session = Depends(get_db)
+):
+    """HTMX endpoint for bioreactor sensor data updates."""
+    bioreactor_service = BioreactorService(db)
+    
+    try:
+        bioreactor = bioreactor_service.get_bioreactor(bioreactor_id)
+        status = bioreactor_service.get_bioreactor_status(bioreactor_id)
+        
+        return templates.TemplateResponse("partials/bioreactor_data.html", {
+            "request": request,
+            "bioreactor": bioreactor,
+            "status": status
+        })
+    except Exception as e:
+        return templates.TemplateResponse("partials/bioreactor_data.html", {
+            "request": request,
+            "error": str(e)
+        })
+
+@router.get("/{bioreactor_id}/control-panel", response_class=HTMLResponse, include_in_schema=False)
+async def bioreactor_control_panel_partial(
+    request: Request,
+    bioreactor_id: UUID,
+    current_user: User = Depends(get_web_user),
+    db: Session = Depends(get_db)
+):
+    """HTMX endpoint for bioreactor control panel updates."""
+    bioreactor_service = BioreactorService(db)
+    
+    try:
+        bioreactor = bioreactor_service.get_bioreactor(bioreactor_id)
+        status = bioreactor_service.get_bioreactor_status(bioreactor_id)
+        
+        return templates.TemplateResponse("partials/bioreactor_control_panel.html", {
+            "request": request,
+            "bioreactor": bioreactor,
+            "status": status
+        })
+    except Exception as e:
+        return templates.TemplateResponse("partials/bioreactor_control_panel.html", {
+            "request": request,
+            "error": str(e)
+        }) 

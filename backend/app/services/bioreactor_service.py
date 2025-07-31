@@ -76,8 +76,14 @@ class BioreactorService:
             # Set bioreactor-specific properties
             bioreactor.set_bioreactor_type(bioreactor_data.bioreactor_type)
             bioreactor.set_vessel_volume(bioreactor_data.vessel_volume)
+            
+            # Set working volume - use 70% of vessel volume as default if not provided
             if bioreactor_data.working_volume:
                 bioreactor.set_working_volume(bioreactor_data.working_volume)
+            else:
+                # Default to 70% of vessel volume
+                default_working_volume = bioreactor_data.vessel_volume * 0.7
+                bioreactor.set_working_volume(default_working_volume)
             
             # Set hardware configuration
             hardware_config = {
