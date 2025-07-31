@@ -100,4 +100,13 @@ class Entity(BaseModel):
     
     def __repr__(self):
         """String representation of the model."""
-        return f"<Entity(id={self.id}, type={self.entity_type}, name={self.name})>" 
+        try:
+            if hasattr(self, '_sa_instance_state') and self._sa_instance_state.has_identity:
+                entity_id = self.id
+                entity_type = self.entity_type
+                name = self.name
+                return f"<Entity(id={entity_id}, type={entity_type}, name={name})>"
+            else:
+                return "<Entity(detached)>"
+        except Exception:
+            return "<Entity(detached)>" 

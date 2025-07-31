@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Error - LMS evo{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Breadcrumb Navigation -->
+    <nav class="breadcrumb mb-6" aria-label="Breadcrumb">
+        <a href="/app" class="breadcrumb-link">Home</a>
+        <span class="breadcrumb-separator">/</span>
+        <span class="breadcrumb-current">Error</span>
+    </nav>
+
+    <!-- Error Section -->
+    <div class="error-section">
+        <div class="error-content">
+            <div class="error-icon">
+                <svg class="w-16 h-16 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                </svg>
+            </div>
+            <h1 class="error-title">Error {{ error_code or 500 }}</h1>
+            <p class="error-message">{{ error_message or "An unexpected error occurred" }}</p>
+            <div class="error-actions">
+                <a href="/app" class="btn btn-primary">Go Home</a>
+                <a href="javascript:history.back()" class="btn btn-secondary">Go Back</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.error-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh;
+    text-align: center;
+}
+
+.error-content {
+    max-width: 500px;
+    padding: var(--space-8);
+}
+
+.error-icon {
+    margin-bottom: var(--space-6);
+}
+
+.error-title {
+    font-size: var(--font-size-3xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+}
+
+.error-message {
+    font-size: var(--font-size-lg);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-8);
+    line-height: 1.6;
+}
+
+.error-actions {
+    display: flex;
+    gap: var(--space-4);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .error-content {
+        padding: var(--space-6);
+    }
+    
+    .error-title {
+        font-size: var(--font-size-2xl);
+    }
+    
+    .error-message {
+        font-size: var(--font-size-base);
+    }
+    
+    .error-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+</style>
+{% endblock %} 

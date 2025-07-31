@@ -5,17 +5,17 @@ This module defines the Event model which represents system events
 and stores event data in the data JSON column.
 """
 
-from sqlalchemy import Column, String, DateTime, ForeignKey
+from sqlalchemy import Column, String, DateTime, ForeignKey, BigInteger, Integer
 from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
 
-from .base import BaseModel
+from .base import Base
 from ..database import JSONType
 
 
-class Event(BaseModel):
+class Event(Base):
     """
     Event model for tracking system events.
     
@@ -28,19 +28,18 @@ class Event(BaseModel):
     
     __tablename__ = "events"
     
-    # Event details
+    # Match the exact database schema from 001_initial_schema.sql
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     event_type = Column(String(100), nullable=False, index=True)
     entity_id = Column(PostgresUUID(as_uuid=True), nullable=False, index=True)
     entity_type = Column(String(100), nullable=False, index=True)
-    
-    # Event data and metadata
     data = Column(JSONType, nullable=False)
     event_metadata = Column(JSONType, default={})
+    source_node = Column(String(50), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     
-    # Note: In pure entity approach, users are stored in entities table
-    # user_id references entities table, not a separate users table
-    user_id = Column(PostgresUUID(as_uuid=True), nullable=True)  # References entities table
+    # Note: user information can be stored in the data JSONB field if needed
     
     def get_data_value(self, key, default=None):
         """
@@ -105,19 +104,21 @@ class Event(BaseModel):
             entity_type: Type of the entity
             data: Event data dictionary
             event_metadata: Event metadata dictionary
-            user_id: ID of the user who triggered the event
+            user_id: ID of the user who triggered the event (stored in data field)
             
         Returns:
             Created Event instance
         """
+        event_data = data or {}
+        if user_id:
+            event_data['user_id'] = str(user_id)
+            
         event = cls(
-            id=uuid.uuid4(),
             event_type=event_type,
             entity_id=entity_id,
             entity_type=entity_type,
-            data=data or {},
-            event_metadata=event_metadata or {},
-            user_id=user_id
+            data=event_data,
+            event_metadata=event_metadata or {}
         )
         db.add(event)
         db.commit()
@@ -133,8 +134,7 @@ class Event(BaseModel):
                 pass
         return db.query(cls).filter(
             cls.entity_id == entity_id,
-            cls.entity_type == entity_type,
-            cls.is_active == True
+            cls.entity_type == entity_type
         ).order_by(cls.timestamp.desc()).limit(limit).all()
     
     @classmethod
@@ -151,18 +151,30 @@ class Event(BaseModel):
             List of events
         """
         return db.query(cls).filter(
-            cls.event_type == event_type,
-            cls.is_active == True
+            cls.event_type == event_type
         ).order_by(cls.timestamp.desc()).limit(limit).all()
     
     @classmethod
     def get_events_by_user(cls, db, user_id, limit=100):
-        if isinstance(user_id, str):
+        """
+        Get events by user ID (searches in data JSONB field).
+        
+        Args:
+            db: Database session
+            user_id: User ID to search for
+            limit: Maximum number of events to return
+            
+        Returns:
+            List of events
+        """
+        if isinstance(user_id, uuid.UUID):
+            user_id = str(user_id)
+        elif not isinstance(user_id, str):
             try:
-                user_id = uuid.UUID(user_id)
+                user_id = str(user_id)
             except Exception:
-                pass
+                return []
+                
         return db.query(cls).filter(
-            cls.user_id == user_id,
-            cls.is_active == True
+            cls.data['user_id'].astext == user_id
         ).order_by(cls.timestamp.desc()).limit(limit).all() 

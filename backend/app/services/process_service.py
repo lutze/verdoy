@@ -16,6 +16,7 @@ from sqlalchemy.exc import IntegrityError
 from ..models.process import Process, ProcessInstance
 from ..models.entity import Entity
 from ..models.user import User
+from ..models.event import Event
 from ..schemas.process import (
     ProcessCreate, ProcessUpdate, ProcessResponse, ProcessListResponse,
     ProcessInstanceCreate, ProcessInstanceUpdate, ProcessInstanceResponse, ProcessInstanceListResponse,
@@ -35,6 +36,11 @@ class ProcessService(BaseService):
     Provides business logic for process creation, updates, execution,
     and monitoring with proper validation and error handling.
     """
+    
+    @property
+    def model_class(self):
+        """Return the Process model class."""
+        return Process
     
     def __init__(self, db: Session):
         super().__init__(db)
@@ -77,22 +83,26 @@ class ProcessService(BaseService):
                 definition=process_data.definition.dict(),
                 description=process_data.description,
                 organization_id=process_data.organization_id,
-                created_by=current_user.entity_id,
+                created_by=current_user.id,
                 is_template=process_data.is_template,
                 status=ProcessStatus.ACTIVE.value
             )
             
             self.db.add(process)
-            self.db.commit()
-            self.db.refresh(process)
+            self.db.flush()  # Flush to get the ID without committing
             
-            # Log creation event
+            # Log creation event (added to same transaction)
             self._log_event(
                 "process.created",
                 process.id,
                 "process",
-                {"process_name": process.name, "process_type": process.process_type}
+                {"process_name": process.name, "process_type": process.process_type},
+                current_user.id
             )
+            
+            # Commit both process and event together
+            self.db.commit()
+            self.db.refresh(process)
             
             return process
             
@@ -166,7 +176,7 @@ class ProcessService(BaseService):
             query = query.filter(Process.organization_id == organization_id)
         else:
             # Show processes from user's organization or public templates
-            user_org_id = current_user.entity.organization_id if current_user.entity else None
+            user_org_id = current_user.organization_id if current_user else None
             if user_org_id:
                 query = query.filter(
                     or_(
@@ -264,16 +274,18 @@ class ProcessService(BaseService):
         process.updated_at = datetime.utcnow()
         
         try:
-            self.db.commit()
-            self.db.refresh(process)
-            
-            # Log update event
+            # Log update event (added to same transaction)
             self._log_event(
                 "process.updated",
                 process.id,
                 "process",
-                {"process_name": process.name, "updated_fields": list(update_data.keys())}
+                {"process_name": process.name, "updated_fields": list(update_data.keys())},
+                current_user.id
             )
+            
+            # Commit both process update and event together
+            self.db.commit()
+            self.db.refresh(process)
             
             return process
             
@@ -316,16 +328,18 @@ class ProcessService(BaseService):
         process.updated_at = datetime.utcnow()
         
         try:
-            self.db.commit()
-            self.db.refresh(process)
-            
-            # Log archive event
+            # Log archive event (added to same transaction)
             self._log_event(
                 "process.archived",
                 process.id,
                 "process",
-                {"process_name": process.name}
+                {"process_name": process.name},
+                current_user.id
             )
+            
+            # Commit both process archive and event together
+            self.db.commit()
+            self.db.refresh(process)
             
             return process
             
@@ -366,15 +380,14 @@ class ProcessService(BaseService):
             batch_id=instance_data.batch_id,
             parameters=instance_data.parameters,
             status=ProcessInstanceStatus.RUNNING.value,
-            created_by=current_user.entity_id
+            created_by=current_user.id
         )
         
         try:
             self.db.add(instance)
-            self.db.commit()
-            self.db.refresh(instance)
+            self.db.flush()  # Flush to get the ID without committing
             
-            # Log instance creation event
+            # Log instance creation event (added to same transaction)
             self._log_event(
                 "process_instance.created",
                 instance.id,
@@ -383,8 +396,13 @@ class ProcessService(BaseService):
                     "process_id": str(instance.process_id),
                     "batch_id": instance.batch_id,
                     "status": instance.status
-                }
+                },
+                current_user.id
             )
+            
+            # Commit both instance and event together
+            self.db.commit()
+            self.db.refresh(instance)
             
             return instance
             
@@ -445,7 +463,7 @@ class ProcessService(BaseService):
         query = self.db.query(ProcessInstance).join(Process)
         
         # Apply organization filter based on process
-        user_org_id = current_user.entity.organization_id if current_user.entity else None
+        user_org_id = current_user.organization_id if current_user else None
         if user_org_id:
             query = query.filter(Process.organization_id == user_org_id)
         else:
@@ -524,10 +542,7 @@ class ProcessService(BaseService):
                 instance.resume()
         
         try:
-            self.db.commit()
-            self.db.refresh(instance)
-            
-            # Log update event
+            # Log update event (added to same transaction)
             self._log_event(
                 "process_instance.updated",
                 instance.id,
@@ -536,8 +551,13 @@ class ProcessService(BaseService):
                     "process_id": str(instance.process_id),
                     "status": instance.status,
                     "updated_fields": list(update_data.keys())
-                }
+                },
+                current_user.id
             )
+            
+            # Commit both instance update and event together
+            self.db.commit()
+            self.db.refresh(instance)
             
             return instance
             
@@ -570,4 +590,33 @@ class ProcessService(BaseService):
         if user.is_superuser:
             return True
         
-        return user.entity and user.entity.organization_id == organization_id 
+        return user.organization_id == organization_id
+    
+    def _log_event(self, event_type: str, entity_id: UUID, entity_type: str, data: Dict[str, Any], user_id: Optional[UUID] = None):
+        """
+        Log process event.
+        
+        Args:
+            event_type: Event type
+            entity_id: Entity ID
+            entity_type: Entity type
+            data: Event data
+            user_id: Optional user ID who triggered the event
+        """
+        try:
+            # Include user_id in the data if provided
+            event_data = data.copy()
+            if user_id:
+                event_data['user_id'] = str(user_id)
+                
+            event = Event(
+                event_type=event_type,
+                entity_id=entity_id,
+                entity_type=entity_type,
+                data=event_data,
+                timestamp=datetime.utcnow()
+            )
+            self.db.add(event)
+            # Note: No commit here - let the calling method handle the transaction
+        except Exception as e:
+            self.logger.error(f"Failed to log process event: {str(e)}") 

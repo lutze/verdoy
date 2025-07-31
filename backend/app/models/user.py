@@ -190,4 +190,13 @@ class User(Entity):
         return self.is_superuser or self.get_property('is_admin', False)
     
     def __repr__(self):
-        return f"<User(id={self.id}, email='{self.email}', is_active={self.is_active})>" 
+        try:
+            if hasattr(self, '_sa_instance_state') and self._sa_instance_state.has_identity:
+                email = self.email
+                is_active = self.is_active
+                user_id = self.id
+                return f"<User(id={user_id}, email='{email}', is_active={is_active})>"
+            else:
+                return "<User(detached)>"
+        except Exception:
+            return "<User(detached)>" 
