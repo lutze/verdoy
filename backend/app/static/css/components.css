@@ -282,7 +282,7 @@ input:invalid, select:invalid, textarea:invalid {
 .page-header {
   background: linear-gradient(135deg, var(--secondary), var(--primary));
   border-bottom: 1px solid var(--border-light);
-  padding: var(--space-8) 0;
+  padding: var(--space-8);
   margin-bottom: var(--space-8);
   position: relative;
   overflow: hidden;
