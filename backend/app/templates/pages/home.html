@@ -1,18 +1,12 @@
 {% extends 'base.html' %}
-{% block title %}Home | LIM OS{% endblock %}
+{% block title %}Home | Verdoy lab{% endblock %}
 
 {% block content %}
 <section class="home-hero">
     <h1>Verdoy<i>lab</i></h1>
-    <p class="lead">The Operating System for modern bioprocess research and product development.</p>
+    <p class="lead">The operating system for bioprocess research and product development.</p>
     <nav class="home-nav">
         <ul>
-            <li><a href="/app/dashboard">Dashboard</a></li>
-            <li><a href="/app/admin/organization/">Organizations</a></li>
-            <li><a href="/app/projects">Projects</a></li>
-            <li><a href="/app/processes">Processes</a></li>
-            <li><a href="/app/experiments">Experiments</a></li>
-            <li><a href="/app/bioreactors">Bioreactors</a></li>
             {% if current_user and current_user.email %}
                 <li><a href="/app/admin/profile">Profile</a></li>
                 <li>

@@ -116,8 +116,9 @@
     font-size: 0.9em;
     vertical-align: baseline;
     margin-left: -0.05em;
+    margin-right: 0.05em;
     position: relative;
-    padding-right: 0.1em;
+    top: -0.1em;
 }
 
 .navbar-toggle {
@@ -186,25 +187,26 @@
 }
 
 .nav-link-primary {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    background: linear-gradient(135deg, var(--primary-dark), var(--secondary-dark));
     color: var(--text-inverse);
     border: 1px solid rgba(106, 255, 147, 0.3);
 }
 
 .nav-link-primary:hover {
-    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    background: linear-gradient(135deg, var(--secondary-dark), var(--primary));
+    color: var(--text-inverse);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(106, 255, 147, 0.2);
 }
 
 .nav-link-secondary {
     border: 1px solid rgba(106, 255, 147, 0.3);
-    color: var(--primary);
+    color: var(--secondary);
     background: rgba(106, 255, 147, 0.05);
 }
 
 .nav-link-secondary:hover {
-    border-color: var(--primary);
+    border-color: var(--secondary);
     background: rgba(106, 255, 147, 0.1);
     transform: translateY(-1px);
 }
