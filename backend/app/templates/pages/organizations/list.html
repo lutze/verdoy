@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
-    <!-- Clean Page Header -->
+    <!-- Enhanced Page Header -->
     <div class="page-header mb-8">
         <div class="page-header-content">
             <div>
@@ -15,6 +15,9 @@
                 <button class="btn btn-secondary">
                     📊 Analytics
                 </button>
+                <button class="btn btn-secondary">
+                    📋 Templates
+                </button>
                 <a href="/app/admin/organization/create" class="btn btn-primary">
                     ➕ New Organization
                 </a>
@@ -22,7 +25,7 @@
         </div>
     </div>
 
-    <!-- Clean Controls Section -->
+    <!-- Enhanced Controls -->
     <form method="get" class="controls-section mb-6">
         <div class="controls-content">
             <div class="search-filters">
@@ -46,6 +49,10 @@
                 <button type="submit" class="btn btn-primary">
                     Filter
                 </button>
+            </div>
+            <div class="view-toggles">
+                <button type="button" class="view-toggle active" id="grid-view" title="Grid View">⚏</button>
+                <button type="button" class="view-toggle" id="list-view" title="List View">☰</button>
             </div>
         </div>
     </form>
@@ -123,177 +130,9 @@
 </div>
 
 <style>
-/* Clean CSS Variables */
-:root {
-    --primary: #6aff93;
-    --primary-dark: #4ade80;
-    --primary-light: #86efac;
-    --secondary: #40e0d0;
-    --secondary-dark: #20b2aa;
-    --secondary-light: #5eead4;
-    --bg-primary: #ffffff;
-    --bg-secondary: #f8fafc;
-    --bg-tertiary: #f1f5f9;
-    --text-primary: #1e293b;
-    --text-secondary: #64748b;
-    --text-tertiary: #94a3b8;
-    --text-inverse: #ffffff;
-    --border-light: #e2e8f0;
-    --space-xs: 0.25rem;
-    --space-sm: 0.5rem;
-    --space-md: 1rem;
-    --space-lg: 1.5rem;
-    --space-xl: 2rem;
-    --space-2xl: 3rem;
-    --radius-sm: 6px;
-    --radius-md: 8px;
-    --radius-lg: 12px;
-    --radius-xl: 16px;
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.15);
-    --shadow-lg: 0 10px 30px rgba(106, 255, 147, 0.2);
-}
+/* Organization-specific styles */
 
-/* Clean Page Header */
-.page-header {
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    border-bottom: 1px solid var(--border-light);
-    padding: var(--space-8) 0;
-    margin-bottom: var(--space-8);
-    position: relative;
-    overflow: hidden;
-}
-
-.page-header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: relative;
-    z-index: 10;
-}
-
-.page-title {
-    color: var(--text-inverse);
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin-bottom: var(--space-sm);
-}
-
-.page-subtitle {
-    color: rgba(255,255,255,0.9);
-    font-size: 1.1rem;
-    font-weight: 400;
-}
-
-.header-actions {
-    display: flex;
-    gap: var(--space-md);
-    z-index: 10;
-    position: relative;
-}
-
-/* Clean Button Styles */
-.btn {
-    padding: 0.75rem 1.5rem;
-    border-radius: var(--radius-md);
-    border: none;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-sm);
-    font-family: 'Inter', sans-serif;
-    text-decoration: none;
-}
-
-.btn-primary {
-    background: rgba(255,255,255,0.2);
-    color: var(--text-inverse);
-    border: 1px solid rgba(255,255,255,0.3);
-    backdrop-filter: blur(10px);
-}
-
-.btn-primary:hover {
-    background: rgba(255,255,255,0.3);
-    transform: translateY(-1px);
-    color: var(--text-primary);
-}
-
-.btn-secondary {
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    border: 1px solid rgba(255,255,255,0.3);
-}
-
-.btn-secondary:hover {
-    background: var(--bg-tertiary);
-    transform: translateY(-1px);
-}
-
-/* Clean Controls Section */
-.controls-section {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--space-xl);
-    padding: var(--space-lg);
-    background: var(--bg-primary);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border-light);
-}
-
-.search-filters {
-    display: flex;
-    gap: var(--space-md);
-    align-items: center;
-}
-
-.search-box {
-    position: relative;
-}
-
-.search-input {
-    padding: 0.75rem 1rem 0.75rem 2.5rem;
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-md);
-    width: 300px;
-    font-family: 'Inter', sans-serif;
-    background: var(--bg-primary);
-    transition: all 0.3s ease;
-}
-
-.search-input:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(106, 255, 147, 0.1);
-}
-
-.search-icon {
-    position: absolute;
-    left: 0.75rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-secondary);
-}
-
-.filter-select {
-    padding: 0.75rem var(--space-md);
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-md);
-    background: var(--bg-primary);
-    font-family: 'Inter', sans-serif;
-    transition: all 0.3s ease;
-}
-
-.filter-select:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(106, 255, 147, 0.1);
-}
-
-/* Clean Organization List */
+/* Organization List */
 .org-list {
     background: var(--bg-primary);
     border-radius: var(--radius-lg);
@@ -304,7 +143,7 @@
 
 .org-item {
     border-bottom: 1px solid var(--border-light);
-    transition: all 0.3s ease;
+    transition: all var(--transition-normal);
 }
 
 .org-item:hover {
@@ -318,8 +157,8 @@
 .org-content {
     display: flex;
     align-items: center;
-    padding: var(--space-lg);
-    gap: var(--space-md);
+    padding: var(--space-6);
+    gap: var(--space-4);
 }
 
 .org-icon {
@@ -353,24 +192,24 @@
     font-size: 1.25rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: var(--space-xs);
+    margin-bottom: var(--space-1);
 }
 
 .org-description {
     color: var(--text-secondary);
     font-size: 0.9rem;
-    margin-bottom: var(--space-sm);
+    margin-bottom: var(--space-2);
 }
 
 .org-stats {
     display: flex;
-    gap: var(--space-lg);
+    gap: var(--space-6);
 }
 
 .stat {
     display: flex;
     align-items: center;
-    gap: var(--space-xs);
+    gap: var(--space-1);
     font-size: 0.8rem;
     color: var(--text-secondary);
 }
@@ -391,17 +230,17 @@
 .org-status {
     display: flex;
     align-items: center;
-    gap: var(--space-md);
+    gap: var(--space-4);
 }
 
 .status-indicator {
-    padding: var(--space-xs) 0.75rem;
+    padding: var(--space-1) var(--space-3);
     border-radius: 20px;
     font-size: 0.75rem;
     font-weight: 500;
     display: flex;
     align-items: center;
-    gap: var(--space-xs);
+    gap: var(--space-1);
 }
 
 .status-online {
@@ -422,16 +261,16 @@
 
 .org-actions {
     display: flex;
-    gap: var(--space-sm);
+    gap: var(--space-2);
 }
 
 .action-btn {
-    padding: var(--space-sm);
+    padding: var(--space-2);
     border: 1px solid var(--border-light);
     background: var(--bg-primary);
     border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all var(--transition-normal);
     color: var(--text-secondary);
     text-decoration: none;
     font-size: 0.9rem;
@@ -443,59 +282,8 @@
     background: var(--bg-secondary);
 }
 
-/* Empty State */
-.empty-state {
-    text-align: center;
-    padding: var(--space-2xl);
-}
-
-.empty-icon {
-    width: 96px;
-    height: 96px;
-    background: var(--bg-tertiary);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto var(--space-lg);
-    color: var(--text-tertiary);
-}
-
-.empty-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: var(--space-sm);
-}
-
-.empty-description {
-    color: var(--text-secondary);
-    margin-bottom: var(--space-lg);
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
-    .page-header-content {
-        flex-direction: column;
-        text-align: center;
-        gap: var(--space-md);
-    }
-    
-    .controls-section {
-        flex-direction: column;
-        gap: var(--space-md);
-    }
-    
-    .search-filters {
-        width: 100%;
-        justify-content: space-between;
-        flex-wrap: wrap;
-    }
-    
-    .search-input {
-        width: 200px;
-    }
-    
     .org-stats {
         flex-wrap: wrap;
     }
@@ -503,7 +291,7 @@
     .org-content {
         flex-direction: column;
         align-items: flex-start;
-        gap: var(--space-md);
+        gap: var(--space-4);
     }
     
     .org-status {

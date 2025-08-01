@@ -185,6 +185,92 @@ input:invalid, select:invalid, textarea:invalid {
 }
 
 /* ============================================================================
+   SEARCH AND FILTER COMPONENTS
+   ============================================================================ */
+
+.search-box {
+  position: relative;
+}
+
+.search-input {
+  padding: var(--space-3) var(--space-4) var(--space-3) 2.5rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  width: 300px;
+  font-family: var(--font-family);
+  background: var(--bg-primary);
+  transition: all var(--transition-normal);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(106, 255, 147, 0.1);
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+}
+
+.filter-select {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  font-family: var(--font-family);
+  transition: all var(--transition-normal);
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(106, 255, 147, 0.1);
+}
+
+.search-filters {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+/* ============================================================================
+   EMPTY STATE COMPONENTS
+   ============================================================================ */
+
+.empty-state {
+  text-align: center;
+  padding: var(--space-12);
+}
+
+.empty-icon {
+  width: 96px;
+  height: 96px;
+  background: var(--bg-tertiary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-6);
+  color: var(--text-tertiary);
+}
+
+.empty-title {
+  font-size: var(--font-size-2xl);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.empty-description {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-6);
+}
+
+/* ============================================================================
    DASHBOARD STYLES
    ============================================================================ */
 
@@ -194,12 +280,13 @@ input:invalid, select:invalid, textarea:invalid {
 }
 
 .page-header {
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  background: linear-gradient(135deg, var(--secondary), var(--primary));
   border-bottom: 1px solid var(--border-light);
   padding: var(--space-8) 0;
   margin-bottom: var(--space-8);
   position: relative;
   overflow: hidden;
+  border-radius: var(--radius-lg);
 }
 
 .page-header h1 {
@@ -216,6 +303,76 @@ input:invalid, select:invalid, textarea:invalid {
   font-size: var(--font-size-lg);
   position: relative;
   z-index: 1;
+}
+
+.page-title {
+  margin: 0;
+  font-size: var(--font-size-3xl);
+  color: var(--text-inverse);
+  position: relative;
+  z-index: 1;
+}
+
+.page-subtitle {
+  margin: var(--space-2) 0 0 0;
+  color: rgba(255,255,255,0.9);
+  font-size: var(--font-size-lg);
+  position: relative;
+  z-index: 1;
+}
+
+/* Page Header Layout */
+.page-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-6);
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  flex-shrink: 0;
+  margin-top: var(--space-4);
+}
+
+/* Controls Section Layout */
+.controls-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-6);
+}
+
+.view-toggles {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.view-toggle {
+  padding: var(--space-2);
+  border: 1px solid var(--border-light);
+  background: var(--bg-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.view-toggle:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--bg-secondary);
+}
+
+.view-toggle.active {
+  background: var(--primary);
+  color: var(--text-inverse);
+  border-color: var(--primary);
 }
 
 /* ============================================================================
@@ -1056,6 +1213,8 @@ input:invalid, select:invalid, textarea:invalid {
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-light);
   overflow: hidden;
+  box-shadow: var(--shadow-md);
+  margin-bottom: var(--space-6);
 }
 
 .controls-header {
