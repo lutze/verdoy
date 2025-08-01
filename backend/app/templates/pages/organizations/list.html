@@ -157,10 +157,11 @@
 /* Clean Page Header */
 .page-header {
     background: linear-gradient(135deg, var(--primary), var(--secondary));
-    border-radius: var(--radius-xl);
+    border-bottom: 1px solid var(--border-light);
+    padding: var(--space-8) 0;
+    margin-bottom: var(--space-8);
     position: relative;
     overflow: hidden;
-    padding: var(--space-2xl);
 }
 
 .page-header-content {
@@ -216,6 +217,7 @@
 .btn-primary:hover {
     background: rgba(255,255,255,0.3);
     transform: translateY(-1px);
+    color: var(--text-primary);
 }
 
 .btn-secondary {

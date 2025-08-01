@@ -64,15 +64,16 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  background: rgba(255,255,255,0.2);
   color: var(--text-inverse);
-  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(255,255,255,0.3);
+  backdrop-filter: blur(10px);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+  background: rgba(255,255,255,0.3);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  color: var(--text-primary);
 }
 
 .btn-secondary {
@@ -193,7 +194,7 @@ input:invalid, select:invalid, textarea:invalid {
 }
 
 .page-header {
-  background: var(--bg-primary);
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
   border-bottom: 1px solid var(--border-light);
   padding: var(--space-8) 0;
   margin-bottom: var(--space-8);
@@ -201,28 +202,17 @@ input:invalid, select:invalid, textarea:invalid {
   overflow: hidden;
 }
 
-.page-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(106, 255, 147, 0.02), rgba(64, 224, 208, 0.02));
-  pointer-events: none;
-}
-
 .page-header h1 {
   margin: 0;
   font-size: var(--font-size-3xl);
-  color: var(--text-primary);
+  color: var(--text-inverse);
   position: relative;
   z-index: 1;
 }
 
 .page-header .subtitle {
   margin: var(--space-2) 0 0 0;
-  color: var(--text-secondary);
+  color: rgba(255,255,255,0.9);
   font-size: var(--font-size-lg);
   position: relative;
   z-index: 1;
