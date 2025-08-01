@@ -112,7 +112,7 @@
         {% endfor %}
     </div>
     {% else %}
-    <!-- Enhanced Empty State -->
+    <!-- Empty State -->
     <div class="empty-state">
         <div class="empty-icon">
             <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,184 +120,12 @@
                       d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
             </svg>
         </div>
-        <h3 class="empty-title">No organizations yet</h3>
-        <p class="empty-description">Create your first organization to get started with team collaboration and device management.</p>
+        <h3 class="empty-title">No organizations found</h3>
+        <p class="empty-description">Create your first organization to get started with managing your research teams.</p>
         <a href="/app/admin/organization/create" class="btn btn-primary">
             Create Organization
         </a>
     </div>
     {% endif %}
 </div>
-
-<style>
-/* Organization-specific styles */
-
-/* Organization List */
-.org-list {
-    background: var(--bg-primary);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    overflow: hidden;
-    border: 1px solid var(--border-light);
-}
-
-.org-item {
-    border-bottom: 1px solid var(--border-light);
-    transition: all var(--transition-normal);
-}
-
-.org-item:hover {
-    background: var(--bg-secondary);
-}
-
-.org-item:last-child {
-    border-bottom: none;
-}
-
-.org-content {
-    display: flex;
-    align-items: center;
-    padding: var(--space-6);
-    gap: var(--space-4);
-}
-
-.org-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: var(--radius-lg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    flex-shrink: 0;
-}
-
-.org-icon.primary {
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-}
-
-.org-icon.secondary {
-    background: linear-gradient(135deg, var(--secondary), var(--secondary-dark));
-}
-
-.org-icon.tertiary {
-    background: linear-gradient(135deg, var(--secondary-dark), var(--primary-dark));
-}
-
-.org-info {
-    flex: 1;
-}
-
-.org-name {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: var(--space-1);
-}
-
-.org-description {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    margin-bottom: var(--space-2);
-}
-
-.org-stats {
-    display: flex;
-    gap: var(--space-6);
-}
-
-.stat {
-    display: flex;
-    align-items: center;
-    gap: var(--space-1);
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-}
-
-.stat-icon {
-    font-size: 0.9rem;
-}
-
-.stat-number {
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.stat-label {
-    color: var(--text-secondary);
-}
-
-.org-status {
-    display: flex;
-    align-items: center;
-    gap: var(--space-4);
-}
-
-.status-indicator {
-    padding: var(--space-1) var(--space-3);
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: var(--space-1);
-}
-
-.status-online {
-    background: rgba(106, 255, 147, 0.1);
-    color: var(--primary-dark);
-    border: 1px solid rgba(106, 255, 147, 0.2);
-}
-
-.status-offline {
-    background: rgba(248, 113, 113, 0.1);
-    color: #dc2626;
-    border: 1px solid rgba(248, 113, 113, 0.2);
-}
-
-.status-dot {
-    font-size: 0.6rem;
-}
-
-.org-actions {
-    display: flex;
-    gap: var(--space-2);
-}
-
-.action-btn {
-    padding: var(--space-2);
-    border: 1px solid var(--border-light);
-    background: var(--bg-primary);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: all var(--transition-normal);
-    color: var(--text-secondary);
-    text-decoration: none;
-    font-size: 0.9rem;
-}
-
-.action-btn:hover {
-    border-color: var(--primary);
-    color: var(--primary);
-    background: var(--bg-secondary);
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .org-stats {
-        flex-wrap: wrap;
-    }
-    
-    .org-content {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--space-4);
-    }
-    
-    .org-status {
-        width: 100%;
-        justify-content: space-between;
-    }
-}
-</style>
 {% endblock %} 

@@ -1,6 +1,468 @@
 /* components.css - UI component styles for LMS evo Platform */
 
 /* ============================================================================
+   PAGE HEADER COMPONENTS
+   ============================================================================ */
+
+.page-header {
+  background: linear-gradient(135deg, var(--secondary), var(--primary));
+  border-radius: var(--radius-xl);
+  position: relative;
+  overflow: hidden;
+  padding: var(--space-8);
+  margin-bottom: var(--space-8);
+}
+
+.page-header::before {
+  content: '';
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.page-header::after {
+  content: '';
+  position: absolute;
+  bottom: -30px;
+  left: -30px;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.page-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 10;
+}
+
+.page-title {
+  color: var(--text-inverse);
+  font-size: var(--font-size-4xl);
+  font-weight: 700;
+  margin-bottom: var(--space-2);
+}
+
+.page-subtitle {
+  color: rgba(255,255,255,0.9);
+  font-size: var(--font-size-lg);
+  font-weight: 400;
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--space-4);
+}
+
+/* ============================================================================
+   CONTROLS SECTION COMPONENTS
+   ============================================================================ */
+
+.controls-section {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  margin-bottom: var(--space-6);
+  border: 1px solid var(--border-light);
+}
+
+.controls-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-6);
+}
+
+.search-filters {
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.search-box {
+  position: relative;
+}
+
+.search-input {
+  padding: var(--space-3) var(--space-4) var(--space-3) 2.5rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  width: 300px;
+  font-family: var(--font-family);
+  background: var(--bg-primary);
+  transition: all var(--transition-normal);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(106, 255, 147, 0.1);
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+}
+
+.filter-select {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  font-family: var(--font-family);
+  transition: all var(--transition-normal);
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(106, 255, 147, 0.1);
+}
+
+.view-toggles {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.view-toggle {
+  padding: var(--space-2);
+  border: 1px solid var(--border-light);
+  background: var(--bg-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.view-toggle:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--bg-secondary);
+}
+
+.view-toggle.active {
+  background: var(--primary);
+  color: var(--text-inverse);
+  border-color: var(--primary);
+}
+
+/* ============================================================================
+   PROGRESS BAR COMPONENTS
+   ============================================================================ */
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-top: var(--space-2);
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  border-radius: var(--radius-full);
+  transition: width var(--transition-normal);
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-1);
+}
+
+/* ============================================================================
+   STATUS BADGES
+   ============================================================================ */
+
+.status-online,
+.status-active {
+  color: var(--success);
+}
+
+.status-offline,
+.status-inactive {
+  color: var(--danger);
+}
+
+.status-warning,
+.status-maintenance {
+  color: var(--warning);
+}
+
+.status-error {
+  color: var(--danger);
+}
+
+.status-planning {
+  color: var(--info);
+}
+
+.status-completed {
+  color: var(--success);
+}
+
+.status-archived {
+  color: var(--text-tertiary);
+}
+
+.status-on_hold {
+  color: var(--warning);
+}
+
+/* ============================================================================
+   ORGANIZATION COMPONENTS
+   ============================================================================ */
+
+.org-list {
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+}
+
+.org-item {
+  border-bottom: 1px solid var(--border-light);
+  transition: all var(--transition-normal);
+}
+
+.org-item:hover {
+  background: var(--bg-secondary);
+}
+
+.org-item:last-child {
+  border-bottom: none;
+}
+
+.org-content {
+  display: flex;
+  align-items: center;
+  padding: var(--space-6);
+  gap: var(--space-4);
+}
+
+.org-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.org-icon.primary {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+}
+
+.org-icon.secondary {
+  background: linear-gradient(135deg, var(--secondary), var(--secondary-dark));
+}
+
+.org-icon.tertiary {
+  background: linear-gradient(135deg, var(--secondary-dark), var(--primary-dark));
+}
+
+.org-info {
+  flex: 1;
+}
+
+.org-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.org-description {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-2);
+}
+
+.org-stats {
+  display: flex;
+  gap: var(--space-6);
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.stat-icon {
+  font-size: 0.9rem;
+}
+
+.stat-number {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.stat-label {
+  color: var(--text-secondary);
+}
+
+.org-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-indicator.status-online {
+  color: var(--success);
+}
+
+.status-indicator.status-offline {
+  color: var(--danger);
+}
+
+/* ============================================================================
+   ALERT COMPONENTS
+   ============================================================================ */
+
+.alert {
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-6);
+}
+
+.alert-error {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
+.alert-success {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.alert-warning {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+
+.alert-info {
+  background: var(--info-light);
+  color: var(--info);
+}
+
+/* ============================================================================
+   PAGINATION COMPONENTS
+   ============================================================================ */
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-8);
+  padding: var(--space-4);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+}
+
+.pagination-info {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.pagination-controls {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.page-info {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  margin: 0 var(--space-3);
+}
+
+/* ============================================================================
+   TEAM COMPONENTS
+   ============================================================================ */
+
+.project-team {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.team-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.team-avatars {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-inverse);
+}
+
+.avatar.bg-green {
+  background: var(--success);
+}
+
+.avatar.bg-blue {
+  background: var(--info);
+}
+
+.avatar.bg-purple {
+  background: #8b5cf6;
+}
+
+.avatar.bg-pink {
+  background: #ec4899;
+}
+
+.avatar.bg-gray {
+  background: var(--text-tertiary);
+}
+
+/* ============================================================================
    UTILITY CLASSES
    ============================================================================ */
 
@@ -902,6 +1364,487 @@ input:invalid, select:invalid, textarea:invalid {
 
 .action-disabled p {
   color: var(--text-tertiary);
+}
+
+/* ============================================================================
+   PROCESS COMPONENTS
+   ============================================================================ */
+
+.processes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: var(--space-6);
+}
+
+.process-card {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-light);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.process-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+}
+
+.process-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.process-header {
+  margin-bottom: var(--space-6);
+}
+
+.process-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-3);
+}
+
+.process-template-badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  background: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  margin-left: var(--space-2);
+}
+
+.process-name {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.process-description {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+  line-height: 1.6;
+}
+
+.process-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.process-stats .stat {
+  text-align: center;
+  padding: var(--space-3);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.process-stats .stat-value {
+  display: block;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.process-stats .stat-label {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.process-footer {
+  padding: var(--space-4) var(--space-6);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border-light);
+}
+
+.process-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.template-badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  background: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
+
+.duration-info {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.process-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.action-btn {
+  padding: var(--space-2);
+  border: 1px solid var(--border-medium);
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  color: var(--text-secondary);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.action-btn.danger:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* ============================================================================
+   PROJECT COMPONENTS
+   ============================================================================ */
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: var(--space-6);
+}
+
+.project-card {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-light);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.project-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+}
+
+.project-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.project-header {
+  margin-bottom: var(--space-6);
+}
+
+.project-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-3);
+}
+
+.project-org {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.project-name {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.project-description {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+  line-height: 1.6;
+}
+
+.project-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.project-stats .stat {
+  text-align: center;
+  padding: var(--space-3);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.project-stats .stat-number {
+  display: block;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.project-stats .stat-label {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.project-footer {
+  padding: var(--space-4) var(--space-6);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border-light);
+}
+
+.project-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ============================================================================
+   BIOREACTOR COMPONENTS
+   ============================================================================ */
+
+.bioreactors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: var(--space-6);
+}
+
+.bioreactor-card {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-light);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.bioreactor-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+}
+
+.bioreactor-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.bioreactor-header {
+  margin-bottom: var(--space-6);
+}
+
+.bioreactor-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-3);
+}
+
+.bioreactor-org {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.bioreactor-name {
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.bioreactor-description {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+  line-height: 1.6;
+}
+
+.bioreactor-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.bioreactor-stats .stat {
+  text-align: center;
+  padding: var(--space-3);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.bioreactor-stats .stat-number {
+  display: block;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.bioreactor-stats .stat-label {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.bioreactor-footer {
+  padding: var(--space-4) var(--space-6);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border-light);
+}
+
+.bioreactor-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ============================================================================
+   LIST VIEW COMPONENTS
+   ============================================================================ */
+
+.processes-list,
+.projects-list,
+.bioreactors-list {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+}
+
+.list-header {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  background: var(--bg-secondary);
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.processes-list .list-header {
+  grid-template-columns: 2fr 1fr 120px 80px 80px 80px;
+}
+
+.projects-list .list-header {
+  grid-template-columns: 2fr 1fr 120px 120px 100px 80px;
+}
+
+.bioreactors-list .list-header {
+  grid-template-columns: 2fr 1fr 120px 120px 100px 80px;
+}
+
+.process-row,
+.project-row,
+.bioreactor-row {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--border-light);
+  align-items: center;
+  transition: all var(--transition-normal);
+}
+
+.process-row {
+  grid-template-columns: 2fr 1fr 120px 80px 80px 80px;
+}
+
+.project-row {
+  grid-template-columns: 2fr 1fr 120px 120px 100px 80px;
+}
+
+.bioreactor-row {
+  grid-template-columns: 2fr 1fr 120px 120px 100px 80px;
+}
+
+.process-row:hover,
+.project-row:hover,
+.bioreactor-row:hover {
+  background: var(--bg-secondary);
+}
+
+.process-info strong,
+.project-info strong,
+.bioreactor-info strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.process-desc,
+.project-desc,
+.bioreactor-desc {
+  color: var(--text-secondary);
+}
+
+.template-badge-small {
+  display: inline-block;
+  padding: 2px 6px;
+  background: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  margin-left: var(--space-2);
 }
 
 /* ============================================================================
