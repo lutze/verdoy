@@ -379,7 +379,7 @@
 </div>
 
 <!-- Hidden delete form -->
-<form id="deleteForm" action="/app/admin/organization/{{ organization.id }}/delete" method="post" style="display: none;">
+        <form id="deleteForm" action="/app/admin/organization/{{ organization.id }}/delete" method="post" class="hidden">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
     <input type="hidden" name="confirm" value="delete">
 </form>

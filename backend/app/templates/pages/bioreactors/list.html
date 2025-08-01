@@ -140,7 +140,7 @@
                         <span>{{ bioreactor.get_status()|title }}</span>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress-fill" style="width: {% if bioreactor.get_status() == 'online' %}100{% elif bioreactor.get_status() == 'offline' %}0{% else %}50{% endif %}%"></div>
+                        <div class="progress-fill {% if bioreactor.get_status() == 'online' %}progress-fill-100{% elif bioreactor.get_status() == 'offline' %}progress-fill-0{% else %}progress-fill-50{% endif %}"></div>
                     </div>
                 </div>
             </div>
@@ -224,7 +224,7 @@
     </div>
 
     <!-- Bioreactors List View -->
-    <div class="bioreactors-list" id="bioreactors-list" style="display: none;">
+    <div class="bioreactors-list hidden" id="bioreactors-list">
         <div class="list-header">
             <div>Bioreactor Name</div>
             <div>Organization</div>
@@ -1052,15 +1052,15 @@ document.addEventListener('DOMContentLoaded', function() {
         gridView.addEventListener('click', () => {
             gridView.classList.add('active');
             listView.classList.remove('active');
-            bioreactorsGrid.style.display = 'grid';
-            bioreactorsList.style.display = 'none';
+            bioreactorsGrid.classList.remove('hidden');
+            bioreactorsList.classList.add('hidden');
         });
 
         listView.addEventListener('click', () => {
             listView.classList.add('active');
             gridView.classList.remove('active');
-            bioreactorsGrid.style.display = 'none';
-            bioreactorsList.style.display = 'block';
+            bioreactorsGrid.classList.add('hidden');
+            bioreactorsList.classList.remove('hidden');
         });
     }
 });

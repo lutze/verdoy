@@ -97,7 +97,7 @@
                         <span>{{ project.progress_percentage }}%</span>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress-fill" style="width: {{ project.progress_percentage }}%"></div>
+                        <div class="progress-fill" data-progress="{{ project.progress_percentage }}"></div>
                     </div>
                 </div>
             </div>
@@ -145,7 +145,7 @@
     </div>
 
     <!-- Projects List View -->
-    <div class="projects-list" id="projects-list" style="display: none;">
+    <div class="projects-list hidden" id="projects-list">
         <div class="list-header">
             <div>Project Name</div>
             <div>Organization</div>
@@ -741,17 +741,24 @@ document.addEventListener('DOMContentLoaded', function() {
         gridView.addEventListener('click', () => {
             gridView.classList.add('active');
             listView.classList.remove('active');
-            projectsGrid.style.display = 'grid';
-            projectsList.style.display = 'none';
+            projectsGrid.classList.remove('hidden');
+            projectsList.classList.add('hidden');
         });
 
         listView.addEventListener('click', () => {
             listView.classList.add('active');
             gridView.classList.remove('active');
-            projectsGrid.style.display = 'none';
-            projectsList.style.display = 'block';
+            projectsGrid.classList.add('hidden');
+            projectsList.classList.remove('hidden');
         });
     }
+
+    // Set progress bar widths from data attributes
+    const progressBars = document.querySelectorAll('.progress-fill[data-progress]');
+    progressBars.forEach(bar => {
+        const progress = bar.getAttribute('data-progress');
+        bar.style.width = progress + '%';
+    });
 });
 </script>
 {% endblock %} 

@@ -1,6 +1,151 @@
 /* components.css - UI component styles for LMS evo Platform */
 
 /* ============================================================================
+   UTILITY CLASSES
+   ============================================================================ */
+
+/* Display Utilities */
+.hidden {
+  display: none !important;
+}
+
+.inline {
+  display: inline !important;
+}
+
+.inline-block {
+  display: inline-block !important;
+}
+
+.block {
+  display: block !important;
+}
+
+.flex {
+  display: flex !important;
+}
+
+/* Progress Bar Utilities */
+.progress-fill-0 {
+  width: 0% !important;
+}
+
+.progress-fill-5 {
+  width: 5% !important;
+}
+
+.progress-fill-10 {
+  width: 10% !important;
+}
+
+.progress-fill-15 {
+  width: 15% !important;
+}
+
+.progress-fill-20 {
+  width: 20% !important;
+}
+
+.progress-fill-25 {
+  width: 25% !important;
+}
+
+.progress-fill-30 {
+  width: 30% !important;
+}
+
+.progress-fill-35 {
+  width: 35% !important;
+}
+
+.progress-fill-40 {
+  width: 40% !important;
+}
+
+.progress-fill-45 {
+  width: 45% !important;
+}
+
+.progress-fill-50 {
+  width: 50% !important;
+}
+
+.progress-fill-55 {
+  width: 55% !important;
+}
+
+.progress-fill-60 {
+  width: 60% !important;
+}
+
+.progress-fill-65 {
+  width: 65% !important;
+}
+
+.progress-fill-70 {
+  width: 70% !important;
+}
+
+.progress-fill-75 {
+  width: 75% !important;
+}
+
+.progress-fill-80 {
+  width: 80% !important;
+}
+
+.progress-fill-85 {
+  width: 85% !important;
+}
+
+.progress-fill-90 {
+  width: 90% !important;
+}
+
+.progress-fill-95 {
+  width: 95% !important;
+}
+
+.progress-fill-100 {
+  width: 100% !important;
+}
+
+/* Dynamic progress bar fallback - for percentages not covered by utility classes */
+.progress-fill {
+  transition: width var(--transition-normal);
+}
+
+/* Form Utilities */
+.form-inline {
+  display: inline !important;
+}
+
+/* Button Utilities */
+.btn-reset {
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  color: inherit !important;
+  cursor: pointer !important;
+  font: inherit !important;
+}
+
+.btn-signout {
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  color: #fff !important;
+  cursor: pointer !important;
+  font: inherit !important;
+}
+
+/* Text Utilities */
+.text-small {
+  font-size: 0.8rem !important;
+  color: var(--text-secondary) !important;
+}
+
+/* ============================================================================
    CARD COMPONENTS
    ============================================================================ */
 

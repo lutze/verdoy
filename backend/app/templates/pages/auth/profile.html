@@ -211,7 +211,7 @@
                         </div>
                     </div>
                     <div class="api-key-actions">
-                        <form action="/auth/api-keys/{{ key.id }}/revoke" method="post" style="display: inline;">
+                        <form action="/auth/api-keys/{{ key.id }}/revoke" method="post" class="form-inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
                             <button type="submit" class="btn btn-danger btn-sm" 
                                     onclick="return confirm('Are you sure you want to revoke this API key?')">
@@ -244,7 +244,7 @@
         </div>
         
         <div class="account-actions">
-            <form action="/auth/logout" method="post" style="display: inline;">
+                            <form action="/auth/logout" method="post" class="form-inline">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
                 <button type="submit" class="btn btn-outline">
                     Sign Out

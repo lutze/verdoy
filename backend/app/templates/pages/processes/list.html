@@ -94,7 +94,7 @@
                         <span>{{ process.status.replace('_', ' ').title() }}</span>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress-fill" style="width: {% if process.status == 'active' %}100{% elif process.status == 'draft' %}25{% elif process.status == 'archived' %}0{% else %}50{% endif %}%"></div>
+                        <div class="progress-fill {% if process.status == 'active' %}progress-fill-100{% elif process.status == 'draft' %}progress-fill-25{% elif process.status == 'archived' %}progress-fill-0{% else %}progress-fill-50{% endif %}"></div>
                     </div>
                 </div>
             </div>
@@ -166,7 +166,7 @@
     </div>
 
     <!-- Processes List View -->
-    <div class="processes-list" id="processes-list" style="display: none;">
+    <div class="processes-list hidden" id="processes-list">
         <div class="list-header">
             <div>Process Name</div>
             <div>Type</div>
@@ -929,15 +929,15 @@ document.addEventListener('DOMContentLoaded', function() {
         gridView.addEventListener('click', () => {
             gridView.classList.add('active');
             listView.classList.remove('active');
-            processesGrid.style.display = 'grid';
-            processesList.style.display = 'none';
+            processesGrid.classList.remove('hidden');
+            processesList.classList.add('hidden');
         });
 
         listView.addEventListener('click', () => {
             listView.classList.add('active');
             gridView.classList.remove('active');
-            processesGrid.style.display = 'none';
-            processesList.style.display = 'block';
+            processesGrid.classList.add('hidden');
+            processesList.classList.remove('hidden');
         });
     }
 });
