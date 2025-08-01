@@ -954,6 +954,10 @@ input:invalid, select:invalid, textarea:invalid {
   /*margin-top: var(--space-4);*/
 }
 
+.header-actions .btn-primary {
+  color: var(--text-inverse);
+}
+
 /* Controls Section Layout */
 .controls-content {
   display: flex;

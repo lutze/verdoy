@@ -26,7 +26,7 @@ from contextlib import asynccontextmanager
 from typing import Optional
 
 from fastapi import FastAPI, Request, Depends
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -98,7 +98,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Import shared templates configuration
-from .templates_config import templates
+from app.templates_config import templates
 
 # Application lifespan management
 @asynccontextmanager
@@ -246,16 +246,20 @@ def create_app() -> FastAPI:
     async def frontend_test(request: Request):
         return templates.TemplateResponse("base.html", {"request": request, "year": 2024})
     
-    # Add root endpoint
+    # Add root endpoint with authentication-based redirects
     @app.get("/app", response_class=HTMLResponse, include_in_schema=False)
     async def home(request: Request, current_user=Depends(get_optional_user)):
         """
-        Render the base home page for the frontend.
+        Redirect users based on authentication status:
+        - Authenticated users -> /app/dashboard
+        - Unauthenticated users -> /app/login
         """
-        return templates.TemplateResponse(
-            "pages/home.html",
-            {"request": request, "current_user": current_user}
-        )
+        if current_user:
+            # User is logged in, redirect to dashboard
+            return RedirectResponse(url="/app/dashboard", status_code=303)
+        else:
+            # User is not logged in, redirect to login
+            return RedirectResponse(url="/app/login", status_code=303)
     
     return app
 
