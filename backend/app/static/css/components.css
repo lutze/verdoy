@@ -683,7 +683,7 @@
 .btn-primary {
   background: rgba(255,255,255,0.2);
   color: var(--primary-dark);
-  border: 1px solid rgba(255,255,255,0.3);
+  border: 1px solid var(--primary-dark);
   backdrop-filter: blur(10px);
 }
 
@@ -1006,8 +1006,8 @@ input:invalid, select:invalid, textarea:invalid {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: var(--space-6);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-4);
 }
 
 .stat-card {
@@ -1057,8 +1057,8 @@ input:invalid, select:invalid, textarea:invalid {
 
 .stat-value {
   display: block;
-  font-size: var(--font-size-2xl);
-  font-weight: 700;
+  font-size: var(--font-size-xl);
+  font-weight: 500;
   color: var(--text-primary);
   line-height: 1;
   margin-bottom: var(--space-1);
@@ -1068,7 +1068,7 @@ input:invalid, select:invalid, textarea:invalid {
   display: block;
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
-  font-weight: 500;
+  font-weight: 300;
 }
 
 /* ============================================================================
@@ -1182,7 +1182,7 @@ input:invalid, select:invalid, textarea:invalid {
 
 .org-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--space-4);
   margin-bottom: var(--space-6);
 }
@@ -1322,7 +1322,7 @@ input:invalid, select:invalid, textarea:invalid {
   text-decoration: none;
   color: inherit;
   transition: all var(--transition-normal);
-  display: block;
+  display: flex;
   position: relative;
   overflow: hidden;
 }
@@ -1378,6 +1378,14 @@ input:invalid, select:invalid, textarea:invalid {
 
 .action-disabled p {
   color: var(--text-tertiary);
+}
+
+.action-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-left: var(--space-4);
 }
 
 /* ============================================================================
