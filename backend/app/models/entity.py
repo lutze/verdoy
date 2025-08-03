@@ -30,6 +30,12 @@ class Entity(BaseModel):
     
     __tablename__ = "entities"
     
+    # Polymorphic configuration
+    __mapper_args__ = {
+        'polymorphic_on': 'entity_type',
+        'polymorphic_identity': 'entity'
+    }
+    
     # Entity-specific fields (inherits id, created_at, updated_at, is_active from BaseModel)
     entity_type = Column(String(100), nullable=False, index=True)
     name = Column(String(255), nullable=False)

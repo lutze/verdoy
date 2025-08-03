@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}Experiments - LMS Core{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Enhanced Page Header -->
+    <div class="page-header mb-8">
+        <div class="page-header-content">
+            <div class="header-titles">
+                <h1 class="page-title">Experiments</h1>
+                <!--<p class="page-subtitle">Manage and monitor laboratory experiments</p>-->
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary">
+                    📊 Analytics
+                </button>
+                <button class="btn btn-secondary">
+                    📋 Templates
+                </button>
+                <a href="/app/experiments/create" class="btn btn-primary">
+                    ➕ New Experiment
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Controls -->
+    <form method="GET" class="controls-section mb-6">
+        <div class="controls-content">
+            <div class="search-filters">
+                <div class="search-box">
+                    <div class="search-icon">🔍</div>
+                    <input type="text" 
+                           class="search-input" 
+                           placeholder="Search experiments..." 
+                           name="search" 
+                           value="{{ filters.search or '' }}">
+                </div>
+                <select name="status" class="filter-select">
+                    <option value="">All Status</option>
+                    {% for status in status_options %}
+                    <option value="{{ status }}" {% if filters.status == status %}selected{% endif %}>
+                        {{ status|title }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <select name="project_id" class="filter-select">
+                    <option value="">All Projects</option>
+                    {% for project in projects %}
+                    <option value="{{ project.id }}" {% if filters.project_id == project.id %}selected{% endif %}>
+                        {{ project.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <select name="bioreactor_id" class="filter-select">
+                    <option value="">All Bioreactors</option>
+                    {% for bioreactor in bioreactors %}
+                    <option value="{{ bioreactor.id }}" {% if filters.bioreactor_id == bioreactor.id %}selected{% endif %}>
+                        {{ bioreactor.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary">
+                    Filter
+                </button>
+            </div>
+            <div class="view-toggles">
+                <button type="button" class="view-toggle active" id="grid-view" title="Grid View">⚏</button>
+                <button type="button" class="view-toggle" id="list-view" title="List View">☰</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Error Message -->
+    {% if error %}
+    <div class="alert alert-error mb-6">
+        <p>{{ error }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Experiments Grid View -->
+    {% if experiments %}
+    <div class="experiments-grid" id="experiments-grid">
+        {% for experiment in experiments %}
+        <div class="experiment-card">
+            <div class="experiment-header">
+                <div class="experiment-status status-{{ experiment.status }}">
+                    ● {{ experiment.status|title }}
+                </div>
+                <div class="experiment-project">
+                    {% if experiment.project_id %}
+                    Project: {{ experiment.project_id|truncate(20) }}
+                    {% else %}
+                    No Project
+                    {% endif %}
+                </div>
+                <h3 class="experiment-name">{{ experiment.name }}</h3>
+                {% if experiment.description %}
+                <p class="experiment-description">{{ experiment.description }}</p>
+                {% endif %}
+                
+                <!-- Progress Bar for Running Experiments -->
+                {% if experiment.is_running %}
+                <div class="experiment-progress">
+                    <div class="progress-label">
+                        <span>Progress</span>
+                        <span>{{ experiment.progress_percentage }}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" data-progress="{{ experiment.progress_percentage }}"></div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="experiment-stats">
+                <div class="stat">
+                    <span class="stat-number">{{ experiment.current_trial }}</span>
+                    <span class="stat-label">Current Trial</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">{{ experiment.total_trials }}</span>
+                    <span class="stat-label">Total Trials</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">{{ experiment.duration_minutes|default(0) }}</span>
+                    <span class="stat-label">Minutes</span>
+                </div>
+            </div>
+            
+            <div class="experiment-footer">
+                <div class="experiment-controls">
+                    {% if experiment.can_start %}
+                    <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="inline">
+                        <input type="hidden" name="action" value="start">
+                        <button type="submit" class="action-btn" title="Start">▶️</button>
+                    </form>
+                    {% endif %}
+                    {% if experiment.can_pause %}
+                    <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="inline">
+                        <input type="hidden" name="action" value="pause">
+                        <button type="submit" class="action-btn" title="Pause">⏸️</button>
+                    </form>
+                    {% endif %}
+                    {% if experiment.can_resume %}
+                    <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="inline">
+                        <input type="hidden" name="action" value="resume">
+                        <button type="submit" class="action-btn" title="Resume">▶️</button>
+                    </form>
+                    {% endif %}
+                    {% if experiment.can_stop %}
+                    <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="inline">
+                        <input type="hidden" name="action" value="stop">
+                        <button type="submit" class="action-btn danger" title="Stop">⏹️</button>
+                    </form>
+                    {% endif %}
+                </div>
+                <div class="experiment-actions">
+                    <a href="/app/experiments/{{ experiment.id }}" class="action-btn" title="View Details">👁️</a>
+                    {% if experiment.is_running %}
+                    <a href="/app/experiments/{{ experiment.id }}/monitor" class="action-btn" title="Monitor">📊</a>
+                    {% else %}
+                    <a href="/app/experiments/{{ experiment.id }}/edit" class="action-btn" title="Edit">✏️</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Experiments List View -->
+    <div class="experiments-list hidden" id="experiments-list">
+        <div class="list-header">
+            <div>Experiment Name</div>
+            <div>Project</div>
+            <div>Status</div>
+            <div>Progress</div>
+            <div>Trials</div>
+            <div>Actions</div>
+        </div>
+        {% for experiment in experiments %}
+        <div class="experiment-row">
+            <div class="experiment-info">
+                <strong>{{ experiment.name }}</strong>
+                {% if experiment.description %}
+                <br>
+                <small class="experiment-desc">{{ experiment.description[:50] }}{% if experiment.description|length > 50 %}...{% endif %}</small>
+                {% endif %}
+            </div>
+            <div>{{ experiment.project_id|truncate(20) if experiment.project_id else 'No Project' }}</div>
+            <div><span class="status-{{ experiment.status }}">● {{ experiment.status|title }}</span></div>
+            <div>
+                {% if experiment.is_running %}
+                {{ experiment.progress_percentage }}%
+                {% else %}
+                -
+                {% endif %}
+            </div>
+            <div>{{ experiment.current_trial }}/{{ experiment.total_trials }}</div>
+            <div class="experiment-actions">
+                <a href="/app/experiments/{{ experiment.id }}" class="action-btn" title="View">👁️</a>
+                {% if experiment.is_running %}
+                <a href="/app/experiments/{{ experiment.id }}/monitor" class="action-btn" title="Monitor">📊</a>
+                {% else %}
+                <a href="/app/experiments/{{ experiment.id }}/edit" class="action-btn" title="Edit">✏️</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Enhanced Empty State -->
+    <div class="empty-state">
+        <div class="empty-icon">
+            <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+        </div>
+        <h3 class="empty-title">No experiments found</h3>
+        <p class="empty-description">Create your first experiment to get started with laboratory research and monitoring.</p>
+        <a href="/app/experiments/create" class="btn btn-primary">
+            Create Experiment
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="pagination mt-8">
+        <div class="pagination-info">
+            <span class="page-info">Showing {{ experiments|length }} of {{ total_count }} experiments</span>
+        </div>
+        <div class="pagination-controls">
+            {% if page > 1 %}
+            <a href="?page={{ page - 1 }}{% if filters.search %}&search={{ filters.search }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.project_id %}&project_id={{ filters.project_id }}{% endif %}{% if filters.bioreactor_id %}&bioreactor_id={{ filters.bioreactor_id }}{% endif %}" 
+               class="btn btn-outline">
+                Previous
+            </a>
+            {% endif %}
+
+            {% for p in range(1, total_pages + 1) %}
+            {% if p == page %}
+            <span class="btn btn-primary">{{ p }}</span>
+            {% else %}
+            <a href="?page={{ p }}{% if filters.search %}&search={{ filters.search }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.project_id %}&project_id={{ filters.project_id }}{% endif %}{% if filters.bioreactor_id %}&bioreactor_id={{ filters.bioreactor_id }}{% endif %}" 
+               class="btn btn-outline">
+                {{ p }}
+            </a>
+            {% endif %}
+            {% endfor %}
+
+            {% if page < total_pages %}
+            <a href="?page={{ page + 1 }}{% if filters.search %}&search={{ filters.search }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.project_id %}&project_id={{ filters.project_id }}{% endif %}{% if filters.bioreactor_id %}&bioreactor_id={{ filters.bioreactor_id }}{% endif %}" 
+               class="btn btn-outline">
+                Next
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// View toggle functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const gridView = document.getElementById('grid-view');
+    const listView = document.getElementById('list-view');
+    const experimentsGrid = document.getElementById('experiments-grid');
+    const experimentsList = document.getElementById('experiments-list');
+
+    if (gridView && listView && experimentsGrid && experimentsList) {
+        gridView.addEventListener('click', () => {
+            gridView.classList.add('active');
+            listView.classList.remove('active');
+            experimentsGrid.classList.remove('hidden');
+            experimentsList.classList.add('hidden');
+        });
+
+        listView.addEventListener('click', () => {
+            listView.classList.add('active');
+            gridView.classList.remove('active');
+            experimentsGrid.classList.add('hidden');
+            experimentsList.classList.remove('hidden');
+        });
+    }
+
+    // Set progress bar widths from data attributes
+    const progressBars = document.querySelectorAll('.progress-fill[data-progress]');
+    progressBars.forEach(bar => {
+        const progress = bar.getAttribute('data-progress');
+        bar.style.width = progress + '%';
+    });
+});
+</script>
+{% endblock %} 

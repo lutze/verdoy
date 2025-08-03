@@ -156,6 +156,33 @@ class BioreactorService:
             raise NotFoundException(f"Bioreactor with ID {bioreactor_id} not found")
         return bioreactor
     
+    def get_bioreactors_by_organization(self, organization_id: UUID, status: Optional[str] = None) -> List[Bioreactor]:
+        """
+        Get bioreactors for a specific organization.
+        
+        Args:
+            organization_id: Organization ID
+            status: Optional status filter
+            
+        Returns:
+            List of bioreactors
+        """
+        try:
+            query = self.db.query(Bioreactor).filter(
+                Bioreactor.organization_id == organization_id,
+                Bioreactor.entity_type == 'device.bioreactor'
+            )
+            
+            if status:
+                query = query.filter(Bioreactor.status == status)
+            
+            bioreactors = query.order_by(Bioreactor.created_at.desc()).all()
+            return bioreactors
+            
+        except Exception as e:
+            logger.error(f"Error getting bioreactors by organization: {e}")
+            return []
+    
     def get_organization_bioreactors(
         self, 
         organization_id: UUID, 

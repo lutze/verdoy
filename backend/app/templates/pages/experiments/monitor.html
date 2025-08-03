@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+
+{% block title %}Monitor {{ experiment.name }} - LMS Core{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header Section -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <a href="/app/experiments/{{ experiment.id }}" class="text-blue-600 hover:text-blue-800 mr-4">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </a>
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Monitor Experiment</h1>
+                    <p class="text-gray-600">{{ experiment.name }}</p>
+                </div>
+            </div>
+            <div class="flex space-x-2">
+                <a href="/app/experiments/{{ experiment.id }}" 
+                   class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Back to Details
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Banner -->
+    <div class="mb-6">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                        {% if experiment.status == 'active' %}bg-green-100 text-green-800
+                        {% elif experiment.status == 'paused' %}bg-yellow-100 text-yellow-800
+                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ experiment.status|title }}
+                    </span>
+                    <div class="ml-4">
+                        <div class="flex items-center">
+                            <div class="w-32 bg-gray-200 rounded-full h-2 mr-3">
+                                <div class="bg-blue-600 h-2 rounded-full" style="width: {{ experiment.progress_percentage }}%"></div>
+                            </div>
+                            <span class="text-sm text-gray-600">{{ experiment.progress_percentage }}% complete</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    {% if experiment.can_pause %}
+                    <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="inline">
+                        <input type="hidden" name="action" value="pause">
+                        <button type="submit" 
+                                class="inline-flex items-center px-3 py-1 bg-yellow-600 text-white text-sm rounded-md hover:bg-yellow-700 transition-colors">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Pause
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% if experiment.can_resume %}
+                    <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="inline">
+                        <input type="hidden" name="action" value="resume">
+                        <button type="submit" 
+                                class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Resume
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% if experiment.can_stop %}
+                    <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="inline">
+                        <input type="hidden" name="action" value="stop">
+                        <button type="submit" 
+                                class="inline-flex items-center px-3 py-1 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
+                                onclick="return confirm('Are you sure you want to stop this experiment?')">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                            Stop
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Real-time Data -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Bioreactor Status -->
+            {% if bioreactor %}
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Bioreactor Status</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 bg-gray-50 rounded-md">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium text-gray-700">Status</span>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {% if bioreactor.status == 'online' %}bg-green-100 text-green-800
+                                {% elif bioreactor.status == 'offline' %}bg-red-100 text-red-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ bioreactor.status|title }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-md">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium text-gray-700">Control Mode</span>
+                            <span class="text-sm text-gray-900">{{ bioreactor.get_control_mode()|title }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Sensor Data -->
+            {% if bioreactor %}
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Sensor Data</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Temperature -->
+                    <div class="p-4 bg-blue-50 rounded-md">
+                        <div class="flex items-center">
+                            <svg class="w-8 h-8 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <div>
+                                <p class="text-sm font-medium text-gray-700">Temperature</p>
+                                <p class="text-2xl font-bold text-blue-600">--°C</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- pH -->
+                    <div class="p-4 bg-green-50 rounded-md">
+                        <div class="flex items-center">
+                            <svg class="w-8 h-8 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            <div>
+                                <p class="text-sm font-medium text-gray-700">pH</p>
+                                <p class="text-2xl font-bold text-green-600">--</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dissolved Oxygen -->
+                    <div class="p-4 bg-purple-50 rounded-md">
+                        <div class="flex items-center">
+                            <svg class="w-8 h-8 text-purple-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            <div>
+                                <p class="text-sm font-medium text-gray-700">Dissolved Oxygen</p>
+                                <p class="text-2xl font-bold text-purple-600">--%</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stirring Speed -->
+                    <div class="p-4 bg-orange-50 rounded-md">
+                        <div class="flex items-center">
+                            <svg class="w-8 h-8 text-orange-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            <div>
+                                <p class="text-sm font-medium text-gray-700">Stirring Speed</p>
+                                <p class="text-2xl font-bold text-orange-600">-- RPM</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Flow Rate -->
+                    <div class="p-4 bg-red-50 rounded-md">
+                        <div class="flex items-center">
+                            <svg class="w-8 h-8 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            <div>
+                                <p class="text-sm font-medium text-gray-700">Flow Rate</p>
+                                <p class="text-2xl font-bold text-red-600">-- mL/min</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Volume -->
+                    <div class="p-4 bg-indigo-50 rounded-md">
+                        <div class="flex items-center">
+                            <svg class="w-8 h-8 text-indigo-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                            </svg>
+                            <div>
+                                <p class="text-sm font-medium text-gray-700">Volume</p>
+                                <p class="text-2xl font-bold text-indigo-600">-- L</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Experiment Progress -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Experiment Progress</h2>
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between text-sm text-gray-600 mb-1">
+                            <span>Overall Progress</span>
+                            <span>{{ experiment.progress_percentage }}%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div class="bg-blue-600 h-3 rounded-full transition-all duration-300" style="width: {{ experiment.progress_percentage }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-3 bg-gray-50 rounded-md">
+                            <p class="text-sm font-medium text-gray-700">Current Trial</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ experiment.current_trial }}</p>
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded-md">
+                            <p class="text-sm font-medium text-gray-700">Total Trials</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ experiment.total_trials }}</p>
+                        </div>
+                    </div>
+
+                    {% if experiment.duration_minutes %}
+                    <div class="p-3 bg-blue-50 rounded-md">
+                        <p class="text-sm font-medium text-gray-700">Duration</p>
+                        <p class="text-2xl font-bold text-blue-600">{{ experiment.duration_minutes }} minutes</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="space-y-6">
+            <!-- Control Actions -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Control Actions</h2>
+                <div class="space-y-3">
+                    {% if experiment.can_pause %}
+                    <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="w-full">
+                        <input type="hidden" name="action" value="pause">
+                        <button type="submit" 
+                                class="w-full flex items-center justify-center px-4 py-3 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Pause Experiment
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    {% if experiment.can_resume %}
+                    <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="w-full">
+                        <input type="hidden" name="action" value="resume">
+                        <button type="submit" 
+                                class="w-full flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Resume Experiment
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="w-full">
+                        <input type="hidden" name="action" value="stop">
+                        <button type="submit" 
+                                class="w-full flex items-center justify-center px-4 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                                onclick="return confirm('Are you sure you want to stop this experiment? This action cannot be undone.')">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                            Stop Experiment
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Experiment Info -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Experiment Info</h2>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Status</span>
+                        <span class="font-medium">{{ experiment.status|title }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Progress</span>
+                        <span class="font-medium">{{ experiment.progress_percentage }}%</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Trials</span>
+                        <span class="font-medium">{{ experiment.current_trial }}/{{ experiment.total_trials }}</span>
+                    </div>
+                    {% if experiment.started_at %}
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Started</span>
+                        <span class="font-medium">{{ experiment.started_at.strftime('%H:%M:%S') }}</span>
+                    </div>
+                    {% endif %}
+                    {% if experiment.duration_minutes %}
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Duration</span>
+                        <span class="font-medium">{{ experiment.duration_minutes }} min</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Safety Notice -->
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-yellow-800">Safety Notice</h3>
+                        <p class="text-sm text-yellow-700 mt-1">
+                            Always ensure proper safety protocols are followed when controlling experiments. 
+                            Emergency stop procedures are available if needed.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- HTMX Auto-refresh for real-time updates -->
+<script>
+    // Auto-refresh the page every 30 seconds to get updated data
+    setTimeout(function() {
+        window.location.reload();
+    }, 30000);
+</script>
+{% endblock %} 

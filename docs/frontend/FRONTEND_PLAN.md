@@ -119,11 +119,184 @@ backend/app/
 - 🔄 **Interactive Designer** - Advanced step configuration and logic management (future enhancement)
 - 🔄 **HTMX Integration** - Real-time updates and dynamic form fields (future enhancement)
 
-### 2.9. Experiment Management
-- Create experiment (select process, bioreactor)
-- Experiment detail (status, controls, real-time data, history)
-- Monitor experiment (HTMX polling for live data)
-- Start/pause/stop controls
+### 2.9. 🆕 Experiment Management (IMPLEMENTATION PLAN)
+
+**Goal:** Implement comprehensive experiment management system that allows users to create, monitor, and control experiments using processes and bioreactors.
+
+#### **Architecture Overview**
+Based on the current Entity-based model system and existing patterns:
+
+**Experiment Model Structure:**
+- **Experiment**: Entity-based model (`entity_type = 'experiment'`) with properties for experiment configuration
+- **Experiment Instance**: Execution instances with status tracking and results (similar to ProcessInstance)
+- **Experiment Trial**: Multiple trials of the same experiment for reproducibility
+
+**Key Relationships:**
+- Experiments belong to Projects (one project per experiment)
+- Experiments use Processes (one or more processes per experiment)
+- Experiments run on Bioreactors (one bioreactor per experiment)
+- Experiments can have multiple Trials (for reproducibility)
+
+#### **Implementation Plan**
+
+**Phase 1: Backend Infrastructure**
+1. **Experiment Model** (`backend/app/models/experiment.py`)
+   - Entity-based model extending Entity class
+   - Properties: project_id, process_id, bioreactor_id, status, parameters, metadata
+   - Status management: draft, active, paused, completed, failed, archived
+   - Trial management with trial numbering
+
+2. **Experiment Schemas** (`backend/app/schemas/experiment.py`)
+   - Create, Update, Response schemas
+   - Trial schemas for execution instances
+   - Validation for experiment parameters and constraints
+
+3. **ExperimentService** (`backend/app/services/experiment_service.py`)
+   - CRUD operations with validation
+   - Trial creation and management
+   - Status transitions and safety checks
+   - Integration with ProcessService and BioreactorService
+
+4. **API Endpoints** (`backend/app/routers/web/web_experiments.py`)
+   - HTML endpoints for web interface
+   - JSON endpoints for programmatic access
+   - Real-time data endpoints for monitoring
+
+**Phase 2: Frontend Templates**
+1. **Experiment List Page** (`/app/experiments`)
+   - Scientific design system with experiment cards
+   - Filtering by status, project, bioreactor, process
+   - Quick actions (view, edit, start, stop)
+   - Real-time status updates via HTMX
+
+2. **Experiment Create Page** (`/app/experiments/create`)
+   - Multi-step form: Basic Info → Process Selection → Bioreactor Selection → Parameters → Review
+   - Process selection with preview and validation
+   - Bioreactor availability checking
+   - Parameter configuration with process-specific validation
+
+3. **Experiment Detail Page** (`/app/experiments/{id}`)
+   - Tabbed interface: Overview, Trials, Data, Controls, Settings
+   - Real-time experiment status and progress
+   - Trial history and results
+   - Live sensor data integration
+
+4. **Experiment Monitor Page** (`/app/experiments/{id}/monitor`)
+   - Real-time dashboard with HTMX polling
+   - Live sensor data visualization
+   - Control panel for start/pause/stop
+   - Safety confirmations and emergency stops
+
+5. **Experiment Edit Page** (`/app/experiments/{id}/edit`)
+   - Pre-populated forms with current values
+   - Parameter editing with validation
+   - Status management (draft, active, archived)
+
+**Phase 3: Integration Features**
+1. **Process Integration**
+   - Process selection with compatibility checking
+   - Parameter mapping from process to experiment
+   - Process execution tracking
+
+2. **Bioreactor Integration**
+   - Bioreactor availability checking
+   - Experiment association and control
+   - Safety systems integration
+
+3. **Real-time Features**
+   - HTMX polling for live updates
+   - WebSocket support for real-time data
+   - Progress tracking and notifications
+
+4. **Safety Systems**
+   - Confirmation dialogs for critical operations
+   - Emergency stop functionality
+   - Status validation and safety checks
+
+**Phase 4: Advanced Features**
+1. **Trial Management**
+   - Multiple trial support for reproducibility
+   - Trial comparison and analysis
+   - Statistical analysis of results
+
+2. **Data Management**
+   - Experiment data export (CSV, JSON)
+   - Data visualization and charts
+   - Historical data analysis
+
+3. **Collaboration Features**
+   - Experiment sharing within organization
+   - Comment and annotation system
+   - Version control for experiment configurations
+
+#### **Technical Implementation Details**
+
+**Experiment Model Properties:**
+```python
+experiment_properties = {
+    "project_id": "uuid",
+    "process_id": "uuid", 
+    "bioreactor_id": "uuid",
+    "status": "draft|active|paused|completed|failed|archived",
+    "parameters": {
+        "temperature": 37.0,
+        "ph": 7.2,
+        "duration": 1440  # minutes
+    },
+    "metadata": {
+        "objective": "Study growth rate under different conditions",
+        "hypothesis": "Higher temperature will increase growth rate",
+        "expected_outcomes": ["Growth rate measurement", "pH stability"]
+    },
+    "current_trial": 1,
+    "total_trials": 3,
+    "started_at": "2025-07-23T10:00:00Z",
+    "completed_at": None,
+    "results": {},
+    "error_message": None
+}
+```
+
+**Status Transitions:**
+- `draft` → `active` (start experiment)
+- `active` → `paused` (pause experiment)
+- `paused` → `active` (resume experiment)
+- `active` → `completed` (experiment finished)
+- `active` → `failed` (experiment failed)
+- `*` → `archived` (archive experiment)
+
+**Safety Validations:**
+- Bioreactor availability check before starting
+- Process compatibility validation
+- Parameter range validation
+- Concurrent experiment prevention
+
+#### **Testing Strategy**
+1. **Backend Tests**
+   - Unit tests for ExperimentService
+   - Integration tests for API endpoints
+   - Validation and error handling tests
+
+2. **Frontend Tests**
+   - Playwright tests for all experiment pages
+   - Form validation and error handling
+   - Real-time updates and HTMX integration
+   - Mobile responsiveness and accessibility
+
+3. **Integration Tests**
+   - Process-Experiment-Bioreactor integration
+   - Real-time data flow testing
+   - Safety system validation
+
+#### **Success Criteria**
+- ✅ Complete CRUD operations for experiments
+- ✅ Process and bioreactor integration working
+- ✅ Real-time monitoring and control
+- ✅ Safety systems and validation
+- ✅ Mobile-responsive design
+- ✅ Progressive enhancement (no-JS mode)
+- ✅ Comprehensive testing coverage
+- ✅ Scientific design system integration
 
 ### 2.10. ✅ Bioreactor Management (COMPLETED)
 - **✅ Enrollment (multi-step form, sensor/actuator config)** - Multi-step enrollment process

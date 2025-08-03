@@ -27,6 +27,9 @@ from ..exceptions import (
     ConflictException, BusinessLogicException
 )
 from .base import BaseService
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ProcessService(BaseService):
@@ -44,6 +47,32 @@ class ProcessService(BaseService):
     
     def __init__(self, db: Session):
         super().__init__(db)
+    
+    def get_processes_by_organization(self, organization_id: UUID, status: Optional[str] = None) -> List[Process]:
+        """
+        Get processes for a specific organization.
+        
+        Args:
+            organization_id: Organization ID
+            status: Optional status filter
+            
+        Returns:
+            List of processes
+        """
+        try:
+            query = self.db.query(Process).filter(
+                Process.organization_id == organization_id
+            )
+            
+            if status:
+                query = query.filter(Process.status == status)
+            
+            processes = query.order_by(Process.created_at.desc()).all()
+            return processes
+            
+        except Exception as e:
+            logger.error(f"Error getting processes by organization: {e}")
+            return []
     
     def create_process(
         self, 
