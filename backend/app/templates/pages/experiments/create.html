@@ -3,176 +3,643 @@
 {% block title %}Create Experiment - LMS Core{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <!-- Header Section -->
-    <div class="mb-8">
-        <div class="flex items-center">
-            <a href="/app/experiments" class="text-blue-600 hover:text-blue-800 mr-4">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
-            </a>
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900">Create Experiment</h1>
-                <p class="text-gray-600">Set up a new laboratory experiment</p>
+<div class="container mx-auto px-4 py-8 max-w-4xl">
+    <!-- Page Header with Scientific Gradient -->
+    <div class="page-header scientific-accent mb-8">
+        <div class="page-header-content">
+            <div class="header-left">
+                <div class="breadcrumb">
+                    <a href="/app/experiments" class="breadcrumb-link">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                        Experiments
+                    </a>
+                </div>
+                <h1 class="page-title">Create Experiment</h1>
+                <p class="page-subtitle">Set up a new laboratory experiment with process and bioreactor integration</p>
             </div>
         </div>
     </div>
 
-    <!-- Create Form -->
-    <div class="max-w-2xl mx-auto">
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <form method="POST" class="space-y-6">
-                <!-- Error Messages -->
-                {% if errors.general %}
-                <div class="bg-red-50 border border-red-200 rounded-md p-4">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm text-red-800">{{ errors.general }}</p>
-                        </div>
+    <!-- Error Message -->
+    {% if errors and errors.general %}
+    <div class="alert alert-error mb-6">
+        <div class="alert-icon">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+        </div>
+        <div class="alert-content">
+            <h3 class="alert-title">Error</h3>
+            <p class="alert-message">{{ errors.general }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Experiment Creation Form -->
+    <form action="/app/experiments/create" method="post" class="form-container">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+        
+        <div class="form-sections">
+            <!-- Basic Information -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon">🧪</div>
+                    <div>
+                        <h3 class="section-title">Basic Information</h3>
+                        <p class="section-description">Core details about your laboratory experiment</p>
                     </div>
                 </div>
-                {% endif %}
-
-                <!-- Basic Information Section -->
-                <div>
-                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
-                    
-                    <!-- Experiment Name -->
-                    <div class="mb-4">
-                        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
-                            Experiment Name <span class="text-red-500">*</span>
-                        </label>
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label for="name" class="form-label">Experiment Name *</label>
                         <input type="text" 
                                id="name" 
                                name="name" 
-                               value="{{ form_data.name or '' }}"
-                               class="w-full px-3 py-2 border {% if errors.name %}border-red-300{% else %}border-gray-300{% endif %} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               value="{{ form_data.name if form_data else '' }}"
+                               required
+                               class="form-input"
                                placeholder="Enter experiment name">
-                        {% if errors.name %}
-                        <p class="mt-1 text-sm text-red-600">{{ errors.name }}</p>
-                        {% endif %}
+                        <p class="form-help">The display name for your experiment</p>
                     </div>
-
-                    <!-- Description -->
-                    <div class="mb-4">
-                        <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
-                            Description
-                        </label>
+                    
+                    <div class="form-group full-width">
+                        <label for="description" class="form-label">Description</label>
                         <textarea id="description" 
                                   name="description" 
                                   rows="3"
-                                  class="w-full px-3 py-2 border {% if errors.description %}border-red-300{% else %}border-gray-300{% endif %} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                  placeholder="Describe the experiment objectives and methodology">{{ form_data.description or '' }}</textarea>
-                        {% if errors.description %}
-                        <p class="mt-1 text-sm text-red-600">{{ errors.description }}</p>
-                        {% endif %}
+                                  class="form-textarea"
+                                  placeholder="Describe your experiment objectives and methodology">{{ form_data.description if form_data else '' }}</textarea>
+                        <p class="form-help">Brief description of your experiment goals and methodology</p>
                     </div>
                 </div>
+            </div>
 
-                <!-- Configuration Section -->
-                <div>
-                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Configuration</h2>
-                    
-                    <!-- Project Selection -->
-                    <div class="mb-4">
-                        <label for="project_id" class="block text-sm font-medium text-gray-700 mb-1">
-                            Project <span class="text-red-500">*</span>
-                        </label>
+            <!-- Configuration -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon">⚙️</div>
+                    <div>
+                        <h3 class="section-title">Configuration</h3>
+                        <p class="section-description">Select project, process, and bioreactor for your experiment</p>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="project_id" class="form-label">Project *</label>
                         <select id="project_id" 
-                                name="project_id" 
-                                class="w-full px-3 py-2 border {% if errors.project_id %}border-red-300{% else %}border-gray-300{% endif %} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">Select a project</option>
+                                name="project_id"
+                                required
+                                class="form-select">
+                            <option value="">Select Project</option>
                             {% for project in projects %}
-                            <option value="{{ project.id }}" {% if form_data.project_id == project.id %}selected{% endif %}>
+                            <option value="{{ project.id }}" 
+                                    {% if form_data and form_data.project_id == project.id|string %}selected{% endif %}>
                                 {{ project.name }}
                             </option>
                             {% endfor %}
                         </select>
-                        {% if errors.project_id %}
-                        <p class="mt-1 text-sm text-red-600">{{ errors.project_id }}</p>
-                        {% endif %}
+                        <p class="form-help">The project this experiment belongs to</p>
                     </div>
-
-                    <!-- Process Selection -->
-                    <div class="mb-4">
-                        <label for="process_id" class="block text-sm font-medium text-gray-700 mb-1">
-                            Process <span class="text-red-500">*</span>
-                        </label>
+                    
+                    <div class="form-group">
+                        <label for="process_id" class="form-label">Process *</label>
                         <select id="process_id" 
-                                name="process_id" 
-                                class="w-full px-3 py-2 border {% if errors.process_id %}border-red-300{% else %}border-gray-300{% endif %} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">Select a process</option>
+                                name="process_id"
+                                required
+                                class="form-select">
+                            <option value="">Select Process</option>
                             {% for process in processes %}
-                            <option value="{{ process.id }}" {% if form_data.process_id == process.id %}selected{% endif %}>
+                            <option value="{{ process.id }}" 
+                                    {% if form_data and form_data.process_id == process.id|string %}selected{% endif %}>
                                 {{ process.name }} ({{ process.process_type }})
                             </option>
                             {% endfor %}
                         </select>
-                        {% if errors.process_id %}
-                        <p class="mt-1 text-sm text-red-600">{{ errors.process_id }}</p>
-                        {% endif %}
+                        <p class="form-help">The process template to follow for this experiment</p>
                     </div>
-
-                    <!-- Bioreactor Selection -->
-                    <div class="mb-4">
-                        <label for="bioreactor_id" class="block text-sm font-medium text-gray-700 mb-1">
-                            Bioreactor <span class="text-red-500">*</span>
-                        </label>
+                    
+                    <div class="form-group">
+                        <label for="bioreactor_id" class="form-label">Bioreactor *</label>
                         <select id="bioreactor_id" 
-                                name="bioreactor_id" 
-                                class="w-full px-3 py-2 border {% if errors.bioreactor_id %}border-red-300{% else %}border-gray-300{% endif %} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">Select a bioreactor</option>
+                                name="bioreactor_id"
+                                required
+                                class="form-select">
+                            <option value="">Select Bioreactor</option>
                             {% for bioreactor in bioreactors %}
-                            <option value="{{ bioreactor.id }}" {% if form_data.bioreactor_id == bioreactor.id %}selected{% endif %}>
-                                {{ bioreactor.name }} 
+                            <option value="{{ bioreactor.id }}" 
+                                    {% if form_data and form_data.bioreactor_id == bioreactor.id|string %}selected{% endif %}>
+                                {{ bioreactor.name }}
                                 {% if bioreactor.is_running_experiment %}(Running Experiment){% endif %}
                             </option>
                             {% endfor %}
                         </select>
-                        {% if errors.bioreactor_id %}
-                        <p class="mt-1 text-sm text-red-600">{{ errors.bioreactor_id }}</p>
-                        {% endif %}
-                        <p class="mt-1 text-sm text-gray-500">Only available bioreactors are shown</p>
+                        <p class="form-help">The bioreactor to use for this experiment</p>
                     </div>
-
-                    <!-- Total Trials -->
-                    <div class="mb-4">
-                        <label for="total_trials" class="block text-sm font-medium text-gray-700 mb-1">
-                            Total Trials <span class="text-red-500">*</span>
-                        </label>
+                    
+                    <div class="form-group">
+                        <label for="total_trials" class="form-label">Total Trials *</label>
                         <input type="number" 
                                id="total_trials" 
                                name="total_trials" 
-                               value="{{ form_data.total_trials or 1 }}"
+                               value="{{ form_data.total_trials if form_data else 1 }}"
                                min="1" 
                                max="100"
-                               class="w-full px-3 py-2 border {% if errors.total_trials %}border-red-300{% else %}border-gray-300{% endif %} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        {% if errors.total_trials %}
-                        <p class="mt-1 text-sm text-red-600">{{ errors.total_trials }}</p>
-                        {% endif %}
-                        <p class="mt-1 text-sm text-gray-500">Number of experimental trials to run</p>
+                               required
+                               class="form-input">
+                        <p class="form-help">Number of experimental trials to run for reproducibility</p>
                     </div>
                 </div>
+            </div>
 
-                <!-- Action Buttons -->
-                <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-                    <a href="/app/experiments" 
-                       class="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors">
-                        Cancel
-                    </a>
-                    <button type="submit" 
-                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                        Create Experiment
-                    </button>
+            <!-- Experiment Parameters -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon">📊</div>
+                    <div>
+                        <h3 class="section-title">Experiment Parameters</h3>
+                        <p class="section-description">Configure experiment-specific parameters and settings</p>
+                    </div>
                 </div>
-            </form>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="duration_minutes" class="form-label">Duration (minutes)</label>
+                        <input type="number" 
+                               id="duration_minutes" 
+                               name="duration_minutes" 
+                               value="{{ form_data.duration_minutes if form_data else '' }}"
+                               min="1"
+                               class="form-input"
+                               placeholder="e.g., 1440">
+                        <p class="form-help">Expected duration of the experiment in minutes</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="temperature" class="form-label">Temperature (°C)</label>
+                        <input type="number" 
+                               id="temperature" 
+                               name="temperature" 
+                               value="{{ form_data.temperature if form_data else '' }}"
+                               step="0.1"
+                               class="form-input"
+                               placeholder="e.g., 37.0">
+                        <p class="form-help">Target temperature for the experiment</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ph" class="form-label">pH</label>
+                        <input type="number" 
+                               id="ph" 
+                               name="ph" 
+                               value="{{ form_data.ph if form_data else '' }}"
+                               step="0.1"
+                               min="0"
+                               max="14"
+                               class="form-input"
+                               placeholder="e.g., 7.2">
+                        <p class="form-help">Target pH level for the experiment</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="dissolved_oxygen" class="form-label">Dissolved Oxygen (%)</label>
+                        <input type="number" 
+                               id="dissolved_oxygen" 
+                               name="dissolved_oxygen" 
+                               value="{{ form_data.dissolved_oxygen if form_data else '' }}"
+                               step="0.1"
+                               min="0"
+                               max="100"
+                               class="form-input"
+                               placeholder="e.g., 80.0">
+                        <p class="form-help">Target dissolved oxygen level</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metadata -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-icon">📝</div>
+                    <div>
+                        <h3 class="section-title">Experiment Metadata</h3>
+                        <p class="section-description">Additional information about your experiment</p>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label for="objective" class="form-label">Objective</label>
+                        <textarea id="objective" 
+                                  name="objective" 
+                                  rows="2"
+                                  class="form-textarea"
+                                  placeholder="What are you trying to achieve with this experiment?">{{ form_data.objective if form_data else '' }}</textarea>
+                        <p class="form-help">The main objective or goal of this experiment</p>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="hypothesis" class="form-label">Hypothesis</label>
+                        <textarea id="hypothesis" 
+                                  name="hypothesis" 
+                                  rows="2"
+                                  class="form-textarea"
+                                  placeholder="What is your hypothesis for this experiment?">{{ form_data.hypothesis if form_data else '' }}</textarea>
+                        <p class="form-help">Your scientific hypothesis for this experiment</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="expected_outcomes" class="form-label">Expected Outcomes</label>
+                        <input type="text" 
+                               id="expected_outcomes" 
+                               name="expected_outcomes" 
+                               value="{{ form_data.expected_outcomes if form_data else '' }}"
+                               placeholder="e.g., Growth rate measurement, pH stability"
+                               class="form-input">
+                        <p class="form-help">Comma-separated list of expected outcomes</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tags" class="form-label">Tags</label>
+                        <input type="text" 
+                               id="tags" 
+                               name="tags" 
+                               value="{{ form_data.tags if form_data else '' }}"
+                               placeholder="e.g., fermentation, optimization, yield"
+                               class="form-input">
+                        <p class="form-help">Comma-separated tags for easy categorization</p>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <a href="/app/experiments" class="btn btn-secondary">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                Cancel
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+                Create Experiment
+            </button>
+        </div>
+    </form>
 </div>
+
+<style>
+/* CSS Variables */
+:root {
+    --primary: #6aff93;
+    --primary-dark: #4ade80;
+    --primary-light: #86efac;
+    --secondary: #40e0d0;
+    --secondary-dark: #20b2aa;
+    --secondary-light: #5eead4;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-tertiary: #f1f5f9;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --text-tertiary: #94a3b8;
+    --text-inverse: #ffffff;
+    --border-light: #e2e8f0;
+    --danger: #ef4444;
+    --danger-light: #fef2f2;
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 3rem;
+    --space-3xl: 4rem;
+    --space-4xl: 6rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.15);
+    --shadow-lg: 0 10px 30px rgba(106, 255, 147, 0.2);
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+    --font-size-4xl: 2.25rem;
+    --transition-normal: 0.3s ease;
+}
+
+/* Page Header Styles */
+.page-header {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: var(--radius-xl);
+    position: relative;
+    overflow: hidden;
+    padding: var(--space-8);
+}
+
+.page-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(50%, -50%);
+}
+
+.page-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 10;
+}
+
+.header-left {
+    flex: 1;
+}
+
+.breadcrumb {
+    margin-bottom: var(--space-2);
+}
+
+.breadcrumb-link {
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+    transition: color var(--transition-normal);
+}
+
+.breadcrumb-link:hover {
+    color: var(--text-inverse);
+}
+
+.page-title {
+    color: var(--text-inverse);
+    font-size: var(--font-size-4xl);
+    font-weight: 700;
+    margin-bottom: var(--space-2);
+}
+
+.page-subtitle {
+    color: rgba(255,255,255,0.9);
+    font-size: var(--font-size-lg);
+    font-weight: 400;
+}
+
+/* Alert Styles */
+.alert {
+    display: flex;
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    gap: var(--space-3);
+}
+
+.alert-error {
+    background: var(--danger-light);
+    border: 1px solid var(--danger);
+    color: var(--danger);
+}
+
+.alert-icon {
+    flex-shrink: 0;
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-title {
+    font-weight: 600;
+    margin-bottom: var(--space-1);
+}
+
+.alert-message {
+    font-size: var(--font-size-sm);
+}
+
+/* Form Container */
+.form-container {
+    background: var(--bg-primary);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.form-sections {
+    padding: var(--space-8);
+}
+
+.form-section {
+    margin-bottom: var(--space-8);
+    padding-bottom: var(--space-8);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.form-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+
+.section-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: var(--radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-2xl);
+    color: var(--text-inverse);
+}
+
+.section-title {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-1);
+}
+
+.section-description {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+/* Form Grid */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--space-6);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    background: var(--bg-primary);
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    transition: all var(--transition-normal);
+    color: var(--text-primary);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(106, 255, 147, 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+    color: var(--text-tertiary);
+}
+
+.form-help {
+    margin-top: var(--space-1);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+/* Button Styles */
+.btn {
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-lg);
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-family);
+    text-decoration: none;
+    font-size: var(--font-size-base);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: var(--text-inverse);
+    border: 1px solid rgba(255,255,255,0.3);
+    backdrop-filter: blur(10px);
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-light);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-tertiary);
+    transform: translateY(-1px);
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-4);
+    padding: var(--space-6) var(--space-8);
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-light);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-header-content {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-4);
+    }
+    
+    .form-sections {
+        padding: var(--space-6);
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-3);
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+    
+    .btn {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: var(--space-4);
+    }
+    
+    .page-title {
+        font-size: var(--font-size-3xl);
+    }
+    
+    .section-title {
+        font-size: var(--font-size-lg);
+    }
+}
+</style>
 {% endblock %} 

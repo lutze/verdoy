@@ -746,10 +746,218 @@ if control_type == 'emergency_stop':
 
 ---
 
-## Process Flow 9: Real-time Data Integration
+## Process Flow 9: Experiment Management
 
 ### Flow Description
-HTMX-based real-time data integration for bioreactor monitoring and process tracking.
+Comprehensive experiment management system that integrates projects, processes, and bioreactors for laboratory experiment execution and monitoring.
+
+### Prerequisites
+- User must be authenticated and belong to an organization
+- Organization must exist and be accessible to the user
+- User must have permission to create experiments in the organization
+- At least one project, process, and bioreactor must be available
+
+### Steps
+1. **Step 1: Basic Experiment Information**
+   ```python
+   # Validate organization access
+   if not user_has_org_access(current_user, organization_id):
+       raise PermissionException("Access denied to organization")
+   
+   # Collect basic experiment information
+   basic_info = {
+       'name': name,  # Required
+       'description': description,  # Optional
+       'objective': objective,  # Optional
+       'hypothesis': hypothesis,  # Optional
+       'expected_outcomes': expected_outcomes,  # Optional
+       'tags': tags  # Optional
+   }
+   ```
+
+2. **Step 2: Experiment Configuration**
+   ```python
+   # Validate required configuration
+   if not project_id:
+       raise ValidationException("Project selection is required")
+   if not process_id:
+       raise ValidationException("Process selection is required")
+   if not bioreactor_id:
+       raise ValidationException("Bioreactor selection is required")
+   
+   # Validate bioreactor availability
+   bioreactor = db.query(Bioreactor).filter(
+       Bioreactor.id == bioreactor_id,
+       Bioreactor.organization_id == organization_id
+   ).first()
+   
+   if bioreactor.is_running_experiment():
+       raise ValidationException("Selected bioreactor is currently running an experiment")
+   
+   experiment_config = {
+       'project_id': project_id,  # Required
+       'process_id': process_id,  # Required
+       'bioreactor_id': bioreactor_id,  # Required
+       'total_trials': total_trials or 1,  # Required, default 1
+       'current_trial': 1  # Start with first trial
+   }
+   ```
+
+3. **Step 3: Scientific Parameters**
+   ```python
+   # Validate scientific parameters
+   scientific_params = {
+       'duration_minutes': duration_minutes,  # Optional
+       'temperature': temperature,  # Optional, validate range
+       'ph': ph,  # Optional, validate range 0-14
+       'dissolved_oxygen': dissolved_oxygen  # Optional, validate range 0-100%
+   }
+   
+   # Validate parameter ranges
+   if temperature and not (-50 <= temperature <= 150):
+       raise ValidationException("Temperature must be between -50°C and 150°C")
+   if ph and not (0 <= ph <= 14):
+       raise ValidationException("pH must be between 0 and 14")
+   if dissolved_oxygen and not (0 <= dissolved_oxygen <= 100):
+       raise ValidationException("Dissolved oxygen must be between 0% and 100%")
+   ```
+
+4. **Step 4: Experiment Creation and Database Storage**
+   ```python
+   # Create experiment entity
+   experiment = Experiment(
+       name=name,
+       description=description,
+       project_id=project_id,
+       process_id=process_id,
+       bioreactor_id=bioreactor_id,
+       organization_id=organization_id,
+       status='draft',
+       entity_type='experiment'
+   )
+   
+   # Store scientific parameters in properties
+   if duration_minutes:
+       experiment.set_property('duration_minutes', duration_minutes)
+   if temperature:
+       experiment.set_property('temperature', temperature)
+   if ph:
+       experiment.set_property('ph', ph)
+   if dissolved_oxygen:
+       experiment.set_property('dissolved_oxygen', dissolved_oxygen)
+   
+   # Store metadata
+   if objective:
+       experiment.set_property('objective', objective)
+   if hypothesis:
+       experiment.set_property('hypothesis', hypothesis)
+   if expected_outcomes:
+       experiment.set_property('expected_outcomes', expected_outcomes.split(','))
+   if tags:
+       experiment.set_property('tags', tags.split(','))
+   
+   # Set trial information
+   experiment.set_property('total_trials', total_trials or 1)
+   experiment.set_property('current_trial', 1)
+   experiment.set_property('progress_percentage', 0)
+   
+   # Save to database
+   db.add(experiment)
+   db.commit()
+   db.refresh(experiment)
+   ```
+
+### Experiment Status Management
+```python
+# Experiment status transitions
+def start_experiment(experiment_id: UUID, current_user: User):
+    experiment = db.query(Experiment).filter(Experiment.id == experiment_id).first()
+    
+    # Validate experiment can be started
+    if experiment.status != 'draft':
+        raise ValidationException("Only draft experiments can be started")
+    
+    # Check bioreactor availability
+    bioreactor = db.query(Bioreactor).filter(Bioreactor.id == experiment.bioreactor_id).first()
+    if bioreactor.is_running_experiment():
+        raise ValidationException("Bioreactor is currently running another experiment")
+    
+    # Update experiment status
+    experiment.status = 'active'
+    experiment.set_property('started_at', datetime.utcnow().isoformat())
+    experiment.set_property('started_by', str(current_user.id))
+    
+    # Update bioreactor status
+    bioreactor.set_property('current_experiment_id', str(experiment.id))
+    bioreactor.set_property('status', 'running_experiment')
+    
+    db.commit()
+```
+
+### Trial Management
+```python
+# Create new trial for experiment
+def create_experiment_trial(experiment_id: UUID):
+    experiment = db.query(Experiment).filter(Experiment.id == experiment_id).first()
+    current_trial = experiment.get_property('current_trial', 1)
+    total_trials = experiment.get_property('total_trials', 1)
+    
+    if current_trial > total_trials:
+        raise ValidationException("All trials for this experiment have been completed")
+    
+    # Create trial record
+    trial = ExperimentTrial(
+        experiment_id=experiment_id,
+        trial_number=current_trial,
+        status='pending',
+        started_at=datetime.utcnow()
+    )
+    
+    db.add(trial)
+    db.commit()
+    
+    return trial
+```
+
+### Real-time Monitoring
+```python
+# HTMX polling for experiment status updates
+@router.get("/{experiment_id}/status", response_class=HTMLResponse)
+async def experiment_status_partial(request: Request, experiment_id: UUID):
+    """Real-time experiment status updates via HTMX."""
+    experiment = get_experiment_with_access(experiment_id, current_user)
+    
+    return templates.TemplateResponse(
+        "partials/experiment_status.html",
+        {
+            "request": request,
+            "experiment": experiment,
+            "status": experiment.status,
+            "progress": experiment.get_property('progress_percentage', 0),
+            "current_trial": experiment.get_property('current_trial', 1),
+            "total_trials": experiment.get_property('total_trials', 1)
+        }
+    )
+```
+
+### Error Handling
+- **Missing Required Fields**: Return to current step with error message
+- **Invalid Parameter Ranges**: Return validation error with acceptable ranges
+- **Bioreactor Unavailable**: Return error with alternative bioreactor suggestions
+- **Permission Denied**: Return 403 Forbidden
+- **Database Errors**: Rollback transaction and return error
+- **Validation Errors**: Preserve form data and display specific error messages
+
+### Security Considerations
+- **Organization Access Control**: Verify user has permission to create experiments
+- **Bioreactor Availability**: Ensure bioreactor is not running another experiment
+- **Parameter Validation**: Validate scientific parameter ranges
+- **Transaction Safety**: Ensure database operations are atomic
+- **Audit Logging**: Log all experiment creation and status change events
+
+---
+
+## Process Flow 10: Real-time Data Integration
 
 ### Implementation
 ```python
