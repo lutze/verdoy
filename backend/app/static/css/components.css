@@ -1905,7 +1905,8 @@ input:invalid, select:invalid, textarea:invalid {
 .processes-list,
 .projects-list,
 .bioreactors-list,
-.experiments-list {
+.experiments-list,
+.organizations-list {
   background: var(--bg-elevated);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
@@ -1941,10 +1942,15 @@ input:invalid, select:invalid, textarea:invalid {
   grid-template-columns: 2fr 1fr 120px 120px 100px 80px;
 }
 
+.organizations-list .list-header {
+  grid-template-columns: 2fr 1fr 120px 100px 100px 100px 80px;
+}
+
 .process-row,
 .project-row,
 .bioreactor-row,
-.experiment-row {
+.experiment-row,
+.organization-row {
   display: grid;
   gap: var(--space-4);
   padding: var(--space-4) var(--space-6);
@@ -1969,17 +1975,23 @@ input:invalid, select:invalid, textarea:invalid {
   grid-template-columns: 2fr 1fr 120px 120px 100px 80px;
 }
 
+.organization-row {
+  grid-template-columns: 2fr 1fr 120px 100px 100px 100px 80px;
+}
+
 .process-row:hover,
 .project-row:hover,
 .bioreactor-row:hover,
-.experiment-row:hover {
+.experiment-row:hover,
+.organization-row:hover {
   background: var(--bg-secondary);
 }
 
 .process-info strong,
 .project-info strong,
 .bioreactor-info strong,
-.experiment-info strong {
+.experiment-info strong,
+.organization-info strong {
   color: var(--text-primary);
   font-weight: 600;
 }
@@ -1987,7 +1999,8 @@ input:invalid, select:invalid, textarea:invalid {
 .process-desc,
 .project-desc,
 .bioreactor-desc,
-.experiment-desc {
+.experiment-desc,
+.organization-desc {
   color: var(--text-secondary);
 }
 
