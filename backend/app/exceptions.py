@@ -328,6 +328,78 @@ class BusinessLogicException(HTTPException):
         )
 
 
+class PermissionDeniedException(HTTPException):
+    """Exception raised when user lacks required permissions."""
+    def __init__(self, detail: str = "Permission denied"):
+        super().__init__(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=detail
+        )
+
+
+class MemberNotFoundException(HTTPException):
+    """Exception raised when a member is not found."""
+    def __init__(self, detail: str = "Member not found"):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=detail
+        )
+
+
+class DuplicateMemberException(HTTPException):
+    """Exception raised when a user is already a member of an organization."""
+    def __init__(self, detail: str = "User is already a member of this organization"):
+        super().__init__(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=detail
+        )
+
+
+class InvitationNotFoundException(HTTPException):
+    """Exception raised when an invitation is not found."""
+    def __init__(self, detail: str = "Invitation not found"):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=detail
+        )
+
+
+class InvitationExpiredException(HTTPException):
+    """Exception raised when an invitation has expired."""
+    def __init__(self, detail: str = "Invitation has expired"):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=detail
+        )
+
+
+class DuplicateInvitationException(HTTPException):
+    """Exception raised when an invitation already exists."""
+    def __init__(self, detail: str = "Invitation already exists"):
+        super().__init__(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=detail
+        )
+
+
+class RemovalRequestNotFoundException(HTTPException):
+    """Exception raised when a removal request is not found."""
+    def __init__(self, detail: str = "Removal request not found"):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=detail
+        )
+
+
+class DuplicateRemovalRequestException(HTTPException):
+    """Exception raised when a removal request already exists."""
+    def __init__(self, detail: str = "Removal request already exists"):
+        super().__init__(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=detail
+        )
+
+
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """
     Global exception handler for unhandled exceptions.

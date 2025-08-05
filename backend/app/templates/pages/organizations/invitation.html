@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Organization Invitation</h1>
+            <p class="text-gray-600 mt-2">You've been invited to join {{ organization.name }}</p>
+        </div>
+
+        <!-- Error Messages -->
+        {% if request.query_params.get("error") %}
+        <div class="alert alert-error mb-6">
+            <span>{{ request.query_params.get("error") }}</span>
+        </div>
+        {% endif %}
+
+        <!-- Invitation Card -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">{{ organization.name }}</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Role</h3>
+                    <p class="mt-1">
+                        <span class="badge badge-{{ 'primary' if invitation.role == 'admin' else 'secondary' if invitation.role == 'member' else 'info' }}">
+                            {{ invitation.role }}
+                        </span>
+                    </p>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Expires</h3>
+                    <p class="mt-1 text-{{ 'red' if invitation.is_expired() else 'green' }}">
+                        {{ invitation.expires_at.strftime('%B %d, %Y') if invitation.expires_at else "Unknown" }}
+                    </p>
+                </div>
+            </div>
+
+            {% if invitation.message %}
+            <div class="border-t border-gray-200 pt-4">
+                <h3 class="text-sm font-medium text-gray-500 mb-2">Message</h3>
+                <p class="text-gray-900 italic">"{{ invitation.message }}"</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Status Check -->
+        {% if invitation.is_expired() %}
+        <div class="alert alert-error mb-6">
+            <span>This invitation has expired and can no longer be accepted.</span>
+        </div>
+        {% elif invitation.status != "pending" %}
+        <div class="alert alert-{{ 'success' if invitation.status == 'accepted' else 'error' }} mb-6">
+            <span>
+                {% if invitation.status == 'accepted' %}
+                    You have already accepted this invitation.
+                {% elif invitation.status == 'declined' %}
+                    You have already declined this invitation.
+                {% else %}
+                    This invitation has been {{ invitation.status }}.
+                {% endif %}
+            </span>
+        </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+        {% if invitation.status == "pending" and not invitation.is_expired() %}
+        <div class="flex flex-col sm:flex-row gap-4">
+            <form method="POST" action="/app/invitations/{{ invitation.id }}/accept" class="flex-1">
+                <button type="submit" class="btn btn-primary w-full">
+                    Accept Invitation
+                </button>
+            </form>
+            <form method="POST" action="/app/invitations/{{ invitation.id }}/decline" class="flex-1">
+                <button type="submit" class="btn btn-outline w-full" onclick="return confirm('Are you sure you want to decline this invitation?')">
+                    Decline Invitation
+                </button>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Navigation -->
+        <div class="text-center mt-8">
+            <a href="/app/dashboard" class="text-blue-600 hover:text-blue-800 font-medium">
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %} 

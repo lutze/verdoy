@@ -1,0 +1,443 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="page-header-content">
+            <div class="header-titles">
+                <h1 class="page-title">{{ organization.name }} - Members</h1>
+                <p class="page-subtitle">Manage organization members and invitations</p>
+            </div>
+            <div class="header-actions">
+                <a href="/app/admin/organization/{{ organization.id }}" class="btn btn-secondary">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Back to Organization
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debug Info -->
+    <!-- DEBUG: current_user = {{ current_user }} -->
+    <!-- DEBUG: current_user_member = {{ current_user_member }} -->
+    <!-- DEBUG: current_user_member type = {{ current_user_member.__class__.__name__ if current_user_member else 'None' }} -->
+    
+    <!-- Success/Error Messages -->
+    {% if request.query_params.get("success") %}
+    <div class="alert alert-success">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        <span>
+            {% if request.query_params.get("success") == "invitation_sent" %}
+                Invitation sent successfully!
+            {% elif request.query_params.get("success") == "role_updated" %}
+                Member role updated successfully!
+            {% elif request.query_params.get("success") == "member_removed" %}
+                Member removed successfully!
+            {% elif request.query_params.get("success") == "removal_requested" %}
+                Removal request submitted successfully!
+            {% elif request.query_params.get("success") == "removal_approved" %}
+                Removal request approved successfully!
+            {% endif %}
+        </span>
+    </div>
+    {% endif %}
+
+    {% if request.query_params.get("error") %}
+    <div class="alert alert-error">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+        <span>{{ request.query_params.get("error") }}</span>
+    </div>
+    {% endif %}
+
+    <!-- Tab Navigation -->
+    <div class="tab-navigation">
+        <button class="tab-button active" data-tab="members">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+            </svg>
+            Members
+        </button>
+        <button class="tab-button" data-tab="invitations">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            Invitations
+        </button>
+        <button class="tab-button" data-tab="removal-requests">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Removal Requests
+        </button>
+    </div>
+
+    <!-- Members Tab -->
+    <div id="members" class="tab-content">
+        <div class="tab-pane active">
+            <div class="section-header">
+                <h2>Organization Members</h2>
+                {% if current_user_member and current_user_member.can_invite_members() %}
+                <button class="btn btn-primary" onclick="openInviteModal()">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                    Invite Member
+                </button>
+                {% endif %}
+            </div>
+            
+            {% if members %}
+            <div class="organizations-list">
+                <div class="list-header">
+                    <div>Name</div>
+                    <div>Email</div>
+                    <div>Role</div>
+                    <div>Joined</div>
+                    <div>Actions</div>
+                </div>
+                {% for member in members %}
+                {% set user = member.user %}
+                <div class="organization-row">
+                    <div class="organization-info">
+                        <strong>{{ user.name if user else "Unknown" }}</strong>
+                        <div class="organization-desc">{{ user.email if user else "Unknown" }}</div>
+                    </div>
+                    <div>{{ user.email if user else "Unknown" }}</div>
+                    <div>
+                        <span class="status-badge {{ 'online' if member.role == 'admin' else 'warning' if member.role == 'member' else 'offline' }}">
+                            {{ member.role }}
+                        </span>
+                    </div>
+                    <div>{{ member.joined_at.strftime('%Y-%m-%d') if member.joined_at else 'Unknown' }}</div>
+                    <div class="organization-actions">
+                        {% if current_user_member and current_user_member.can_manage_roles() and member.user_id != current_user.id %}
+                        <button class="action-btn" onclick="openRoleModal('{{ member.user_id }}', '{{ member.role }}')">
+                            Change Role
+                        </button>
+                        {% endif %}
+                        
+                        {% if current_user_member and current_user_member.can_manage_roles() and member.user_id != current_user.id %}
+                        <form method="POST" action="/app/admin/organization/{{ organization.id }}/members/{{ member.user_id }}/remove" class="inline">
+                            <button type="submit" class="action-btn danger" onclick="return confirm('Are you sure you want to remove this member?')">
+                                Remove
+                            </button>
+                        </form>
+                        {% endif %}
+                        
+                        {% if member.user_id == current_user.id %}
+                        <button class="action-btn" onclick="openRemovalModal('{{ member.user_id }}')">
+                            Request Removal
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                    </svg>
+                </div>
+                <h3 class="empty-title">No members yet</h3>
+                <p class="empty-description">Start by inviting members to your organization.</p>
+                {% if current_user_member and current_user_member.can_invite_members() %}
+                <button class="btn btn-primary" onclick="openInviteModal()">
+                    Invite First Member
+                </button>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Invitations Tab -->
+    <div id="invitations" class="tab-content">
+        <div class="tab-pane">
+            <div class="section-header">
+                <h2>Pending Invitations</h2>
+            </div>
+            
+            {% if invitations %}
+            <div class="organizations-list">
+                <div class="list-header">
+                    <div>Email</div>
+                    <div>Role</div>
+                    <div>Invited</div>
+                    <div>Expires</div>
+                    <div>Actions</div>
+                </div>
+                {% for invitation in invitations %}
+                <div class="organization-row">
+                    <div class="organization-info">
+                        <strong>{{ invitation.email }}</strong>
+                    </div>
+                    <div>
+                        <span class="status-badge {{ 'online' if invitation.role == 'admin' else 'warning' if invitation.role == 'member' else 'offline' }}">
+                            {{ invitation.role }}
+                        </span>
+                    </div>
+                    <div>{{ invitation.invited_at.strftime('%Y-%m-%d') if invitation.invited_at else 'Unknown' }}</div>
+                    <div>
+                        <span class="{{ 'status-error' if invitation.is_expired() else 'status-online' }}">
+                            {{ invitation.expires_at.strftime('%Y-%m-%d') if invitation.expires_at else 'Unknown' }}
+                        </span>
+                    </div>
+                    <div class="organization-actions">
+                        {% if current_user_member and current_user_member.can_invite_members() %}
+                        <form method="POST" action="/app/admin/organization/{{ organization.id }}/invitations/{{ invitation.id }}/cancel" class="inline">
+                            <button type="submit" class="action-btn danger" onclick="return confirm('Are you sure you want to cancel this invitation?')">
+                                Cancel
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <h3 class="empty-title">No pending invitations</h3>
+                <p class="empty-description">All invitations have been processed or expired.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Removal Requests Tab -->
+    <div id="removal-requests" class="tab-content">
+        <div class="tab-pane">
+            <div class="section-header">
+                <h2>Removal Requests</h2>
+            </div>
+            
+            {% if removal_requests %}
+            <div class="organizations-list">
+                <div class="list-header">
+                    <div>User</div>
+                    <div>Requested By</div>
+                    <div>Reason</div>
+                    <div>Requested</div>
+                    <div>Actions</div>
+                </div>
+                {% for request in removal_requests %}
+                <div class="organization-row">
+                    <div class="organization-info">
+                        <strong>{{ request.user.name if request.user else "Unknown" }}</strong>
+                    </div>
+                    <div>{{ request.requester.name if request.requester else "Unknown" }}</div>
+                    <div>{{ request.reason or "No reason provided" }}</div>
+                    <div>{{ request.requested_at.strftime('%Y-%m-%d') if request.requested_at else 'Unknown' }}</div>
+                    <div class="organization-actions">
+                        {% if current_user_member and current_user_member.can_approve_removals() %}
+                        <button class="action-btn" onclick="openApprovalModal('{{ request.user_id }}', 'approve')">
+                            Approve
+                        </button>
+                        <button class="action-btn danger" onclick="openApprovalModal('{{ request.user_id }}', 'deny')">
+                            Deny
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <h3 class="empty-title">No removal requests</h3>
+                <p class="empty-description">All removal requests have been processed.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Invite Member Modal -->
+<div id="inviteModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Invite Member</h3>
+            <button class="modal-close" onclick="closeInviteModal()">&times;</button>
+        </div>
+        <form method="POST" action="/app/admin/organization/{{ organization.id }}/invite">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="role">Role</label>
+                    <select id="role" name="role" class="form-select">
+                        <option value="member">Member</option>
+                        <option value="admin">Admin</option>
+                        <option value="viewer">Viewer</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="message">Message (Optional)</label>
+                    <textarea id="message" name="message" rows="3" class="form-textarea" placeholder="Add a personal message to the invitation..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeInviteModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Send Invitation</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Role Update Modal -->
+<div id="roleModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Update Member Role</h3>
+            <button class="modal-close" onclick="closeRoleModal()">&times;</button>
+        </div>
+        <form id="roleForm" method="POST">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="newRole">New Role</label>
+                    <select id="newRole" name="role" class="form-select">
+                        <option value="member">Member</option>
+                        <option value="admin">Admin</option>
+                        <option value="viewer">Viewer</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeRoleModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Update Role</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Removal Request Modal -->
+<div id="removalModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Request Removal</h3>
+            <button class="modal-close" onclick="closeRemovalModal()">&times;</button>
+        </div>
+        <form id="removalForm" method="POST">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="reason">Reason (Optional)</label>
+                    <textarea id="reason" name="reason" rows="3" class="form-textarea" placeholder="Why are you requesting removal?"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeRemovalModal()">Cancel</button>
+                <button type="submit" class="btn btn-warning">Submit Request</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Approval Modal -->
+<div id="approvalModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Review Removal Request</h3>
+            <button class="modal-close" onclick="closeApprovalModal()">&times;</button>
+        </div>
+        <form id="approvalForm" method="POST">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="adminNotes">Admin Notes (Optional)</label>
+                    <textarea id="adminNotes" name="admin_notes" rows="3" class="form-textarea" placeholder="Add notes about your decision..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeApprovalModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Submit Decision</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Tab functionality
+document.querySelectorAll('.tab-button').forEach(button => {
+    button.addEventListener('click', () => {
+        const tabName = button.getAttribute('data-tab');
+        
+        // Update active tab button
+        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        
+        // Update active tab panel
+        document.querySelectorAll('.tab-pane').forEach(panel => panel.classList.remove('active'));
+        document.querySelector(`#${tabName} .tab-pane`).classList.add('active');
+    });
+});
+
+// Modal functions
+function openInviteModal() {
+    document.getElementById('inviteModal').classList.add('active');
+}
+
+function closeInviteModal() {
+    document.getElementById('inviteModal').classList.remove('active');
+}
+
+function openRoleModal(userId, currentRole) {
+    document.getElementById('newRole').value = currentRole;
+    document.getElementById('roleForm').action = `/app/admin/organization/{{ organization.id }}/members/${userId}/role`;
+    document.getElementById('roleModal').classList.add('active');
+}
+
+function closeRoleModal() {
+    document.getElementById('roleModal').classList.remove('active');
+}
+
+function openRemovalModal(userId) {
+    document.getElementById('removalForm').action = `/app/admin/organization/{{ organization.id }}/members/${userId}/request-removal`;
+    document.getElementById('removalModal').classList.add('active');
+}
+
+function closeRemovalModal() {
+    document.getElementById('removalModal').classList.remove('active');
+}
+
+function openApprovalModal(userId, action) {
+    const form = document.getElementById('approvalForm');
+    if (action === 'approve') {
+        form.action = `/app/admin/organization/{{ organization.id }}/members/${userId}/approve-removal`;
+    } else {
+        form.action = `/app/admin/organization/{{ organization.id }}/members/${userId}/deny-removal`;
+    }
+    document.getElementById('approvalModal').classList.add('active');
+}
+
+function closeApprovalModal() {
+    document.getElementById('approvalModal').classList.remove('active');
+}
+
+// Close modals when clicking outside
+window.addEventListener('click', (event) => {
+    if (event.target.classList.contains('modal')) {
+        event.target.classList.remove('active');
+    }
+});
+</script>
+{% endblock %} 

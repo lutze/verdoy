@@ -79,10 +79,12 @@ from app.routers.api.api_auth import router as api_auth_router
 from app.routers.api.api_dashboard import router as api_dashboard_router
 from app.routers.api.api_projects import router as api_projects_router
 from app.routers.api.api_organizations import router as api_organizations_router
+from app.routers.api.api_organization_members import router as api_organization_members_router
 from app.routers.web.web_auth import router as web_auth_router
 from app.routers.web.web_dashboard import router as web_dashboard_router
 from app.routers.web.web_projects import router as web_projects_router
 from app.routers.web.web_organizations import router as web_organizations_router
+from app.routers.web.web_organization_members import router as web_organization_members_router
 from app.routers.web.web_bioreactors import router as web_bioreactors_router
 from app.routers.web.web_processes import router as web_processes_router
 from app.routers.web.web_experiments import router as web_experiments_router
@@ -375,6 +377,7 @@ def register_routers(app: FastAPI) -> None:
     app.include_router(web_dashboard_router)
     app.include_router(web_projects_router)
     app.include_router(web_organizations_router)
+    app.include_router(web_organization_members_router)
     app.include_router(web_bioreactors_router)
     app.include_router(web_processes_router)
     app.include_router(web_experiments_router)
@@ -383,6 +386,7 @@ def register_routers(app: FastAPI) -> None:
     app.include_router(api_dashboard_router)
     app.include_router(api_projects_router)
     app.include_router(api_organizations_router)
+    app.include_router(api_organization_members_router)
     # Other routers (unchanged)
     app.include_router(
         devices_router,

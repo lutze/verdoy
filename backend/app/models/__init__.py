@@ -13,6 +13,9 @@ from .device import Device
 from .reading import Reading
 from .alert import Alert, AlertRule
 from .organization import Organization
+from .organization_member import OrganizationMember
+from .organization_invitation import OrganizationInvitation
+from .membership_removal_request import MembershipRemovalRequest
 from .billing import Billing, Subscription
 from .command import Command
 from .process import Process, ProcessInstance
@@ -28,6 +31,9 @@ __all__ = [
     "Alert",
     "AlertRule", 
     "Organization",
+    "OrganizationMember",
+    "OrganizationInvitation",
+    "MembershipRemovalRequest",
     "Billing",
     "Subscription",
     "Command",

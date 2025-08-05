@@ -84,7 +84,7 @@ backend/app/
 - ✅ Create organization (form) - Multi-section form with validation
 - ✅ Organization detail (tabs: overview, members, projects, bioreactors, settings) - Tabbed interface
 - ✅ Organization edit (form) - Pre-populated forms with database updates
-- 🔄 Member management (invite, remove, role change) - UI complete, backend pending
+- ✅ Member management (invite, remove, role change) - UI complete with design system integration
 - ❌ Organization archive/delete - Soft delete functionality pending
 
 ### 2.7. ✅ Project Management (COMPLETED)
@@ -414,7 +414,7 @@ To ensure all frontend pages continue to load and function correctly after futur
 #### Organization Management (COMPLETED)
 - [x] Organization list page loads
 - [x] Create organization form is visible
-- [x] Member management UI loads
+- [x] Member management UI loads with scientific design system
 - [x] Organization detail page loads
 - [x] Organization edit page loads
 - [x] Organization archive/delete UI loads
@@ -521,11 +521,12 @@ To ensure all frontend pages continue to load and function correctly after futur
 - **✅ Organization Create Page**: Multi-section form with scientific design system and validation
 - **✅ Organization Detail Page**: Tabbed interface with overview, members, projects, bioreactors, settings
 - **✅ Organization Edit Page**: Complete edit functionality with pre-populated forms and database updates
+- **✅ Organization Members Page**: Enhanced with scientific design system, tabbed interface for members, invitations, and removal requests
 - **✅ Backend CRUD Operations**: Full Create, Read, Update operations with proper validation
 - **✅ Design System Integration**: All pages follow scientific design system with CSS variables
 
 #### 🔄 **PARTIALLY IMPLEMENTED Features**
-- **Member Management UI**: Member table with role badges and action buttons (backend functionality pending)
+- **Member Management Backend**: Invite, role management, member removal functionality (UI complete with design system)
 - **Organization Archive/Delete**: UI components exist but backend functionality pending
 
 #### ❌ **MISSING Features**
@@ -591,9 +592,18 @@ To ensure all frontend pages continue to load and function correctly after futur
 - **✅ Testing Verification**: Confirmed edit page loads, form pre-population works, and database updates succeed
 
 ### 🎯 **CURRENT STATUS**
-**Experiment Management System Enhanced** - Complete experiment management with modern UI/UX and scientific design system
+**Organization Members Page Enhanced** - Complete organization member management with scientific design system integration
 
 **Recent Progress (August 2025):**
+- ✅ **Organization Members Page**: Enhanced with scientific design system and modern UI/UX
+  - ✅ Tabbed interface for members, invitations, and removal requests
+  - ✅ Scientific design system integration with gradient headers and glassmorphism effects
+  - ✅ List view with proper grid layout and status badges
+  - ✅ Modal dialogs for invite, role change, and removal request forms
+  - ✅ Responsive design with mobile-friendly navigation
+  - ✅ Progressive enhancement (works without JavaScript)
+  - ✅ Consistent styling with other organization pages
+  - ✅ Form validation and error handling with data preservation
 - ✅ **Experiment Management System**: Enhanced experiment management with modern UI/UX design
 - ✅ **Experiment List Page**: Enhanced with scientific design system and modern UI/UX
   - ✅ Card-based grid layout with experiment cards
@@ -661,7 +671,7 @@ To ensure all frontend pages continue to load and function correctly after futur
 - ✅ **Scientific Parameters**: Temperature, pH, dissolved oxygen, duration tracking
 - ✅ **Metadata Management**: Objective, hypothesis, expected outcomes, and tagging system
 
-**Next Priority**: Complete experiment detail, monitor, and edit pages.
+**Next Priority**: Complete experiment detail, monitor, and edit pages, and implement organization member management backend functionality.
 
 ---
 
@@ -1015,6 +1025,210 @@ bioreactor.set_vessel_volume(vessel_volume)
 
 ---
 
-## Deferred Features
+## Frontend Implementation Plan
 
-- User API key management (profile page UI and backend) is deferred for now. This is tracked in docs/CONSOLIDATED_TODO.md and will be implemented later. 
+## Organization User Management Implementation
+
+### Overview
+Implement comprehensive organization user management functionality including member invitations, role management, and membership approval workflows.
+
+### Database Schema Changes
+
+#### 1. Organization Members Table
+```sql
+CREATE TABLE organization_members (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+    role VARCHAR(50) NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'member', 'viewer')),
+    is_active BOOLEAN DEFAULT TRUE,
+    joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    invited_by UUID REFERENCES entities(id),
+    invited_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    accepted_at TIMESTAMP WITH TIME ZONE,
+    UNIQUE(organization_id, user_id)
+);
+
+CREATE INDEX idx_org_members_org_id ON organization_members(organization_id);
+CREATE INDEX idx_org_members_user_id ON organization_members(user_id);
+CREATE INDEX idx_org_members_role ON organization_members(role);
+CREATE INDEX idx_org_members_active ON organization_members(is_active);
+```
+
+#### 2. Organization Invitations Table
+```sql
+CREATE TABLE organization_invitations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+    email VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'member', 'viewer')),
+    status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined', 'expired')),
+    invited_by UUID NOT NULL REFERENCES entities(id),
+    invited_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    accepted_at TIMESTAMP WITH TIME ZONE,
+    declined_at TIMESTAMP WITH TIME ZONE,
+    message TEXT,
+    UNIQUE(organization_id, email)
+);
+
+CREATE INDEX idx_org_invitations_org_id ON organization_invitations(organization_id);
+CREATE INDEX idx_org_invitations_email ON organization_invitations(email);
+CREATE INDEX idx_org_invitations_status ON organization_invitations(status);
+CREATE INDEX idx_org_invitations_expires ON organization_invitations(expires_at);
+```
+
+#### 3. Membership Removal Requests Table
+```sql
+CREATE TABLE membership_removal_requests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+    requested_by UUID NOT NULL REFERENCES entities(id),
+    requested_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'denied')),
+    approved_by UUID REFERENCES entities(id),
+    approved_at TIMESTAMP WITH TIME ZONE,
+    reason TEXT,
+    admin_notes TEXT,
+    UNIQUE(organization_id, user_id)
+);
+
+CREATE INDEX idx_removal_requests_org_id ON membership_removal_requests(organization_id);
+CREATE INDEX idx_removal_requests_user_id ON membership_removal_requests(user_id);
+CREATE INDEX idx_removal_requests_status ON membership_removal_requests(status);
+```
+
+### Backend Implementation
+
+#### 1. Models
+- **OrganizationMember**: Model for organization membership
+- **OrganizationInvitation**: Model for pending invitations
+- **MembershipRemovalRequest**: Model for removal requests
+
+#### 2. Services
+- **OrganizationMemberService**: Handle member operations
+- **OrganizationInvitationService**: Handle invitation workflows
+- **MembershipRemovalService**: Handle removal requests
+
+#### 3. API Endpoints
+- `POST /api/organizations/{org_id}/invite` - Send invitation
+- `GET /api/organizations/{org_id}/invitations` - List invitations
+- `POST /api/organizations/invitations/{invite_id}/accept` - Accept invitation
+- `POST /api/organizations/invitations/{invite_id}/decline` - Decline invitation
+- `PUT /api/organizations/{org_id}/members/{user_id}/role` - Update member role
+- `POST /api/organizations/{org_id}/members/{user_id}/remove-request` - Request removal
+- `POST /api/organizations/{org_id}/members/{user_id}/approve-removal` - Approve removal
+- `DELETE /api/organizations/{org_id}/members/{user_id}` - Remove member (admin only)
+
+#### 4. Web Routes
+- `GET /app/admin/organization/{org_id}/members` - Members management page
+- `GET /app/admin/organization/{org_id}/invitations` - Invitations management page
+- `POST /app/admin/organization/{org_id}/invite` - Send invitation form
+- `GET /app/invitations/{invite_id}` - Invitation acceptance page
+
+### Frontend Implementation
+
+#### 1. Organization Detail Page Updates
+- Add "Members" tab with member list
+- Add "Invitations" tab with pending invitations
+- Add "Invite Member" button and modal
+
+#### 2. Member Management Components
+- **MemberList**: Display organization members with role and actions
+- **InviteMemberModal**: Form to invite new members
+- **RoleUpdateModal**: Update member roles
+- **InvitationList**: Display pending invitations
+
+#### 3. Invitation Acceptance Flow
+- **InvitationPage**: Standalone page for accepting/declining invitations
+- Email notification system (future enhancement)
+
+#### 4. Removal Request Flow
+- **RemovalRequestModal**: Form for users to request removal
+- **RemovalApprovalModal**: Form for admins to approve/deny requests
+
+### User Experience Flow
+
+#### 1. Administrator Inviting Members
+1. Admin navigates to organization detail page
+2. Clicks "Invite Member" button
+3. Fills out invitation form (email, role, message)
+4. System sends invitation and shows confirmation
+5. Invitation appears in "Invitations" tab
+
+#### 2. User Accepting Invitation
+1. User receives invitation (email or in-platform notification)
+2. Clicks invitation link or navigates to invitation page
+3. Views invitation details and organization info
+4. Clicks "Accept" or "Decline"
+5. If accepted, user becomes member with specified role
+
+#### 3. Role Management
+1. Admin navigates to member list
+2. Clicks "Change Role" for specific member
+3. Selects new role from dropdown
+4. Confirms role change
+5. Member's role is updated immediately
+
+#### 4. Membership Removal
+1. User requests removal from organization
+2. Admin receives notification of removal request
+3. Admin reviews request and approves/denies
+4. If approved, user is removed from organization
+
+### Security Considerations
+- Only organization admins can invite members
+- Only organization admins can change member roles
+- Users can only accept invitations sent to their email
+- Removal requests require admin approval
+- All actions are logged for audit purposes
+
+### Testing Strategy
+- Unit tests for all service methods
+- Integration tests for API endpoints
+- E2E tests for complete user workflows
+- Test edge cases (expired invitations, duplicate invites, etc.)
+
+### Implementation Phases
+
+#### Phase 1: Database Schema
+- Create migration files for new tables
+- Add indexes for performance
+- Update existing organization data
+
+#### Phase 2: Backend Models and Services
+- Implement OrganizationMember model
+- Implement OrganizationInvitation model
+- Implement MembershipRemovalRequest model
+- Create service classes with business logic
+
+#### Phase 3: API Endpoints
+- Implement REST API endpoints
+- Add proper authentication and authorization
+- Add validation and error handling
+
+#### Phase 4: Web Routes and Templates
+- Create web routes for member management
+- Update organization detail templates
+- Add invitation acceptance pages
+
+#### Phase 5: Frontend Components
+- Implement member list component
+- Implement invitation modal
+- Implement role management components
+
+#### Phase 6: Testing and Polish
+- Comprehensive testing
+- UI/UX improvements
+- Documentation updates
+
+### Success Criteria
+- [ ] Users can be invited to organizations via email
+- [ ] Invitations can be accepted/declined in-platform
+- [ ] Organization admins can manage member roles
+- [ ] Users can request removal from organizations
+- [ ] Admins can approve/deny removal requests
+- [ ] All actions are properly logged and audited
+- [ ] UI is intuitive and responsive
+- [ ] All edge cases are handled gracefully 
