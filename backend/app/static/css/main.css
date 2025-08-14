@@ -95,6 +95,79 @@
   box-sizing: border-box;
 }
 
+/* Icon System - Ensure SVG icons are properly sized */
+svg {
+  /* Default icon sizing - ensures icons are never larger than line height */
+  max-width: 1em;
+  max-height: 1em;
+  width: auto;
+  height: auto;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+/* Specific icon size classes for different contexts */
+.icon-xs {
+  width: 0.75rem;
+  height: 0.75rem;
+  max-width: 0.75rem;
+  max-height: 0.75rem;
+}
+
+.icon-sm {
+  width: 1rem;
+  height: 1rem;
+  max-width: 1rem;
+  max-height: 1rem;
+}
+
+.icon-md {
+  width: 1.25rem;
+  height: 1.25rem;
+  max-width: 1.25rem;
+  max-height: 1.25rem;
+}
+
+.icon-lg {
+  width: 1.5rem;
+  height: 1.5rem;
+  max-width: 1.5rem;
+  max-height: 1.5rem;
+}
+
+.icon-xl {
+  width: 2rem;
+  height: 2rem;
+  max-width: 2rem;
+  max-height: 2rem;
+}
+
+/* Ensure icons in buttons and links are properly sized */
+.btn svg,
+a svg {
+  width: 1em;
+  height: 1em;
+  max-width: 1em;
+  max-height: 1em;
+}
+
+/* Ensure icons in stat cards are properly sized */
+.stat-icon svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  max-width: 1.5rem;
+  max-height: 1.5rem;
+}
+
+/* Ensure icons in navigation are properly sized */
+.breadcrumb svg,
+.nav-link svg {
+  width: 1em;
+  height: 1em;
+  max-width: 1em;
+  max-height: 1em;
+}
+
 html {
   font-size: 16px;
   scroll-behavior: smooth;

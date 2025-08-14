@@ -293,16 +293,22 @@
                                     <span class="detail-value">{{ trial.started_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
                                 </div>
                                 {% endif %}
-                                {% if trial.duration_minutes %}
+                                {% if trial.get_duration_minutes() %}
                                 <div class="trial-detail">
                                     <span class="detail-label">Duration:</span>
-                                    <span class="detail-value">{{ trial.duration_minutes }} minutes</span>
+                                    <span class="detail-value">{{ trial.get_duration_minutes() }} minutes</span>
                                 </div>
                                 {% endif %}
                                 {% if trial.results %}
                                 <div class="trial-detail">
                                     <span class="detail-label">Results:</span>
-                                    <span class="detail-value">{{ trial.results|length }} data points</span>
+                                    <span class="detail-value">
+                                        {% if trial.results is mapping %}
+                                            {{ trial.results.keys()|list|length }} data points
+                                        {% else %}
+                                            Results available
+                                        {% endif %}
+                                    </span>
                                 </div>
                                 {% endif %}
                             </div>
@@ -518,13 +524,25 @@
                                 {% if experiment.parameters %}
                                 <div class="setting-item">
                                     <span class="setting-label">Parameters</span>
-                                    <span class="setting-value">{{ experiment.parameters|length }} configured</span>
+                                    <span class="setting-value">
+                                        {% if experiment.parameters is mapping %}
+                                            {{ experiment.parameters.keys()|list|length }} configured
+                                        {% else %}
+                                            Parameters available
+                                        {% endif %}
+                                    </span>
                                 </div>
                                 {% endif %}
                                 {% if experiment.metadata %}
                                 <div class="setting-item">
                                     <span class="setting-label">Metadata</span>
-                                    <span class="setting-value">{{ experiment.metadata|length }} items</span>
+                                    <span class="setting-value">
+                                        {% if experiment.metadata is mapping %}
+                                            {{ experiment.metadata.keys()|list|length }} items
+                                        {% else %}
+                                            Metadata available
+                                        {% endif %}
+                                    </span>
                                 </div>
                                 {% endif %}
                             </div>

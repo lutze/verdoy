@@ -287,7 +287,13 @@ class Experiment(Entity):
         if not self.started_at:
             return None
         
-        end_time = self.completed_at or datetime.utcnow()
+        if self.completed_at:
+            end_time = self.completed_at
+        else:
+            # Use timezone-aware datetime to match started_at
+            from datetime import datetime, timezone
+            end_time = datetime.now(timezone.utc)
+        
         duration = end_time - self.started_at
         return int(duration.total_seconds() / 60)
     
@@ -417,6 +423,12 @@ class ExperimentTrial(Base):
         if not self.started_at:
             return None
         
-        end_time = self.completed_at or datetime.utcnow()
+        if self.completed_at:
+            end_time = self.completed_at
+        else:
+            # Use timezone-aware datetime to match started_at
+            from datetime import datetime, timezone
+            end_time = datetime.now(timezone.utc)
+        
         duration = end_time - self.started_at
         return int(duration.total_seconds() / 60) 
