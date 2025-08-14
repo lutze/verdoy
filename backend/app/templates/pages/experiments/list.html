@@ -90,7 +90,7 @@
                 </div>
                 <div class="experiment-project">
                     {% if experiment.project_id %}
-                    Project: {{ experiment.project_id|truncate(20) }}
+                    Project: {{ experiment.project_id|string|truncate(20) }}
                     {% else %}
                     No Project
                     {% endif %}
@@ -188,7 +188,7 @@
                 <small class="experiment-desc">{{ experiment.description[:50] }}{% if experiment.description|length > 50 %}...{% endif %}</small>
                 {% endif %}
             </div>
-            <div>{{ experiment.project_id|truncate(20) if experiment.project_id else 'No Project' }}</div>
+            <div>{{ experiment.project_id|string|truncate(20) if experiment.project_id else 'No Project' }}</div>
             <div><span class="status-{{ experiment.status }}">● {{ experiment.status|title }}</span></div>
             <div>
                 {% if experiment.is_running %}

@@ -87,8 +87,8 @@ async def experiment_list_page(
         
         # Get experiments
         experiment_service = ExperimentService(db)
-        experiments, total_count = experiment_service.get_experiments_by_organization(
-            organization_id, filters
+        experiments, total_count = experiment_service.get_user_accessible_experiments(
+            current_user.id, filters
         )
         
         # Get related data for display
@@ -389,9 +389,9 @@ async def experiment_detail_page(
         process_service = ProcessService(db)
         bioreactor_service = BioreactorService(db)
         
-        project = project_service.get_project_by_id(experiment.project_id) if experiment.project_id else None
-        process = process_service.get_process_by_id(experiment.process_id) if experiment.process_id else None
-        bioreactor = bioreactor_service.get_bioreactor_by_id(experiment.bioreactor_id) if experiment.bioreactor_id else None
+        project = project_service.get_by_id(experiment.project_id) if experiment.project_id else None
+        process = process_service.get_process(experiment.process_id, current_user) if experiment.process_id else None
+        bioreactor = bioreactor_service.get_bioreactor(experiment.bioreactor_id) if experiment.bioreactor_id else None
         
         # Get trials
         trials = experiment_service.get_trials_by_experiment(experiment_id)

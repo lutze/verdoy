@@ -10,6 +10,7 @@ from typing import Optional
 
 from ...dependencies import get_db, get_web_user
 from ...models.user import User
+from ...services.organization_service import OrganizationService
 from ...templates_config import templates
 
 router = APIRouter(prefix="/app/dashboard", tags=["Web Dashboard"])
@@ -21,8 +22,44 @@ async def dashboard_page(
     db: Session = Depends(get_db)
 ):
     """Display user dashboard for web browsers."""
-    # TODO: Implement actual data fetching from services
-    # For now, provide mock data for development
+    # Get user's organizations
+    org_service = OrganizationService(db)
+    user_organizations = org_service.get_user_organizations(current_user.id)
+    
+    # Convert organizations to dashboard format
+    organizations_data = []
+    total_experiments = 0
+    total_bioreactors = 0
+    online_bioreactors = 0
+    
+    for org in user_organizations:
+        # Get organization stats
+        stats = org_service.get_organization_stats(org.id)
+        
+        org_data = {
+            "id": str(org.id),  # Use actual UUID as string
+            "name": org.name,
+            "description": org.description or "Research organization",
+            "member_count": stats.get('member_count', 0),
+            "active_experiments": stats.get('project_count', 0),  # Using project_count as placeholder for experiments
+            "online_bioreactors": stats.get('online_devices', 0),  # Using online_devices as placeholder for bioreactors
+            "recent_activity": [
+                {"type": "organization_created", "message": f"Organization '{org.name}' created", "time": "Recently"}
+            ]
+        }
+        organizations_data.append(org_data)
+        
+        # Aggregate stats
+        total_experiments += org_data["active_experiments"]
+        total_bioreactors += stats.get('device_count', 0)  # Using device_count as placeholder for bioreactors
+        online_bioreactors += org_data["online_bioreactors"]
+    
+    # If no organizations, provide a message to create one
+    if not organizations_data:
+        organizations_data = []
+        # Note: We don't create a fake organization with "default" ID anymore
+        # Instead, we'll show an empty state in the template
+    
     dashboard_data = {
         "user": {
             "id": str(current_user.id),
@@ -30,46 +67,19 @@ async def dashboard_page(
             "name": current_user.name,
             "is_active": current_user.is_active
         },
-        "organizations": [
-            {
-                "id": "1",
-                "name": "Acme Research Lab",
-                "description": "Primary research organization",
-                "member_count": 5,
-                "active_experiments": 3,
-                "online_bioreactors": 2,
-                "recent_activity": [
-                    {"type": "experiment_started", "message": "Experiment 'pH Optimization' started", "time": "2 hours ago"},
-                    {"type": "bioreactor_online", "message": "Bioreactor BR-001 came online", "time": "4 hours ago"},
-                    {"type": "data_collected", "message": "Temperature data collected from BR-002", "time": "6 hours ago"}
-                ]
-            },
-            {
-                "id": "2",
-                "name": "University Lab",
-                "description": "Academic research projects",
-                "member_count": 12,
-                "active_experiments": 1,
-                "online_bioreactors": 0,
-                "recent_activity": [
-                    {"type": "experiment_completed", "message": "Experiment 'Growth Rate Study' completed", "time": "1 day ago"}
-                ]
-            }
-        ],
+        "organizations": organizations_data,
         "summary_stats": {
-            "total_organizations": 2,
-            "total_experiments": 4,
-            "total_bioreactors": 3,
-            "online_bioreactors": 2,
-            "data_points_today": 15420
+            "total_organizations": len(organizations_data),
+            "total_experiments": total_experiments,
+            "total_bioreactors": total_bioreactors,
+            "online_bioreactors": online_bioreactors,
+            "data_points_today": 0  # TODO: Implement actual data point counting
         },
         "recent_activity": [
-            {"type": "experiment_started", "message": "Experiment 'pH Optimization' started", "time": "2 hours ago", "org": "Acme Research Lab"},
-            {"type": "bioreactor_online", "message": "Bioreactor BR-001 came online", "time": "4 hours ago", "org": "Acme Research Lab"},
-            {"type": "data_collected", "message": "Temperature data collected from BR-002", "time": "6 hours ago", "org": "Acme Research Lab"},
-            {"type": "experiment_completed", "message": "Experiment 'Growth Rate Study' completed", "time": "1 day ago", "org": "University Lab"}
+            {"type": "welcome", "message": f"Welcome back, {current_user.name or current_user.email}!", "time": "Just now", "org": "System"}
         ]
     }
+    
     return templates.TemplateResponse("pages/dashboard/index.html", {
         "request": request,
         "dashboard": dashboard_data,

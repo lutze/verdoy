@@ -275,17 +275,38 @@ class OrganizationService(BaseService[Organization]):
             List of organizations the user belongs to
         """
         try:
-            # Get user and find organizations through organization_id
-            user = self.db.query(User).filter(User.id == user_id).first()
-            if not user or not user.organization_id:
-                return []
+            # Import OrganizationMember model
+            from ..models.organization_member import OrganizationMember
             
-            # Get the organization the user belongs to
-            organization = self.db.query(Organization).filter(
-                Organization.id == user.organization_id
-            ).first()
+            # Get organizations through organization_members table
+            memberships = self.db.query(OrganizationMember).filter(
+                OrganizationMember.user_id == user_id,
+                OrganizationMember.is_active == True
+            ).all()
             
-            organizations = [organization] if organization else []
+            # Get organization IDs from memberships
+            organization_ids = [membership.organization_id for membership in memberships]
+            
+            # Get organizations
+            organizations = []
+            if organization_ids:
+                organizations = self.db.query(Organization).filter(
+                    Organization.id.in_(organization_ids),
+                    Organization.entity_type == "organization",
+                    Organization.is_active == True
+                ).all()
+            
+            # Fallback: if no memberships found, check the old organization_id field
+            if not organizations:
+                user = self.db.query(User).filter(User.id == user_id).first()
+                if user and user.organization_id:
+                    organization = self.db.query(Organization).filter(
+                        Organization.id == user.organization_id,
+                        Organization.entity_type == "organization",
+                        Organization.is_active == True
+                    ).first()
+                    if organization:
+                        organizations = [organization]
             
             logger.debug(f"Retrieved {len(organizations)} organizations for user {user_id}")
             return organizations

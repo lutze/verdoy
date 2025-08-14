@@ -344,7 +344,7 @@ class Experiment(Entity):
         return result
 
 
-class ExperimentTrial(BaseModel):
+class ExperimentTrial(Base):
     """
     ExperimentTrial model representing specific executions of experiments.
     
@@ -364,6 +364,8 @@ class ExperimentTrial(BaseModel):
     results = Column(JSONB, default={})  # Trial results and data
     error_message = Column(Text)
     created_by = Column(PostgresUUID(as_uuid=True), ForeignKey("entities.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     def __repr__(self):
         return f"<ExperimentTrial(id={self.id}, experiment_id={self.experiment_id}, trial_number={self.trial_number})>"

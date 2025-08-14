@@ -347,7 +347,7 @@
                                 <span class="maintenance-label">Last Calibration</span>
                                 <span class="maintenance-value">
                                     {% if bioreactor.get_last_calibration() %}
-                                    {{ bioreactor.get_last_calibration()|date }}
+                                    {{ bioreactor.get_last_calibration() }}
                                     {% else %}
                                     Never
                                     {% endif %}

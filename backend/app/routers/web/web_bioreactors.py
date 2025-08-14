@@ -42,20 +42,16 @@ async def list_bioreactors_page(
         )
         selected_org = org_service.get_by_id(organization_id)
     else:
+        # Get all bioreactors user has access to
+        bioreactors = bioreactor_service.get_user_accessible_bioreactors(current_user.id, status)
         bioreactors_data = {
-            'bioreactors': [],
-            'total_count': 0,
+            'bioreactors': bioreactors,
+            'total_count': len(bioreactors),
             'page': page,
             'page_size': 20,
-            'total_pages': 0
+            'total_pages': (len(bioreactors) + 19) // 20
         }
         selected_org = None
-        for org in user_organizations:
-            org_bioreactors = bioreactor_service.get_organization_bioreactors(
-                org.id, status, 1, 1000  # Get all for search
-            )
-            bioreactors_data['bioreactors'].extend(org_bioreactors['bioreactors'])
-            bioreactors_data['total_count'] += org_bioreactors['total_count']
     
     # Apply search filter if provided
     if search:
@@ -402,7 +398,15 @@ async def bioreactor_detail_page(
         })
     except Exception as e:
         print(f"Error in bioreactor detail page: {e}")
-        raise HTTPException(status_code=404, detail="Bioreactor not found")
+        return templates.TemplateResponse(
+            "pages/error.html",
+            {
+                "request": request,
+                "error_code": 404,
+                "error_message": "Bioreactor not found",
+                "current_user": current_user
+            }
+        )
 
 @router.get("/{bioreactor_id}/edit", response_class=HTMLResponse, include_in_schema=False)
 async def edit_bioreactor_page(

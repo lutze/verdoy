@@ -4,524 +4,548 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
-    <!-- Breadcrumb Navigation -->
-    <nav class="breadcrumb mb-6">
-        <a href="/app" class="breadcrumb-link">Home</a>
-        <span class="breadcrumb-separator">/</span>
-        <a href="/app/bioreactors" class="breadcrumb-link">Bioreactors</a>
-        <span class="breadcrumb-separator">/</span>
-        <a href="/app/bioreactors/{{ bioreactor.id }}" class="breadcrumb-link">{{ bioreactor.name }}</a>
-        <span class="breadcrumb-separator">/</span>
-        <span class="breadcrumb-current">Control Panel</span>
-    </nav>
-
-    <!-- Header Section -->
-    <div class="header-section">
-        <div class="header-content">
-            <h1 class="page-title">Control Panel</h1>
-            <p class="page-subtitle">Manual control for {{ bioreactor.name }}</p>
-        </div>
-        <div class="header-actions">
-            <a href="/app/bioreactors/{{ bioreactor.id }}" class="btn btn-secondary">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                </svg>
-                Back to Details
-            </a>
+    <!-- Page Header with Scientific Gradient -->
+    <div class="page-header scientific-accent mb-8">
+        <div class="page-header-content">
+            <div class="header-left">
+                <div class="breadcrumb">
+                    <a href="/app/bioreactors" class="breadcrumb-link">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                        Bioreactors
+                    </a>
+                    <span class="breadcrumb-separator">/</span>
+                    <a href="/app/bioreactors/{{ bioreactor.id }}" class="breadcrumb-link">{{ bioreactor.name }}</a>
+                    <span class="breadcrumb-separator">/</span>
+                    <span class="breadcrumb-current">Control Panel</span>
+                </div>
+                <h1 class="page-title">Control Panel</h1>
+                <p class="page-subtitle">Manual control for {{ bioreactor.name }}</p>
+            </div>
+            <div class="header-actions">
+                <div class="status-badge {% if bioreactor.status == 'emergency_stop' %}error{% else %}active{% endif %}">
+                    {% if bioreactor.status == 'emergency_stop' %}
+                        Emergency Stop Active
+                    {% else %}
+                        Manual Control
+                    {% endif %}
+                </div>
+                <a href="/app/bioreactors/{{ bioreactor.id }}" class="btn btn-secondary">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Back to Details
+                </a>
+            </div>
         </div>
     </div>
 
     <!-- Safety Warning Banner -->
-    <div class="safety-warning-banner">
-        <div class="warning-content">
-            <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="alert alert-warning mb-8">
+        <div class="alert-content">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
             </svg>
-            <div class="warning-text">
-                <h3 class="warning-title">Manual Control Active</h3>
-                <p class="warning-description">You are in manual control mode. All safety systems remain active. Use caution when making changes.</p>
+            <div class="alert-text">
+                <h3 class="alert-title">Manual Control Active</h3>
+                <p class="alert-description">You are in manual control mode. All safety systems remain active. Use caution when making changes.</p>
             </div>
         </div>
     </div>
 
     <!-- Emergency Stop Section -->
-    <div class="emergency-section">
-        <div class="emergency-header">
-            <h2 class="emergency-title">Emergency Stop</h2>
-            <p class="emergency-description">Immediately stop all bioreactor operations</p>
+    <div class="form-section">
+        <div class="section-header">
+            <div class="section-icon">🚨</div>
+            <div>
+                <h2 class="section-title">Emergency Stop</h2>
+                <p class="section-description">Immediately stop all bioreactor operations</p>
+            </div>
         </div>
-        
-        <div class="emergency-controls">
-            <button type="button" class="btn btn-emergency" onclick="confirmEmergencyStop()">
-                <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
-                </svg>
-                EMERGENCY STOP
-            </button>
-            
-            <div class="emergency-status">
-                <span class="status-label">Emergency Stop Status:</span>
-                <span class="status-value status-{{ bioreactor.get_safety_status().emergency_stop|lower }}">
-                    {{ bioreactor.get_safety_status().emergency_stop|title }}
-                </span>
+        <div class="form-grid">
+            <div class="emergency-controls">
+                <button type="button" class="btn btn-danger btn-lg" onclick="confirmEmergencyStop()">
+                    <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                    </svg>
+                    EMERGENCY STOP
+                </button>
+                
+                <div class="emergency-status">
+                    <span class="status-label">Emergency Stop Status:</span>
+                    <span class="status-badge {% if bioreactor.status == 'emergency_stop' %}error{% else %}success{% endif %}">
+                        {% if bioreactor.status == 'emergency_stop' %}Active{% else %}Normal{% endif %}
+                    </span>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Real-time Status -->
-    <div class="status-section">
-        <div class="status-header">
-            <h3 class="section-title">Real-time Status</h3>
-            <div class="status-controls">
-                <button class="btn btn-sm btn-outline" onclick="refreshStatus()">
+    <div class="form-section">
+        <div class="section-header">
+            <div class="section-icon">📊</div>
+            <div>
+                <h3 class="section-title">Real-time Status</h3>
+                <p class="section-description">Monitor current bioreactor parameters</p>
+            </div>
+            <div class="section-actions">
+                <button class="btn btn-outline btn-sm" onclick="refreshStatus()">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                     </svg>
                     Refresh
                 </button>
-                <label class="auto-refresh">
+                <label class="checkbox">
                     <input type="checkbox" id="autoRefresh" checked>
                     <span class="checkbox-label">Auto-refresh</span>
                 </label>
             </div>
         </div>
-        
-        <div class="status-grid" id="statusGrid">
-            <!-- Status will be loaded here via HTMX -->
-            <div class="loading-spinner">Loading status...</div>
+        <div class="form-grid">
+            <div class="status-grid" id="statusGrid">
+                <!-- Status will be loaded here via HTMX -->
+                <div class="loading-spinner">Loading status...</div>
+            </div>
         </div>
     </div>
 
     <!-- Control Panels -->
     <div class="control-panels">
         <!-- Temperature Control -->
-        <div class="control-panel">
-            <div class="panel-header">
-                <h3 class="panel-title">Temperature Control</h3>
-                <div class="panel-status">
-                    <span class="status-dot status-{{ status.temperature_status|lower }}"></span>
-                    <span class="status-text">{{ status.temperature_status|title }}</span>
+        <div class="form-section">
+            <div class="section-header">
+                <div class="section-icon">🌡️</div>
+                <div>
+                    <h3 class="section-title">Temperature Control</h3>
+                    <p class="section-description">Maintain optimal temperature for cell growth</p>
                 </div>
             </div>
-            
-            <div class="panel-content">
-                <div class="control-display">
-                    <div class="display-item">
-                        <span class="display-label">Current Temperature:</span>
-                        <span class="display-value">{{ status.current_temperature|default('--', true) }}°C</span>
-                    </div>
-                    <div class="display-item">
-                        <span class="display-label">Set Point:</span>
-                        <span class="display-value">{{ status.temperature_setpoint|default('--', true) }}°C</span>
-                    </div>
-                </div>
-                
-                <form method="POST" class="control-form" hx-post="/app/bioreactors/{{ bioreactor.id }}/control" hx-target="#controlResponse">
-                    <input type="hidden" name="control_type" value="temperature">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="temperature_setpoint" class="form-label">Temperature Setpoint (°C)</label>
+            <div class="form-grid">
+                <div class="control-grid">
+                    <div class="control-group">
+                        <label for="temperature" class="control-label">Temperature (°C)</label>
+                        <div class="control-input-group">
                             <input 
                                 type="number" 
-                                id="temperature_setpoint" 
-                                name="value" 
+                                id="temperature" 
+                                name="temperature" 
+                                min="20" 
+                                max="45" 
+                                step="0.1" 
+                                value="{{ bioreactor.get_operating_parameters().get('temperature', 37.0) }}"
                                 class="form-input"
-                                step="0.1"
-                                min="0"
-                                max="100"
-                                placeholder="Enter temperature"
                             >
+                            <button type="button" class="btn btn-primary" onclick="setTemperature()">
+                                Set
+                            </button>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Action</label>
-                            <div class="button-group">
-                                <button type="submit" name="parameter" value="set" class="btn btn-primary">Set</button>
-                                <button type="submit" name="parameter" value="increase" class="btn btn-secondary">+1°C</button>
-                                <button type="submit" name="parameter" value="decrease" class="btn btn-secondary">-1°C</button>
-                            </div>
+                        <div class="control-range">
+                            <span class="range-min">20°C</span>
+                            <span class="range-max">45°C</span>
                         </div>
                     </div>
-                    <div class="safety-confirmation">
-                        <label class="checkbox-label">
-                            <input type="checkbox" name="safety_confirmation" required>
-                            <span class="checkbox-text">I confirm this temperature change is safe</span>
-                        </label>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Agitation Control -->
-        <div class="control-panel">
-            <div class="panel-header">
-                <h3 class="panel-title">Agitation Control</h3>
-                <div class="panel-status">
-                    <span class="status-dot status-{{ status.agitation_status|lower }}"></span>
-                    <span class="status-text">{{ status.agitation_status|title }}</span>
-                </div>
-            </div>
-            
-            <div class="panel-content">
-                <div class="control-display">
-                    <div class="display-item">
-                        <span class="display-label">Current Speed:</span>
-                        <span class="display-value">{{ status.current_agitation|default('--', true) }} RPM</span>
-                    </div>
-                    <div class="display-item">
-                        <span class="display-label">Set Point:</span>
-                        <span class="display-value">{{ status.agitation_setpoint|default('--', true) }} RPM</span>
+                    
+                    <div class="control-status">
+                        <div class="status-item">
+                            <span class="status-label">Current:</span>
+                            <span class="status-value">{{ status.operating_parameters.temperature or 'N/A' }}°C</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Target:</span>
+                            <span class="status-value">{{ bioreactor.get_operating_parameters().get('temperature', 'Not set') }}°C</span>
+                        </div>
                     </div>
                 </div>
-                
-                <form method="POST" class="control-form" hx-post="/app/bioreactors/{{ bioreactor.id }}/control" hx-target="#controlResponse">
-                    <input type="hidden" name="control_type" value="agitation">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="agitation_speed" class="form-label">Agitation Speed (RPM)</label>
-                            <input 
-                                type="number" 
-                                id="agitation_speed" 
-                                name="value" 
-                                class="form-input"
-                                step="10"
-                                min="0"
-                                max="2000"
-                                placeholder="Enter speed"
-                            >
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Action</label>
-                            <div class="button-group">
-                                <button type="submit" name="parameter" value="set" class="btn btn-primary">Set</button>
-                                <button type="submit" name="parameter" value="increase" class="btn btn-secondary">+50 RPM</button>
-                                <button type="submit" name="parameter" value="decrease" class="btn btn-secondary">-50 RPM</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="safety-confirmation">
-                        <label class="checkbox-label">
-                            <input type="checkbox" name="safety_confirmation" required>
-                            <span class="checkbox-text">I confirm this speed change is safe</span>
-                        </label>
-                    </div>
-                </form>
             </div>
         </div>
 
         <!-- pH Control -->
-        <div class="control-panel">
-            <div class="panel-header">
-                <h3 class="panel-title">pH Control</h3>
-                <div class="panel-status">
-                    <span class="status-dot status-{{ status.ph_status|lower }}"></span>
-                    <span class="status-text">{{ status.ph_status|title }}</span>
+        <div class="form-section">
+            <div class="section-header">
+                <div class="section-icon">⚗️</div>
+                <div>
+                    <h3 class="section-title">pH Control</h3>
+                    <p class="section-description">Maintain optimal pH levels for cell culture</p>
                 </div>
             </div>
-            
-            <div class="panel-content">
-                <div class="control-display">
-                    <div class="display-item">
-                        <span class="display-label">Current pH:</span>
-                        <span class="display-value">{{ status.current_ph|default('--', true) }}</span>
-                    </div>
-                    <div class="display-item">
-                        <span class="display-label">Set Point:</span>
-                        <span class="display-value">{{ status.ph_setpoint|default('--', true) }}</span>
-                    </div>
-                </div>
-                
-                <form method="POST" class="control-form" hx-post="/app/bioreactors/{{ bioreactor.id }}/control" hx-target="#controlResponse">
-                    <input type="hidden" name="control_type" value="ph">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="ph_setpoint" class="form-label">pH Setpoint</label>
+            <div class="form-grid">
+                <div class="control-grid">
+                    <div class="control-group">
+                        <label for="ph" class="control-label">pH Level</label>
+                        <div class="control-input-group">
                             <input 
                                 type="number" 
-                                id="ph_setpoint" 
-                                name="value" 
+                                id="ph" 
+                                name="ph" 
+                                min="6.0" 
+                                max="8.0" 
+                                step="0.1" 
+                                value="{{ bioreactor.get_operating_parameters().get('ph', 7.4) }}"
                                 class="form-input"
-                                step="0.1"
-                                min="0"
-                                max="14"
-                                placeholder="Enter pH"
                             >
+                            <button type="button" class="btn btn-primary" onclick="setPH()">
+                                Set
+                            </button>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Action</label>
-                            <div class="button-group">
-                                <button type="submit" name="parameter" value="set" class="btn btn-primary">Set</button>
-                                <button type="submit" name="parameter" value="increase" class="btn btn-secondary">+0.1</button>
-                                <button type="submit" name="parameter" value="decrease" class="btn btn-secondary">-0.1</button>
-                            </div>
+                        <div class="control-range">
+                            <span class="range-min">6.0</span>
+                            <span class="range-max">8.0</span>
                         </div>
                     </div>
-                    <div class="safety-confirmation">
-                        <label class="checkbox-label">
-                            <input type="checkbox" name="safety_confirmation" required>
-                            <span class="checkbox-text">I confirm this pH change is safe</span>
-                        </label>
+                    
+                    <div class="control-status">
+                        <div class="status-item">
+                            <span class="status-label">Current:</span>
+                            <span class="status-value">{{ status.operating_parameters.ph or 'N/A' }}</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Target:</span>
+                            <span class="status-value">{{ bioreactor.get_operating_parameters().get('ph', 'Not set') }}</span>
+                        </div>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
 
         <!-- Dissolved Oxygen Control -->
-        <div class="control-panel">
-            <div class="panel-header">
-                <h3 class="panel-title">Dissolved Oxygen Control</h3>
-                <div class="panel-status">
-                    <span class="status-dot status-{{ status.do_status|lower }}"></span>
-                    <span class="status-text">{{ status.do_status|title }}</span>
+        <div class="form-section">
+            <div class="section-header">
+                <div class="section-icon">💨</div>
+                <div>
+                    <h3 class="section-title">Dissolved Oxygen Control</h3>
+                    <p class="section-description">Maintain optimal oxygen levels for aerobic processes</p>
                 </div>
             </div>
-            
-            <div class="panel-content">
-                <div class="control-display">
-                    <div class="display-item">
-                        <span class="display-label">Current DO:</span>
-                        <span class="display-value">{{ status.current_do|default('--', true) }}%</span>
-                    </div>
-                    <div class="display-item">
-                        <span class="display-label">Set Point:</span>
-                        <span class="display-value">{{ status.do_setpoint|default('--', true) }}%</span>
-                    </div>
-                </div>
-                
-                <form method="POST" class="control-form" hx-post="/app/bioreactors/{{ bioreactor.id }}/control" hx-target="#controlResponse">
-                    <input type="hidden" name="control_type" value="dissolved_oxygen">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="do_setpoint" class="form-label">DO Setpoint (%)</label>
+            <div class="form-grid">
+                <div class="control-grid">
+                    <div class="control-group">
+                        <label for="dissolved_oxygen" class="control-label">DO (% saturation)</label>
+                        <div class="control-input-group">
                             <input 
                                 type="number" 
-                                id="do_setpoint" 
-                                name="value" 
+                                id="dissolved_oxygen" 
+                                name="dissolved_oxygen" 
+                                min="0" 
+                                max="100" 
+                                step="1" 
+                                value="{{ bioreactor.get_operating_parameters().get('dissolved_oxygen', 30) }}"
                                 class="form-input"
-                                step="1"
-                                min="0"
-                                max="100"
-                                placeholder="Enter DO %"
                             >
+                            <button type="button" class="btn btn-primary" onclick="setDissolvedOxygen()">
+                                Set
+                            </button>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Action</label>
-                            <div class="button-group">
-                                <button type="submit" name="parameter" value="set" class="btn btn-primary">Set</button>
-                                <button type="submit" name="parameter" value="increase" class="btn btn-secondary">+5%</button>
-                                <button type="submit" name="parameter" value="decrease" class="btn btn-secondary">-5%</button>
-                            </div>
+                        <div class="control-range">
+                            <span class="range-min">0%</span>
+                            <span class="range-max">100%</span>
                         </div>
                     </div>
-                    <div class="safety-confirmation">
-                        <label class="checkbox-label">
-                            <input type="checkbox" name="safety_confirmation" required>
-                            <span class="checkbox-text">I confirm this DO change is safe</span>
-                        </label>
+                    
+                    <div class="control-status">
+                        <div class="status-item">
+                            <span class="status-label">Current:</span>
+                            <span class="status-value">{{ status.operating_parameters.dissolved_oxygen or 'N/A' }}%</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Target:</span>
+                            <span class="status-value">{{ bioreactor.get_operating_parameters().get('dissolved_oxygen', 'Not set') }}%</span>
+                        </div>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
 
-        <!-- Pump Control -->
-        <div class="control-panel">
-            <div class="panel-header">
-                <h3 class="panel-title">Pump Control</h3>
-                <div class="panel-status">
-                    <span class="status-dot status-{{ status.pump_status|lower }}"></span>
-                    <span class="status-text">{{ status.pump_status|title }}</span>
+        <!-- Agitation Control -->
+        <div class="form-section">
+            <div class="section-header">
+                <div class="section-icon">🌀</div>
+                <div>
+                    <h3 class="section-title">Agitation Control</h3>
+                    <p class="section-description">Control mixing and oxygen transfer rates</p>
                 </div>
             </div>
-            
-            <div class="panel-content">
-                <div class="control-display">
-                    <div class="display-item">
-                        <span class="display-label">Current Flow:</span>
-                        <span class="display-value">{{ status.current_flow|default('--', true) }} mL/min</span>
-                    </div>
-                    <div class="display-item">
-                        <span class="display-label">Set Point:</span>
-                        <span class="display-value">{{ status.flow_setpoint|default('--', true) }} mL/min</span>
-                    </div>
-                </div>
-                
-                <form method="POST" class="control-form" hx-post="/app/bioreactors/{{ bioreactor.id }}/control" hx-target="#controlResponse">
-                    <input type="hidden" name="control_type" value="pump">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="flow_rate" class="form-label">Flow Rate (mL/min)</label>
+            <div class="form-grid">
+                <div class="control-grid">
+                    <div class="control-group">
+                        <label for="agitation_speed" class="control-label">Agitation Speed (RPM)</label>
+                        <div class="control-input-group">
                             <input 
                                 type="number" 
-                                id="flow_rate" 
-                                name="value" 
+                                id="agitation_speed" 
+                                name="agitation_speed" 
+                                min="0" 
+                                max="1000" 
+                                step="10" 
+                                value="{{ bioreactor.get_operating_parameters().get('agitation_speed', 200) }}"
                                 class="form-input"
-                                step="0.1"
-                                min="0"
-                                max="1000"
-                                placeholder="Enter flow rate"
                             >
+                            <button type="button" class="btn btn-primary" onclick="setAgitationSpeed()">
+                                Set
+                            </button>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Action</label>
-                            <div class="button-group">
-                                <button type="submit" name="parameter" value="set" class="btn btn-primary">Set</button>
-                                <button type="submit" name="parameter" value="start" class="btn btn-success">Start</button>
-                                <button type="submit" name="parameter" value="stop" class="btn btn-danger">Stop</button>
-                            </div>
+                        <div class="control-range">
+                            <span class="range-min">0 RPM</span>
+                            <span class="range-max">1000 RPM</span>
                         </div>
                     </div>
-                    <div class="safety-confirmation">
-                        <label class="checkbox-label">
-                            <input type="checkbox" name="safety_confirmation" required>
-                            <span class="checkbox-text">I confirm this pump change is safe</span>
-                        </label>
+                    
+                    <div class="control-status">
+                        <div class="status-item">
+                            <span class="status-label">Current:</span>
+                            <span class="status-value">{{ status.operating_parameters.agitation_speed or 'N/A' }} RPM</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Target:</span>
+                            <span class="status-value">{{ bioreactor.get_operating_parameters().get('agitation_speed', 'Not set') }} RPM</span>
+                        </div>
                     </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Control Response -->
-    <div id="controlResponse" class="control-response"></div>
-</div>
-
-<!-- Emergency Stop Confirmation Modal -->
-<div id="emergencyModal" class="modal hidden">
-    <div class="modal-overlay"></div>
-    <div class="modal-content emergency-modal">
-        <div class="modal-header">
-            <h3 class="modal-title">Emergency Stop Confirmation</h3>
-            <button type="button" class="modal-close" onclick="closeEmergencyModal()">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
-        </div>
-        
-        <div class="modal-body">
-            <div class="emergency-warning">
-                <svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
-                </svg>
-                <div class="emergency-content">
-                    <h4 class="emergency-title">EMERGENCY STOP</h4>
-                    <p class="emergency-text">
-                        This will immediately stop all bioreactor operations including temperature control, agitation, pH control, and pumps. This action cannot be undone and may affect ongoing experiments.
-                    </p>
-                    <p class="emergency-text">
-                        <strong>Are you absolutely sure you want to perform an emergency stop?</strong>
-                    </p>
                 </div>
             </div>
         </div>
-        
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeEmergencyModal()">Cancel</button>
-            <form method="POST" action="/app/bioreactors/{{ bioreactor.id }}/control" class="inline">
-                <input type="hidden" name="control_type" value="emergency_stop">
-                <input type="hidden" name="parameter" value="activate">
-                <input type="hidden" name="safety_confirmation" value="true">
-                <button type="submit" class="btn btn-emergency">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
-                    </svg>
-                    ACTIVATE EMERGENCY STOP
-                </button>
-            </form>
+
+        <!-- Aeration Control -->
+        <div class="form-section">
+            <div class="section-header">
+                <div class="section-icon">🌬️</div>
+                <div>
+                    <h3 class="section-title">Aeration Control</h3>
+                    <p class="section-description">Control gas flow rates for oxygen supply</p>
+                </div>
+            </div>
+            <div class="form-grid">
+                <div class="control-grid">
+                    <div class="control-group">
+                        <label for="aeration_rate" class="control-label">Aeration Rate (L/min)</label>
+                        <div class="control-input-group">
+                            <input 
+                                type="number" 
+                                id="aeration_rate" 
+                                name="aeration_rate" 
+                                min="0" 
+                                max="10" 
+                                step="0.1" 
+                                value="{{ bioreactor.get_operating_parameters().get('aeration_rate', 1.0) }}"
+                                class="form-input"
+                            >
+                            <button type="button" class="btn btn-primary" onclick="setAerationRate()">
+                                Set
+                            </button>
+                        </div>
+                        <div class="control-range">
+                            <span class="range-min">0 L/min</span>
+                            <span class="range-max">10 L/min</span>
+                        </div>
+                    </div>
+                    
+                    <div class="control-status">
+                        <div class="status-item">
+                            <span class="status-label">Current:</span>
+                            <span class="status-value">{{ status.operating_parameters.aeration_rate or 'N/A' }} L/min</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Target:</span>
+                            <span class="status-value">{{ bioreactor.get_operating_parameters().get('aeration_rate', 'Not set') }} L/min</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<script>
-// Auto-refresh functionality
-let autoRefreshInterval;
-const autoRefreshCheckbox = document.getElementById('autoRefresh');
-
-document.addEventListener('DOMContentLoaded', function() {
-    autoRefreshCheckbox.addEventListener('change', function() {
-        if (this.checked) {
-            startAutoRefresh();
-        } else {
-            stopAutoRefresh();
-        }
-    });
-    
-    // Start auto-refresh if enabled
-    if (autoRefreshCheckbox.checked) {
-        startAutoRefresh();
-    }
-    
-    // Load initial status
-    refreshStatus();
-});
-
-function startAutoRefresh() {
-    autoRefreshInterval = setInterval(() => {
-        refreshStatus();
-    }, 3000); // Refresh every 3 seconds
+<style>
+/* Control Page Specific Styles */
+.emergency-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+    flex-wrap: wrap;
 }
 
-function stopAutoRefresh() {
-    if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
+.emergency-status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.status-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.control-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-6);
+    align-items: start;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.control-label {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+}
+
+.control-input-group {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+.control-input-group .form-input {
+    flex: 1;
+    min-width: 120px;
+}
+
+.control-range {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-size-xs);
+    color: var(--text-tertiary);
+}
+
+.control-status {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 150px;
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-2) var(--space-3);
+    background: var(--background-tertiary);
+    border-radius: var(--radius-md);
+}
+
+.status-item .status-label {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.status-item .status-value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.card-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.checkbox {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    cursor: pointer;
+}
+
+.checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary);
+}
+
+.checkbox-label {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.loading-spinner {
+    text-align: center;
+    padding: var(--space-8);
+    color: var(--text-tertiary);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .control-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-4);
+    }
+    
+    .emergency-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .card-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--space-2);
+    }
+}
+</style>
+
+<script>
+function confirmEmergencyStop() {
+    if (confirm('Are you sure you want to activate the emergency stop? This will immediately halt all bioreactor operations.')) {
+        // TODO: Implement emergency stop functionality
+        alert('Emergency stop activated');
     }
 }
 
 function refreshStatus() {
-    // HTMX request to refresh status
-    htmx.ajax('GET', `/app/bioreactors/{{ bioreactor.id }}/status`, {
-        target: '#statusGrid',
-        swap: 'innerHTML'
-    });
+    // TODO: Implement status refresh functionality
+    console.log('Refreshing status...');
 }
 
-function confirmEmergencyStop() {
-    document.getElementById('emergencyModal').classList.remove('hidden');
+function setTemperature() {
+    const value = document.getElementById('temperature').value;
+    // TODO: Implement temperature setting functionality
+    console.log('Setting temperature to:', value);
 }
 
-function closeEmergencyModal() {
-    document.getElementById('emergencyModal').classList.add('hidden');
+function setPH() {
+    const value = document.getElementById('ph').value;
+    // TODO: Implement pH setting functionality
+    console.log('Setting pH to:', value);
 }
 
-// Close modal when clicking overlay
-document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById('emergencyModal');
-    const overlay = modal.querySelector('.modal-overlay');
-    
-    overlay.addEventListener('click', closeEmergencyModal);
+function setDissolvedOxygen() {
+    const value = document.getElementById('dissolved_oxygen').value;
+    // TODO: Implement dissolved oxygen setting functionality
+    console.log('Setting dissolved oxygen to:', value);
+}
+
+function setAgitationSpeed() {
+    const value = document.getElementById('agitation_speed').value;
+    // TODO: Implement agitation speed setting functionality
+    console.log('Setting agitation speed to:', value);
+}
+
+function setAerationRate() {
+    const value = document.getElementById('aeration_rate').value;
+    // TODO: Implement aeration rate setting functionality
+    console.log('Setting aeration rate to:', value);
+}
+
+// Auto-refresh functionality
+let autoRefreshInterval;
+const autoRefreshCheckbox = document.getElementById('autoRefresh');
+
+autoRefreshCheckbox.addEventListener('change', function() {
+    if (this.checked) {
+        autoRefreshInterval = setInterval(refreshStatus, 5000); // Refresh every 5 seconds
+    } else {
+        clearInterval(autoRefreshInterval);
+    }
 });
 
-// Form validation for control forms
-document.addEventListener('DOMContentLoaded', function() {
-    const controlForms = document.querySelectorAll('.control-form');
-    
-    controlForms.forEach(form => {
-        form.addEventListener('submit', function(e) {
-            const safetyCheckbox = form.querySelector('input[name="safety_confirmation"]');
-            const valueInput = form.querySelector('input[name="value"]');
-            
-            if (!safetyCheckbox.checked) {
-                e.preventDefault();
-                alert('You must confirm the safety of this action before proceeding.');
-                return;
-            }
-            
-            if (valueInput && valueInput.value === '') {
-                e.preventDefault();
-                alert('Please enter a value for this control.');
-                return;
-            }
-            
-            // Show loading state
-            const submitButton = form.querySelector('button[type="submit"]');
-            submitButton.disabled = true;
-            submitButton.innerHTML = `
-                <svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                </svg>
-                Sending...
-            `;
-        });
-    });
-});
+// Initialize auto-refresh if checked
+if (autoRefreshCheckbox.checked) {
+    autoRefreshInterval = setInterval(refreshStatus, 5000);
+}
 </script>
 {% endblock %} 

@@ -183,6 +183,59 @@ class BioreactorService:
             logger.error(f"Error getting bioreactors by organization: {e}")
             return []
     
+    def get_user_accessible_bioreactors(self, user_id: UUID, status: Optional[str] = None) -> List[Bioreactor]:
+        """
+        Get bioreactors that a user has access to through organization membership.
+        
+        Args:
+            user_id: User ID
+            status: Optional status filter
+            
+        Returns:
+            List of bioreactors
+        """
+        try:
+            from ..models.organization_member import OrganizationMember
+            from ..models.user import User
+            
+            # Get user's organizations from membership table
+            user_orgs = self.db.query(OrganizationMember.organization_id).filter(
+                and_(
+                    OrganizationMember.user_id == user_id,
+                    OrganizationMember.is_active == True
+                )
+            ).all()
+            
+            # Get user's legacy organization_id
+            user = self.db.query(User).filter(User.id == user_id).first()
+            legacy_org_id = user.organization_id if user else None
+            
+            # Build list of accessible organization IDs
+            org_ids = [org[0] for org in user_orgs]  # Extract UUID from tuple
+            if legacy_org_id and legacy_org_id not in org_ids:
+                org_ids.append(legacy_org_id)
+            
+            if not org_ids:
+                return []
+            
+            # Query bioreactors from accessible organizations
+            query = self.db.query(Bioreactor).filter(
+                and_(
+                    Bioreactor.organization_id.in_(org_ids),
+                    Bioreactor.entity_type == 'device.bioreactor'
+                )
+            )
+            
+            if status:
+                query = query.filter(Bioreactor.status == status)
+            
+            bioreactors = query.order_by(Bioreactor.created_at.desc()).all()
+            return bioreactors
+            
+        except Exception as e:
+            logger.error(f"Error getting user accessible bioreactors: {e}")
+            return []
+    
     def get_organization_bioreactors(
         self, 
         organization_id: UUID, 
@@ -362,6 +415,17 @@ class BioreactorService:
         """
         bioreactor = self.get_bioreactor(bioreactor_id)
         
+        # Handle last_seen - convert string to datetime or None
+        last_seen_str = bioreactor.get_last_seen()
+        last_seen = None
+        if last_seen_str and last_seen_str.strip():
+            try:
+                from datetime import datetime
+                last_seen = datetime.fromisoformat(last_seen_str.replace('Z', '+00:00'))
+            except (ValueError, AttributeError):
+                # If parsing fails, set to None
+                last_seen = None
+        
         return BioreactorStatusResponse(
             id=bioreactor.id,
             name=bioreactor.name,
@@ -371,7 +435,7 @@ class BioreactorService:
             safety_status=bioreactor.get_safety_status(),
             is_operational=bioreactor.is_operational(),
             is_running_experiment=bioreactor.is_running_experiment(),
-            last_seen=bioreactor.get_last_seen(),
+            last_seen=last_seen,
             experiment_id=bioreactor.get_experiment_id()
         )
     

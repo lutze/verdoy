@@ -149,7 +149,7 @@ async def register_user(
             db.commit()
             final_organization_id = org_id
         return RedirectResponse(
-            url="/app/auth/login?message=Account created successfully! Please sign in.",
+            url="/app/login?message=Account created successfully! Please sign in.",
             status_code=303
         )
     except Exception as e:
@@ -164,7 +164,7 @@ async def register_user(
 @router.post("/logout", response_class=HTMLResponse, include_in_schema=False)
 async def logout_user(request: Request):
     """Logout user (clear session cookie and redirect)."""
-    response = RedirectResponse(url="/app/auth/login?message=Successfully logged out", status_code=303)
+    response = RedirectResponse(url="/app/login?message=Successfully logged out", status_code=303)
     response.delete_cookie(
         key="session_token",
         httponly=True,

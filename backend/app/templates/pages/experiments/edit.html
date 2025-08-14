@@ -89,7 +89,7 @@
                                 class="w-full px-3 py-2 border {% if errors.project_id %}border-red-300{% else %}border-gray-300{% endif %} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="">Select a project</option>
                             {% for project in projects %}
-                            <option value="{{ project.id }}" {% if form_data.project_id == project.id %}selected{% endif %}>
+                            <option value="{{ project.id }}" {% if form_data.project_id == project.id|string %}selected{% endif %}>
                                 {{ project.name }}
                             </option>
                             {% endfor %}
@@ -109,7 +109,7 @@
                                 class="w-full px-3 py-2 border {% if errors.process_id %}border-red-300{% else %}border-gray-300{% endif %} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="">Select a process</option>
                             {% for process in processes %}
-                            <option value="{{ process.id }}" {% if form_data.process_id == process.id %}selected{% endif %}>
+                            <option value="{{ process.id }}" {% if form_data.process_id == process.id|string %}selected{% endif %}>
                                 {{ process.name }} ({{ process.process_type }})
                             </option>
                             {% endfor %}
@@ -129,7 +129,7 @@
                                 class="w-full px-3 py-2 border {% if errors.bioreactor_id %}border-red-300{% else %}border-gray-300{% endif %} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="">Select a bioreactor</option>
                             {% for bioreactor in bioreactors %}
-                            <option value="{{ bioreactor.id }}" {% if form_data.bioreactor_id == bioreactor.id %}selected{% endif %}>
+                            <option value="{{ bioreactor.id }}" {% if form_data.bioreactor_id == bioreactor.id|string %}selected{% endif %}>
                                 {{ bioreactor.name }} 
                                 {% if bioreactor.is_running_experiment %}(Running Experiment){% endif %}
                             </option>

@@ -189,6 +189,88 @@ class ExperimentService(BaseService[Experiment]):
             logger.error(f"Error getting experiments for organization {organization_id}: {e}")
             return [], 0
     
+    def get_user_accessible_experiments(
+        self, 
+        user_id: UUID, 
+        filters: ExperimentFilterRequest
+    ) -> Tuple[List[Experiment], int]:
+        """
+        Get experiments that a user has access to through organization membership.
+        
+        Args:
+            user_id: User ID
+            filters: Filter criteria
+            
+        Returns:
+            Tuple of (experiments, total_count)
+        """
+        try:
+            from ..models.organization_member import OrganizationMember
+            from ..models.user import User
+            
+            # Get user's organizations from membership table
+            user_orgs = self.db.query(OrganizationMember.organization_id).filter(
+                and_(
+                    OrganizationMember.user_id == user_id,
+                    OrganizationMember.is_active == True
+                )
+            ).all()
+            
+            # Get user's legacy organization_id
+            user = self.db.query(User).filter(User.id == user_id).first()
+            legacy_org_id = user.organization_id if user else None
+            
+            # Build list of accessible organization IDs
+            org_ids = [org[0] for org in user_orgs]  # Extract UUID from tuple
+            if legacy_org_id and legacy_org_id not in org_ids:
+                org_ids.append(legacy_org_id)
+            
+            if not org_ids:
+                return [], 0
+            
+            # Query experiments from accessible organizations
+            query = self.db.query(Experiment).filter(
+                and_(
+                    Experiment.organization_id.in_(org_ids),
+                    Experiment.entity_type == 'experiment'
+                )
+            )
+            
+            # Apply filters
+            if filters.status:
+                query = query.filter(Experiment.status == filters.status)
+            
+            if filters.project_id:
+                query = query.filter(Experiment.project_id == filters.project_id)
+            
+            if filters.process_id:
+                query = query.filter(Experiment.process_id == filters.process_id)
+            
+            if filters.bioreactor_id:
+                query = query.filter(Experiment.bioreactor_id == filters.bioreactor_id)
+            
+            if filters.search:
+                search_term = f"%{filters.search}%"
+                query = query.filter(
+                    or_(
+                        Experiment.name.ilike(search_term),
+                        Experiment.description.ilike(search_term)
+                    )
+                )
+            
+            # Get total count
+            total_count = query.count()
+            
+            # Apply pagination
+            offset = (filters.page - 1) * filters.page_size
+            experiments = query.offset(offset).limit(filters.page_size).all()
+            
+            return experiments, total_count
+            
+        except Exception as e:
+            logger.error(f"Error getting user accessible experiments: {e}")
+            return [], 0
+    
     def update_experiment(
         self, 
         experiment_id: UUID, 

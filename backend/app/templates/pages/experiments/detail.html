@@ -4,24 +4,29 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
-    <!-- Header Section -->
-    <div class="mb-8">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center">
-                <a href="/app/experiments" class="text-blue-600 hover:text-blue-800 mr-4">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                    </svg>
-                </a>
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900">{{ experiment.name }}</h1>
-                    <p class="text-gray-600">Experiment Details</p>
+    <!-- Page Header with Scientific Gradient -->
+    <div class="page-header scientific-accent mb-8">
+        <div class="page-header-content">
+            <div class="header-left">
+                <div class="breadcrumb">
+                    <a href="/app/experiments" class="breadcrumb-link">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                        Experiments
+                    </a>
                 </div>
+                <h1 class="page-title">{{ experiment.name }}</h1>
+                {% if experiment.description %}
+                <p class="page-subtitle">{{ experiment.description }}</p>
+                {% endif %}
             </div>
-            <div class="flex space-x-2">
+            <div class="header-actions">
+                <div class="status-badge {% if experiment.status == 'active' %}active{% elif experiment.status == 'paused' %}paused{% elif experiment.status == 'completed' %}completed{% elif experiment.status == 'failed' %}failed{% else %}draft{% endif %}">
+                    {{ experiment.status|title }}
+                </div>
                 {% if experiment.is_running %}
-                <a href="/app/experiments/{{ experiment.id }}/monitor" 
-                   class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+                <a href="/app/experiments/{{ experiment.id }}/monitor" class="btn btn-primary">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
@@ -30,8 +35,7 @@
                 </a>
                 {% endif %}
                 {% if not experiment.is_running %}
-                <a href="/app/experiments/{{ experiment.id }}/edit" 
-                   class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                <a href="/app/experiments/{{ experiment.id }}/edit" class="btn btn-secondary">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                     </svg>
@@ -42,294 +46,537 @@
         </div>
     </div>
 
-    <!-- Status Banner -->
-    <div class="mb-6">
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center">
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                        {% if experiment.status == 'active' %}bg-green-100 text-green-800
-                        {% elif experiment.status == 'paused' %}bg-yellow-100 text-yellow-800
-                        {% elif experiment.status == 'completed' %}bg-blue-100 text-blue-800
-                        {% elif experiment.status == 'failed' %}bg-red-100 text-red-800
-                        {% elif experiment.status == 'draft' %}bg-gray-100 text-gray-800
-                        {% else %}bg-gray-100 text-gray-800{% endif %}">
-                        {{ experiment.status|title }}
-                    </span>
-                    {% if experiment.is_running %}
-                    <div class="ml-4">
-                        <div class="flex items-center">
-                            <div class="w-32 bg-gray-200 rounded-full h-2 mr-3">
-                                <div class="bg-blue-600 h-2 rounded-full" style="width: {{ experiment.progress_percentage }}%"></div>
-                            </div>
-                            <span class="text-sm text-gray-600">{{ experiment.progress_percentage }}% complete</span>
-                        </div>
-                    </div>
+    <!-- Experiment Stats Cards -->
+    <div class="stats-grid mb-8">
+        <div class="stat-card">
+            <div class="stat-icon status">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ experiment.status|title }}</div>
+                <div class="stat-label">Status</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon progress">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ experiment.progress_percentage }}%</div>
+                <div class="stat-label">Progress</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon trials">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ experiment.current_trial }}/{{ experiment.total_trials }}</div>
+                <div class="stat-label">Trials</div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon duration">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">
+                    {% if experiment.duration_minutes %}
+                        {{ experiment.duration_minutes }} min
+                    {% else %}
+                        Not set
                     {% endif %}
                 </div>
-                <div class="flex space-x-2">
-                    {% if experiment.can_start %}
-                    <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="inline">
-                        <input type="hidden" name="action" value="start">
-                        <button type="submit" 
-                                class="inline-flex items-center px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Start
-                        </button>
-                    </form>
-                    {% endif %}
-                    {% if experiment.can_pause %}
-                    <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="inline">
-                        <input type="hidden" name="action" value="pause">
-                        <button type="submit" 
-                                class="inline-flex items-center px-3 py-1 bg-yellow-600 text-white text-sm rounded-md hover:bg-yellow-700 transition-colors">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Pause
-                        </button>
-                    </form>
-                    {% endif %}
-                    {% if experiment.can_resume %}
-                    <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="inline">
-                        <input type="hidden" name="action" value="resume">
-                        <button type="submit" 
-                                class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Resume
-                        </button>
-                    </form>
-                    {% endif %}
-                    {% if experiment.can_stop %}
-                    <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="inline">
-                        <input type="hidden" name="action" value="stop">
-                        <button type="submit" 
-                                class="inline-flex items-center px-3 py-1 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                            Stop
-                        </button>
-                    </form>
-                    {% endif %}
-                </div>
+                <div class="stat-label">Duration</div>
             </div>
         </div>
     </div>
 
-    <!-- Main Content Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Experiment Details -->
-        <div class="lg:col-span-2 space-y-6">
-            <!-- Basic Information -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
-                <div class="space-y-3">
-                    <div>
-                        <label class="text-sm font-medium text-gray-700">Name</label>
-                        <p class="text-gray-900">{{ experiment.name }}</p>
-                    </div>
-                    {% if experiment.description %}
-                    <div>
-                        <label class="text-sm font-medium text-gray-700">Description</label>
-                        <p class="text-gray-900">{{ experiment.description }}</p>
-                    </div>
-                    {% endif %}
-                    <div>
-                        <label class="text-sm font-medium text-gray-700">Status</label>
-                        <p class="text-gray-900">{{ experiment.status|title }}</p>
-                    </div>
-                    <div>
-                        <label class="text-sm font-medium text-gray-700">Trials</label>
-                        <p class="text-gray-900">{{ experiment.current_trial }} of {{ experiment.total_trials }}</p>
-                    </div>
-                    {% if experiment.duration_minutes %}
-                    <div>
-                        <label class="text-sm font-medium text-gray-700">Duration</label>
-                        <p class="text-gray-900">{{ experiment.duration_minutes }} minutes</p>
-                    </div>
-                    {% endif %}
-                    {% if experiment.started_at %}
-                    <div>
-                        <label class="text-sm font-medium text-gray-700">Started</label>
-                        <p class="text-gray-900">{{ experiment.started_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
-                    </div>
-                    {% endif %}
-                    {% if experiment.completed_at %}
-                    <div>
-                        <label class="text-sm font-medium text-gray-700">Completed</label>
-                        <p class="text-gray-900">{{ experiment.completed_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
-                    </div>
-                    {% endif %}
-                    {% if experiment.error_message %}
-                    <div>
-                        <label class="text-sm font-medium text-red-700">Error</label>
-                        <p class="text-red-600">{{ experiment.error_message }}</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Related Resources -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Related Resources</h2>
-                <div class="space-y-4">
-                    {% if project %}
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                        <div class="flex items-center">
-                            <svg class="w-5 h-5 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            <div>
-                                <p class="font-medium text-gray-900">Project</p>
-                                <p class="text-sm text-gray-600">{{ project.name }}</p>
-                            </div>
-                        </div>
-                        <a href="/app/projects/{{ project.id }}" class="text-blue-600 hover:text-blue-800 text-sm">
-                            View Project
-                        </a>
-                    </div>
-                    {% endif %}
-
-                    {% if process %}
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                        <div class="flex items-center">
-                            <svg class="w-5 h-5 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                            </svg>
-                            <div>
-                                <p class="font-medium text-gray-900">Process</p>
-                                <p class="text-sm text-gray-600">{{ process.name }} ({{ process.process_type }})</p>
-                            </div>
-                        </div>
-                        <a href="/app/processes/{{ process.id }}" class="text-blue-600 hover:text-blue-800 text-sm">
-                            View Process
-                        </a>
-                    </div>
-                    {% endif %}
-
-                    {% if bioreactor %}
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                        <div class="flex items-center">
-                            <svg class="w-5 h-5 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
-                            </svg>
-                            <div>
-                                <p class="font-medium text-gray-900">Bioreactor</p>
-                                <p class="text-sm text-gray-600">{{ bioreactor.name }}</p>
-                            </div>
-                        </div>
-                        <a href="/app/bioreactors/{{ bioreactor.id }}" class="text-blue-600 hover:text-blue-800 text-sm">
-                            View Bioreactor
-                        </a>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Trials -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Trials</h2>
-                {% if trials %}
-                <div class="space-y-3">
-                    {% for trial in trials %}
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                        <div class="flex items-center">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                {% if trial.status == 'running' %}bg-green-100 text-green-800
-                                {% elif trial.status == 'completed' %}bg-blue-100 text-blue-800
-                                {% elif trial.status == 'failed' %}bg-red-100 text-red-800
-                                {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                {{ trial.status|title }}
-                            </span>
-                            <span class="ml-3 text-sm font-medium text-gray-900">Trial {{ trial.trial_number }}</span>
-                        </div>
-                        <div class="text-sm text-gray-600">
-                            {% if trial.started_at %}
-                            Started: {{ trial.started_at.strftime('%H:%M:%S') }}
-                            {% endif %}
-                            {% if trial.duration_minutes %}
-                            ({{ trial.duration_minutes }} min)
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p class="text-gray-500 text-center py-4">No trials recorded yet.</p>
-                {% endif %}
-            </div>
+    <!-- Main Content Tabs -->
+    <div class="content-tabs">
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="overview">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                Overview
+            </button>
+            <button class="tab-button" data-tab="trials">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                </svg>
+                Trials
+            </button>
+            <button class="tab-button" data-tab="data">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Data
+            </button>
+            <button class="tab-button" data-tab="controls">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                Controls
+            </button>
+            <button class="tab-button" data-tab="settings">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                Settings
+            </button>
         </div>
 
-        <!-- Sidebar -->
-        <div class="space-y-6">
-            <!-- Quick Actions -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-                <div class="space-y-3">
-                    {% if experiment.is_running %}
-                    <a href="/app/experiments/{{ experiment.id }}/monitor" 
-                       class="w-full flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                        </svg>
-                        Monitor Experiment
-                    </a>
-                    {% endif %}
-                    
-                    {% if not experiment.is_running %}
-                    <a href="/app/experiments/{{ experiment.id }}/edit" 
-                       class="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                        </svg>
-                        Edit Experiment
-                    </a>
-                    {% endif %}
+        <div class="tab-content">
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-panel active">
 
-                    <form method="POST" action="/app/experiments/{{ experiment.id }}/archive" class="w-full">
-                        <button type="submit" 
-                                class="w-full flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-                                onclick="return confirm('Are you sure you want to archive this experiment?')">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
-                            </svg>
-                            Archive Experiment
-                        </button>
-                    </form>
+                <div class="overview-grid">
+                    <!-- Experiment Info -->
+                    <div class="info-card">
+                        <h3 class="card-title">Experiment Information</h3>
+                        <div class="info-list">
+                            <div class="info-item">
+                                <span class="info-label">Name</span>
+                                <span class="info-value">{{ experiment.name }}</span>
+                            </div>
+                            {% if experiment.description %}
+                            <div class="info-item">
+                                <span class="info-label">Description</span>
+                                <span class="info-value">{{ experiment.description }}</span>
+                            </div>
+                            {% endif %}
+                            <div class="info-item">
+                                <span class="info-label">Status</span>
+                                <span class="info-value">{{ experiment.status|title }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Trials</span>
+                                <span class="info-value">{{ experiment.current_trial }} of {{ experiment.total_trials }}</span>
+                            </div>
+                            {% if experiment.duration_minutes %}
+                            <div class="info-item">
+                                <span class="info-label">Duration</span>
+                                <span class="info-value">{{ experiment.duration_minutes }} minutes</span>
+                            </div>
+                            {% endif %}
+                            {% if experiment.started_at %}
+                            <div class="info-item">
+                                <span class="info-label">Started</span>
+                                <span class="info-value">{{ experiment.started_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                            </div>
+                            {% endif %}
+                            {% if experiment.completed_at %}
+                            <div class="info-item">
+                                <span class="info-label">Completed</span>
+                                <span class="info-value">{{ experiment.completed_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                            </div>
+                            {% endif %}
+                            {% if experiment.error_message %}
+                            <div class="info-item error">
+                                <span class="info-label">Error</span>
+                                <span class="info-value">{{ experiment.error_message }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Related Resources -->
+                    <div class="info-card">
+                        <h3 class="card-title">Related Resources</h3>
+                        <div class="resource-list">
+                            {% if project %}
+                            <div class="resource-item">
+                                <div class="resource-icon">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                </div>
+                                <div class="resource-content">
+                                    <div class="resource-name">Project</div>
+                                    <div class="resource-details">{{ project.name }}</div>
+                                </div>
+                                <a href="/app/projects/{{ project.id }}" class="resource-link">View</a>
+                            </div>
+                            {% endif %}
+
+                            {% if process %}
+                            <div class="resource-item">
+                                <div class="resource-icon">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                                    </svg>
+                                </div>
+                                <div class="resource-content">
+                                    <div class="resource-name">Process</div>
+                                    <div class="resource-details">{{ process.name }} ({{ process.process_type }})</div>
+                                </div>
+                                <a href="/app/processes/{{ process.id }}" class="resource-link">View</a>
+                            </div>
+                            {% endif %}
+
+                            {% if bioreactor %}
+                            <div class="resource-item">
+                                <div class="resource-icon">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                                    </svg>
+                                </div>
+                                <div class="resource-content">
+                                    <div class="resource-name">Bioreactor</div>
+                                    <div class="resource-details">{{ bioreactor.name }}</div>
+                                </div>
+                                <a href="/app/bioreactors/{{ bioreactor.id }}" class="resource-link">View</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Experiment Statistics -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Statistics</h2>
-                <div class="space-y-3">
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Status</span>
-                        <span class="font-medium">{{ experiment.status|title }}</span>
+            <!-- Trials Tab -->
+            <div id="trials" class="tab-panel">
+                <div class="trials-section">
+                    <div class="section-header">
+                        <h3 class="section-title">Experiment Trials</h3>
+                        <div class="section-actions">
+                            {% if experiment.can_start %}
+                            <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="inline">
+                                <input type="hidden" name="action" value="start">
+                                <button type="submit" class="btn btn-primary">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    Start New Trial
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Progress</span>
-                        <span class="font-medium">{{ experiment.progress_percentage }}%</span>
+                    
+                    {% if trials %}
+                    <div class="trials-list">
+                        {% for trial in trials %}
+                        <div class="trial-card">
+                            <div class="trial-header">
+                                <div class="trial-info">
+                                    <span class="trial-number">Trial {{ trial.trial_number }}</span>
+                                    <span class="trial-status {% if trial.status == 'running' %}running{% elif trial.status == 'completed' %}completed{% elif trial.status == 'failed' %}failed{% else %}pending{% endif %}">
+                                        {{ trial.status|title }}
+                                    </span>
+                                </div>
+                                <div class="trial-actions">
+                                    {% if trial.status == 'running' %}
+                                    <a href="/app/experiments/{{ experiment.id }}/monitor" class="btn btn-sm btn-primary">
+                                        Monitor
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="trial-details">
+                                {% if trial.started_at %}
+                                <div class="trial-detail">
+                                    <span class="detail-label">Started:</span>
+                                    <span class="detail-value">{{ trial.started_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                                </div>
+                                {% endif %}
+                                {% if trial.duration_minutes %}
+                                <div class="trial-detail">
+                                    <span class="detail-label">Duration:</span>
+                                    <span class="detail-value">{{ trial.duration_minutes }} minutes</span>
+                                </div>
+                                {% endif %}
+                                {% if trial.results %}
+                                <div class="trial-detail">
+                                    <span class="detail-label">Results:</span>
+                                    <span class="detail-value">{{ trial.results|length }} data points</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
                     </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Trials</span>
-                        <span class="font-medium">{{ experiment.current_trial }}/{{ experiment.total_trials }}</span>
-                    </div>
-                    {% if experiment.duration_minutes %}
-                    <div class="flex justify-between">
-                        <span class="text-gray-600">Duration</span>
-                        <span class="font-medium">{{ experiment.duration_minutes }} min</span>
+                    {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">🧪</div>
+                        <h3 class="empty-title">No trials recorded yet</h3>
+                        <p class="empty-description">Start the experiment to begin recording trials.</p>
+                        {% if experiment.can_start %}
+                        <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="inline">
+                            <input type="hidden" name="action" value="start">
+                            <button type="submit" class="btn btn-primary">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                Start First Trial
+                            </button>
+                        </form>
+                        {% endif %}
                     </div>
                     {% endif %}
+                </div>
+            </div>
+
+            <!-- Data Tab -->
+            <div id="data" class="tab-panel">
+                <div class="data-section">
+                    <div class="section-header">
+                        <h3 class="section-title">Experiment Data</h3>
+                        <div class="section-actions">
+                            <button class="btn btn-secondary" onclick="exportData()">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                Export Data
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {% if experiment.is_running %}
+                    <div class="live-data-section">
+                        <div class="live-data-header">
+                            <h4 class="live-data-title">Live Sensor Data</h4>
+                            <div class="live-indicator">
+                                <span class="live-dot"></span>
+                                Live
+                            </div>
+                        </div>
+                        <div class="sensor-grid" hx-get="/app/experiments/{{ experiment.id }}/data" hx-trigger="every 5s">
+                            <!-- Live sensor data will be loaded here via HTMX -->
+                            <div class="sensor-card">
+                                <div class="sensor-icon temperature">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                                <div class="sensor-info">
+                                    <div class="sensor-name">Temperature</div>
+                                    <div class="sensor-value">--°C</div>
+                                </div>
+                            </div>
+                            <div class="sensor-card">
+                                <div class="sensor-icon ph">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                    </svg>
+                                </div>
+                                <div class="sensor-info">
+                                    <div class="sensor-name">pH</div>
+                                    <div class="sensor-value">--</div>
+                                </div>
+                            </div>
+                            <div class="sensor-card">
+                                <div class="sensor-icon oxygen">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                                    </svg>
+                                </div>
+                                <div class="sensor-info">
+                                    <div class="sensor-name">Dissolved Oxygen</div>
+                                    <div class="sensor-value">-- mg/L</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">📊</div>
+                        <h3 class="empty-title">No live data available</h3>
+                        <p class="empty-description">Start the experiment to view live sensor data.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Controls Tab -->
+            <div id="controls" class="tab-panel">
+                <div class="controls-section">
+                    <div class="section-header">
+                        <h3 class="section-title">Experiment Controls</h3>
+                    </div>
+                    
+                    <div class="control-grid">
+                        {% if experiment.can_start %}
+                        <div class="control-card">
+                            <div class="control-icon start">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <div class="control-info">
+                                <h4 class="control-title">Start Experiment</h4>
+                                <p class="control-description">Begin the experiment and start recording data</p>
+                            </div>
+                            <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="control-action">
+                                <input type="hidden" name="action" value="start">
+                                <button type="submit" class="btn btn-primary">
+                                    Start
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
+
+                        {% if experiment.can_pause %}
+                        <div class="control-card">
+                            <div class="control-icon pause">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <div class="control-info">
+                                <h4 class="control-title">Pause Experiment</h4>
+                                <p class="control-description">Temporarily pause the experiment</p>
+                            </div>
+                            <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="control-action">
+                                <input type="hidden" name="action" value="pause">
+                                <button type="submit" class="btn btn-warning">
+                                    Pause
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
+
+                        {% if experiment.can_resume %}
+                        <div class="control-card">
+                            <div class="control-icon resume">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <div class="control-info">
+                                <h4 class="control-title">Resume Experiment</h4>
+                                <p class="control-description">Resume the paused experiment</p>
+                            </div>
+                            <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="control-action">
+                                <input type="hidden" name="action" value="resume">
+                                <button type="submit" class="btn btn-primary">
+                                    Resume
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
+
+                        {% if experiment.can_stop %}
+                        <div class="control-card emergency">
+                            <div class="control-icon stop">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </div>
+                            <div class="control-info">
+                                <h4 class="control-title">Stop Experiment</h4>
+                                <p class="control-description">Stop the experiment immediately</p>
+                            </div>
+                            <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="control-action">
+                                <input type="hidden" name="action" value="stop">
+                                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to stop this experiment?')">
+                                    Stop
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings" class="tab-panel">
+                <div class="settings-section">
+                    <div class="section-header">
+                        <h3 class="section-title">Experiment Settings</h3>
+                        <div class="section-actions">
+                            <a href="/app/experiments/{{ experiment.id }}/edit" class="btn btn-secondary">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                </svg>
+                                Edit Settings
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-grid">
+                        <div class="settings-card">
+                            <h4 class="settings-title">Experiment Configuration</h4>
+                            <div class="settings-list">
+                                <div class="setting-item">
+                                    <span class="setting-label">Total Trials</span>
+                                    <span class="setting-value">{{ experiment.total_trials }}</span>
+                                </div>
+                                {% if experiment.parameters %}
+                                <div class="setting-item">
+                                    <span class="setting-label">Parameters</span>
+                                    <span class="setting-value">{{ experiment.parameters|length }} configured</span>
+                                </div>
+                                {% endif %}
+                                {% if experiment.metadata %}
+                                <div class="setting-item">
+                                    <span class="setting-label">Metadata</span>
+                                    <span class="setting-value">{{ experiment.metadata|length }} items</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="settings-card">
+                            <h4 class="settings-title">Danger Zone</h4>
+                            <div class="danger-actions">
+                                <form method="POST" action="/app/experiments/{{ experiment.id }}/archive" class="w-full">
+                                    <button type="submit" 
+                                            class="btn btn-danger w-full"
+                                            onclick="return confirm('Are you sure you want to archive this experiment? This action cannot be undone.')">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                                        </svg>
+                                        Archive Experiment
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+// Tab functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetTab = button.getAttribute('data-tab');
+            
+            // Remove active class from all buttons and panels
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabPanels.forEach(panel => panel.classList.remove('active'));
+            
+            // Add active class to clicked button and target panel
+            button.classList.add('active');
+            document.getElementById(targetTab).classList.add('active');
+        });
+    });
+});
+
+// Export data function
+function exportData() {
+    // TODO: Implement data export functionality
+    alert('Data export functionality will be implemented in a future update.');
+}
+</script>
 {% endblock %} 

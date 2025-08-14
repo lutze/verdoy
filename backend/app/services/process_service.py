@@ -619,6 +619,20 @@ class ProcessService(BaseService):
         if user.is_superuser:
             return True
         
+        # Check organization_members table first (current system)
+        from ..models.organization_member import OrganizationMember
+        membership = self.db.query(OrganizationMember).filter(
+            and_(
+                OrganizationMember.user_id == user.id,
+                OrganizationMember.organization_id == organization_id,
+                OrganizationMember.is_active == True
+            )
+        ).first()
+        
+        if membership:
+            return True
+        
+        # Fall back to legacy organization_id field for backward compatibility
         return user.organization_id == organization_id
     
     def _log_event(self, event_type: str, entity_id: UUID, entity_type: str, data: Dict[str, Any], user_id: Optional[UUID] = None):

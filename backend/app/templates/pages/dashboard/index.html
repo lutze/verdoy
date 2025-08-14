@@ -28,6 +28,7 @@
                 <a href="/app/admin/organization/" class="btn btn-secondary">View All</a>
             </div>
             
+            {% if dashboard.organizations %}
             <div class="organizations-grid">
                 {% for org in dashboard.organizations %}
                 <article class="org-card">
@@ -76,6 +77,18 @@
                 </article>
                 {% endfor %}
             </div>
+            {% else %}
+            <!-- Empty State for No Organizations -->
+            <div class="empty-state">
+                <div class="empty-icon">🏢</div>
+                <h3>No Organizations Found</h3>
+                <p>You don't have access to any organizations yet. Contact your administrator or create a new organization to get started.</p>
+                <div class="empty-actions">
+                    <a href="/app/admin/organization/create" class="btn btn-primary">Create Organization</a>
+                    <a href="/app/admin/organization/" class="btn btn-secondary">View All Organizations</a>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </section>
 
