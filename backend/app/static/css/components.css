@@ -4393,3 +4393,123 @@ input:invalid, select:invalid, textarea:invalid {
     width: 100%;
   }
 } 
+
+/* ============================================================================
+   BIOREACTOR EDIT FORM COMPONENTS
+   ============================================================================ */
+
+/* Edit Form Container - Shared across all edit pages */
+.edit-form {
+  max-width: 100%;
+}
+
+/* ============================================================================
+   ORGANIZATION EDIT FORM COMPONENTS
+   ============================================================================ */
+
+/* Breadcrumb Separator - For edit page navigation */
+.breadcrumb-separator {
+  color: rgba(255,255,255,0.6);
+  font-size: var(--font-size-sm);
+}
+
+/* Status Grid - For organization status display */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+}
+
+.status-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.status-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.status-value {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.status-value.active {
+  color: var(--success);
+}
+
+.status-value.inactive {
+  color: var(--danger);
+}
+
+/* Responsive Design for Edit Pages */
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .form-actions .btn {
+    width: 100%;
+  }
+  
+  .page-header-content {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--space-4);
+  }
+  
+  .breadcrumb {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .form-sections {
+    padding: var(--space-6);
+  }
+  
+  .section-header {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--space-3);
+  }
+  
+  .status-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  
+  .btn {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: var(--space-4);
+  }
+  
+  .page-title {
+    font-size: var(--font-size-3xl);
+  }
+  
+  .section-title {
+    font-size: var(--font-size-lg);
+  }
+}
