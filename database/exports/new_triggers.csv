@@ -1,0 +1,3 @@
+trigger_name,event_manipulation,event_object_table,action_statement,action_timing
+update_entities_updated_at,UPDATE,entities,EXECUTE FUNCTION update_updated_at_column(),BEFORE
+ts_insert_blocker,INSERT,events,EXECUTE FUNCTION _timescaledb_functions.insert_blocker(),BEFORE

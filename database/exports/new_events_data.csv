@@ -1,0 +1,7 @@
+id,timestamp,event_type,entity_id,entity_type,data,event_metadata,source_node,created_at
+1,2025-08-30 08:47:55.481904+00,equipment.created,af771d47-b96e-4707-aa05-e7c66c51fb1a,equipment.oven,"{""name"": ""DEMO Production Oven #1"", ""created_by"": ""system""}",{},,2025-08-30 08:47:55.481904+00
+2,2025-08-30 08:47:55.481904+00,device.created,d0cf7808-35c3-469c-ae72-c4a409ad6cc3,device.esp32,"{""name"": ""DEMO ESP32 Node 042"", ""created_by"": ""system""}",{},,2025-08-30 08:47:55.481904+00
+3,2025-08-30 08:54:11.065579+00,equipment.created,af771d47-b96e-4707-aa05-e7c66c51fb1a,equipment.oven,"{""name"": ""DEMO Production Oven #1"", ""created_by"": ""system""}",{},,2025-08-30 08:54:11.065579+00
+4,2025-08-30 08:54:11.065579+00,device.created,d0cf7808-35c3-469c-ae72-c4a409ad6cc3,device.esp32,"{""name"": ""DEMO ESP32 Node 042"", ""created_by"": ""system""}",{},,2025-08-30 08:54:11.065579+00
+5,2025-08-30 08:54:35.329275+00,equipment.created,af771d47-b96e-4707-aa05-e7c66c51fb1a,equipment.oven,"{""name"": ""DEMO Production Oven #1"", ""created_by"": ""system""}",{},,2025-08-30 08:54:35.329275+00
+6,2025-08-30 08:54:35.329275+00,device.created,d0cf7808-35c3-469c-ae72-c4a409ad6cc3,device.esp32,"{""name"": ""DEMO ESP32 Node 042"", ""created_by"": ""system""}",{},,2025-08-30 08:54:35.329275+00

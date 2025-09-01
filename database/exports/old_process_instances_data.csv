@@ -1,0 +1,2 @@
+id,process_id,batch_id,status,started_at,completed_at,parameters,results
+1ef0cedb-28f3-49d6-947a-bca35809bb11,0fa9dd7f-fd37-44fc-a3d0-7dbafbb81964,batch-2024-03-19-001,running,2025-08-30 08:54:54.265553+00,,"{""operator"": ""baker-jane"", ""loafCount"": 6, ""startTime"": ""2024-03-19T08:00:00Z"", ""doughWeight"": ""500g""}",{}

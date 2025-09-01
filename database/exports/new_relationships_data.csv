@@ -1,0 +1,2 @@
+id,from_entity,to_entity,relationship_type,properties,strength,valid_from,valid_to,created_by
+1,d0cf7808-35c3-469c-ae72-c4a409ad6cc3,af771d47-b96e-4707-aa05-e7c66c51fb1a,monitors,"{""zone"": 1, ""position"": ""upper-center"", ""installDate"": ""2024-03-01""}",1.00,2025-08-30 08:47:55.475481+00,,

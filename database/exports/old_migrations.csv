@@ -1,0 +1,4 @@
+version,applied_at,status,rolled_back_at,rollback_reason
+001_schema,2025-08-30 08:54:53.6497+00,applied,,
+002_test_data,2025-08-30 08:54:53.909696+00,applied,,
+006_esp32_device_schema,2025-08-30 08:54:54.027394+00,applied,,

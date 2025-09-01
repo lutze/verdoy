@@ -1,0 +1,29 @@
+DATABASE EXPORT SUMMARY
+=======================
+Export Type: old
+Export Time: Sat Aug 30 10:54:59 CEST 2025
+Database: lmsevo-db
+
+SCHEMA OVERVIEW
+---------------
+-----------------
+ Foreign Keys: 7
+ Functions: 107
+ Hypertables: 1
+ Indexes: 65
+ Tables: 12
+ Triggers: 2
+(6 rows)
+
+DATA OVERVIEW
+-------------
+
+
+MIGRATION STATUS
+----------------
+-------------------------+-------------------------------+---------
+ 001_schema              | 2025-08-30 08:54:53.6497+00   | applied
+ 002_test_data           | 2025-08-30 08:54:53.909696+00 | applied
+ 006_esp32_device_schema | 2025-08-30 08:54:54.027394+00 | applied
+(3 rows)
+

@@ -1,0 +1,3 @@
+version,applied_at,status,rolled_back_at,rollback_reason
+001_schema,2025-08-30 08:47:55.28514+00,applied,,
+002_test_data,2025-08-30 08:47:55.493399+00,applied,,

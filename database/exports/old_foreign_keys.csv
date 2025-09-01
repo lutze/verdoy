@@ -1,0 +1,8 @@
+table_name,constraint_name,constraint_type,column_name,foreign_table_name,foreign_column_name
+entities,fk_entities_organization,FOREIGN KEY,organization_id,entities,id
+process_instances,process_instances_process_id_fkey,FOREIGN KEY,process_id,processes,id
+processes,processes_created_by_fkey,FOREIGN KEY,created_by,entities,id
+processes,processes_organization_id_fkey,FOREIGN KEY,organization_id,entities,id
+relationships,relationships_from_entity_fkey,FOREIGN KEY,from_entity,entities,id
+relationships,relationships_to_entity_fkey,FOREIGN KEY,to_entity,entities,id
+schema_versions,schema_versions_schema_id_fkey,FOREIGN KEY,schema_id,schemas,id

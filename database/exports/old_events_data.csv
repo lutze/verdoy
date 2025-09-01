@@ -1,0 +1,4 @@
+id,timestamp,event_type,entity_id,entity_type,data,event_metadata,source_node,created_at
+1,2025-08-30 08:54:53.893793+00,equipment.created,add28e30-b951-4ff7-ae9f-17c09e62bee3,equipment.oven,"{""name"": ""DEMO Production Oven #1"", ""created_by"": ""system""}",{},,2025-08-30 08:54:53.893793+00
+2,2025-08-30 08:54:53.893793+00,device.created,7180b744-4db4-4012-8192-afc870b81470,device.esp32,"{""name"": ""DEMO ESP32 Node 042"", ""created_by"": ""system""}",{},,2025-08-30 08:54:53.893793+00
+3,2025-08-30 08:54:54.024643+00,device.created,001670be-5bfb-4c58-af9a-f1c74d868816,device.esp32,"{""name"": ""Test ESP32 Device"", ""created_by"": ""system""}",{},,2025-08-30 08:54:54.024643+00

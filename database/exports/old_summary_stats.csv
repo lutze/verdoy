@@ -1,0 +1,13 @@
+tablename,size
+entities,272 kB
+events,88 kB
+experiment_trials,112 kB
+membership_removal_requests,64 kB
+organization_invitations,64 kB
+organization_members,120 kB
+process_instances,80 kB
+processes,80 kB
+relationships,128 kB
+schema_migrations,32 kB
+schema_versions,24 kB
+schemas,32 kB

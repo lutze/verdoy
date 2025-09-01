@@ -1,0 +1,66 @@
+schemaname,tablename,indexname,indexdef
+public,entities,entities_pkey,CREATE UNIQUE INDEX entities_pkey ON public.entities USING btree (id)
+public,entities,idx_entities_active,CREATE INDEX idx_entities_active ON public.entities USING btree (is_active)
+public,entities,idx_entities_name,CREATE INDEX idx_entities_name ON public.entities USING btree (name)
+public,entities,idx_entities_organization,CREATE INDEX idx_entities_organization ON public.entities USING btree (organization_id)
+public,entities,idx_entities_organization_id,CREATE INDEX idx_entities_organization_id ON public.entities USING btree (organization_id)
+public,entities,idx_entities_properties,CREATE INDEX idx_entities_properties ON public.entities USING gin (properties)
+public,entities,idx_entities_properties_gin,CREATE INDEX idx_entities_properties_gin ON public.entities USING gin (properties)
+public,entities,idx_entities_status,CREATE INDEX idx_entities_status ON public.entities USING btree (status)
+public,entities,idx_entities_type,CREATE INDEX idx_entities_type ON public.entities USING btree (entity_type)
+public,entities,idx_entities_type_org,"CREATE INDEX idx_entities_type_org ON public.entities USING btree (entity_type, organization_id)"
+public,entities,idx_entities_type_status,"CREATE INDEX idx_entities_type_status ON public.entities USING btree (entity_type, status)"
+public,events,events_pkey,"CREATE UNIQUE INDEX events_pkey ON public.events USING btree (""timestamp"", id)"
+public,events,events_timestamp_idx,"CREATE INDEX events_timestamp_idx ON public.events USING btree (""timestamp"" DESC)"
+public,events,idx_events_data,CREATE INDEX idx_events_data ON public.events USING gin (data)
+public,events,idx_events_entity,"CREATE INDEX idx_events_entity ON public.events USING btree (entity_id, entity_type)"
+public,events,idx_events_metadata,CREATE INDEX idx_events_metadata ON public.events USING gin (event_metadata)
+public,events,idx_events_source,CREATE INDEX idx_events_source ON public.events USING btree (source_node)
+public,events,idx_events_timestamp,"CREATE INDEX idx_events_timestamp ON public.events USING btree (""timestamp"")"
+public,events,idx_events_type,CREATE INDEX idx_events_type ON public.events USING btree (event_type)
+public,experiment_trials,experiment_trials_experiment_id_trial_number_key,"CREATE UNIQUE INDEX experiment_trials_experiment_id_trial_number_key ON public.experiment_trials USING btree (experiment_id, trial_number)"
+public,experiment_trials,experiment_trials_pkey,CREATE UNIQUE INDEX experiment_trials_pkey ON public.experiment_trials USING btree (id)
+public,experiment_trials,idx_experiment_trials_created_by,CREATE INDEX idx_experiment_trials_created_by ON public.experiment_trials USING btree (created_by)
+public,experiment_trials,idx_experiment_trials_experiment_id,CREATE INDEX idx_experiment_trials_experiment_id ON public.experiment_trials USING btree (experiment_id)
+public,experiment_trials,idx_experiment_trials_status,CREATE INDEX idx_experiment_trials_status ON public.experiment_trials USING btree (status)
+public,experiment_trials,idx_experiment_trials_trial_number,CREATE INDEX idx_experiment_trials_trial_number ON public.experiment_trials USING btree (trial_number)
+public,membership_removal_requests,idx_removal_requests_approved_by,CREATE INDEX idx_removal_requests_approved_by ON public.membership_removal_requests USING btree (approved_by)
+public,membership_removal_requests,idx_removal_requests_org_id,CREATE INDEX idx_removal_requests_org_id ON public.membership_removal_requests USING btree (organization_id)
+public,membership_removal_requests,idx_removal_requests_requested_by,CREATE INDEX idx_removal_requests_requested_by ON public.membership_removal_requests USING btree (requested_by)
+public,membership_removal_requests,idx_removal_requests_status,CREATE INDEX idx_removal_requests_status ON public.membership_removal_requests USING btree (status)
+public,membership_removal_requests,idx_removal_requests_user_id,CREATE INDEX idx_removal_requests_user_id ON public.membership_removal_requests USING btree (user_id)
+public,membership_removal_requests,membership_removal_requests_organization_id_user_id_key,"CREATE UNIQUE INDEX membership_removal_requests_organization_id_user_id_key ON public.membership_removal_requests USING btree (organization_id, user_id)"
+public,membership_removal_requests,membership_removal_requests_pkey,CREATE UNIQUE INDEX membership_removal_requests_pkey ON public.membership_removal_requests USING btree (id)
+public,organization_invitations,idx_org_invitations_email,CREATE INDEX idx_org_invitations_email ON public.organization_invitations USING btree (email)
+public,organization_invitations,idx_org_invitations_expires,CREATE INDEX idx_org_invitations_expires ON public.organization_invitations USING btree (expires_at)
+public,organization_invitations,idx_org_invitations_invited_by,CREATE INDEX idx_org_invitations_invited_by ON public.organization_invitations USING btree (invited_by)
+public,organization_invitations,idx_org_invitations_org_id,CREATE INDEX idx_org_invitations_org_id ON public.organization_invitations USING btree (organization_id)
+public,organization_invitations,idx_org_invitations_status,CREATE INDEX idx_org_invitations_status ON public.organization_invitations USING btree (status)
+public,organization_invitations,organization_invitations_organization_id_email_key,"CREATE UNIQUE INDEX organization_invitations_organization_id_email_key ON public.organization_invitations USING btree (organization_id, email)"
+public,organization_invitations,organization_invitations_pkey,CREATE UNIQUE INDEX organization_invitations_pkey ON public.organization_invitations USING btree (id)
+public,organization_members,idx_org_members_active,CREATE INDEX idx_org_members_active ON public.organization_members USING btree (is_active)
+public,organization_members,idx_org_members_invited_by,CREATE INDEX idx_org_members_invited_by ON public.organization_members USING btree (invited_by)
+public,organization_members,idx_org_members_org_id,CREATE INDEX idx_org_members_org_id ON public.organization_members USING btree (organization_id)
+public,organization_members,idx_org_members_role,CREATE INDEX idx_org_members_role ON public.organization_members USING btree (role)
+public,organization_members,idx_org_members_user_id,CREATE INDEX idx_org_members_user_id ON public.organization_members USING btree (user_id)
+public,organization_members,organization_members_organization_id_user_id_key,"CREATE UNIQUE INDEX organization_members_organization_id_user_id_key ON public.organization_members USING btree (organization_id, user_id)"
+public,organization_members,organization_members_pkey,CREATE UNIQUE INDEX organization_members_pkey ON public.organization_members USING btree (id)
+public,process_instances,idx_process_instances_batch,CREATE INDEX idx_process_instances_batch ON public.process_instances USING btree (batch_id)
+public,process_instances,idx_process_instances_started,CREATE INDEX idx_process_instances_started ON public.process_instances USING btree (started_at)
+public,process_instances,idx_process_instances_status,CREATE INDEX idx_process_instances_status ON public.process_instances USING btree (status)
+public,process_instances,process_instances_pkey,CREATE UNIQUE INDEX process_instances_pkey ON public.process_instances USING btree (id)
+public,processes,idx_processes_created_by,CREATE INDEX idx_processes_created_by ON public.processes USING btree (created_by)
+public,processes,idx_processes_organization,CREATE INDEX idx_processes_organization ON public.processes USING btree (organization_id)
+public,processes,idx_processes_template,CREATE INDEX idx_processes_template ON public.processes USING btree (is_template)
+public,processes,processes_pkey,CREATE UNIQUE INDEX processes_pkey ON public.processes USING btree (id)
+public,relationships,idx_rel_device_ownership,"CREATE INDEX idx_rel_device_ownership ON public.relationships USING btree (from_entity, to_entity, relationship_type) WHERE ((relationship_type)::text = 'owns'::text)"
+public,relationships,idx_rel_from,CREATE INDEX idx_rel_from ON public.relationships USING btree (from_entity)
+public,relationships,idx_rel_properties,CREATE INDEX idx_rel_properties ON public.relationships USING gin (properties)
+public,relationships,idx_rel_time,"CREATE INDEX idx_rel_time ON public.relationships USING btree (valid_from, valid_to)"
+public,relationships,idx_rel_to,CREATE INDEX idx_rel_to ON public.relationships USING btree (to_entity)
+public,relationships,idx_rel_type,CREATE INDEX idx_rel_type ON public.relationships USING btree (relationship_type)
+public,relationships,relationships_pkey,CREATE UNIQUE INDEX relationships_pkey ON public.relationships USING btree (id)
+public,schema_migrations,schema_migrations_pkey,CREATE UNIQUE INDEX schema_migrations_pkey ON public.schema_migrations USING btree (version)
+public,schema_versions,schema_versions_pkey,CREATE UNIQUE INDEX schema_versions_pkey ON public.schema_versions USING btree (id)
+public,schema_versions,schema_versions_schema_id_version_key,"CREATE UNIQUE INDEX schema_versions_schema_id_version_key ON public.schema_versions USING btree (schema_id, version)"
+public,schemas,schemas_pkey,CREATE UNIQUE INDEX schemas_pkey ON public.schemas USING btree (id)
