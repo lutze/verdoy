@@ -1,5 +1,5 @@
 """
-Billing model for LMS Core API.
+Billing model for VerdoyLab API.
 
 This module contains the Billing and Subscription models and related functionality
 for billing and subscription management.

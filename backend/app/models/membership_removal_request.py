@@ -1,5 +1,5 @@
 """
-Membership Removal Request model for LMS Core API.
+Membership Removal Request model for VerdoyLab API.
 
 This module contains the MembershipRemovalRequest model for managing
 membership removal requests and approval workflows.

@@ -1,5 +1,5 @@
 """
-LMS Core API - Main Application Entry Point
+VerdoyLab API - Main Application Entry Point
 
 This is the main FastAPI application that orchestrates all components:
 - Configuration management
@@ -116,7 +116,7 @@ async def lifespan(app: FastAPI):
     - Graceful shutdown procedures
     """
     # Startup operations
-    logger.info("Starting up LMS Core API...")
+    logger.info("Starting up VerdoyLab API...")
     startup_time = datetime.utcnow()
     
     try:
@@ -156,7 +156,7 @@ async def lifespan(app: FastAPI):
     yield
     
     # Shutdown operations
-    logger.info("Shutting down LMS Core API...")
+    logger.info("Shutting down VerdoyLab API...")
     shutdown_time = datetime.utcnow()
     
     try:

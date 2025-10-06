@@ -1,6 +1,6 @@
 # Data Model Overview
 
-This document provides a comprehensive overview of the data structures in the LMS Core system, including database schema, models, and data flow patterns.
+This document provides a comprehensive overview of the data structures in the VerdoyLab system, including database schema, models, and data flow patterns.
 
 ## Table of Contents
 
@@ -14,7 +14,7 @@ This document provides a comprehensive overview of the data structures in the LM
 
 ## Architecture Overview
 
-The LMS Core system uses a **pure entity approach** with an **event-driven architecture** for data management. This design provides:
+The VerdoyLab system uses a **pure entity approach** with an **event-driven architecture** for data management. This design provides:
 
 - **Flexibility**: All entities stored in a single table with type-specific properties in JSONB
 - **Auditability**: Complete event history for all system changes
@@ -442,4 +442,4 @@ The system includes comprehensive sample data:
 - **Schema Migration**: Automated schema updates
 - **Custom Workflows**: User-defined process templates
 
-This data model provides a solid foundation for the LMS Core system, supporting current requirements while enabling future growth and evolution. 
+This data model provides a solid foundation for the VerdoyLab system, supporting current requirements while enabling future growth and evolution. 

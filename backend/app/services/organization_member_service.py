@@ -1,5 +1,5 @@
 """
-Organization Member Service for LMS Core API.
+Organization Member Service for VerdoyLab API.
 
 This module contains the OrganizationMemberService for managing
 organization membership and member operations.

@@ -1,5 +1,5 @@
 """
-Router package for the LMS Core API.
+Router package for the VerdoyLab API.
 
 This package contains all API route handlers organized by domain:
 - devices: Device management and IoT operations

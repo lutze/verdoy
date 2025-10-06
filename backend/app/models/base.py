@@ -1,5 +1,5 @@
 """
-Base model for all database models in the LMS Core API.
+Base model for all database models in the VerdoyLab API.
 
 This module provides the base model class with common fields and
 functionality that all models inherit from.

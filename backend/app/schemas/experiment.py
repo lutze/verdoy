@@ -1,5 +1,5 @@
 """
-Experiment schemas for the LMS Core API.
+Experiment schemas for the VerdoyLab API.
 
 This module defines Pydantic schemas for experiment data validation,
 serialization, and API responses.

@@ -130,7 +130,7 @@ from app.routers import (
 )
 
 app = FastAPI(
-    title="LMS Core API",
+    title="VerdoyLab API",
     description="IoT SaaS API for ESP32 device management",
     version="1.0.0"
 )

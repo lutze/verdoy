@@ -1,5 +1,5 @@
 """
-Helper functions for LMS Core API.
+Helper functions for VerdoyLab API.
 
 This module contains common utility functions used across the application
 for data processing, formatting, and general operations.

@@ -1,10 +1,10 @@
-# LMS Core API Exception Documentation
+# VerdoyLab API Exception Documentation
 
-This document provides a comprehensive overview of all custom exceptions used in the LMS Core API, including their HTTP status codes, default messages, and usage scenarios.
+This document provides a comprehensive overview of all custom exceptions used in the VerdoyLab API, including their HTTP status codes, default messages, and usage scenarios.
 
 ## 📊 Exception Overview
 
-The LMS Core API defines **28 custom exceptions** organized by HTTP status codes and functional categories.
+The VerdoyLab API defines **28 custom exceptions** organized by HTTP status codes and functional categories.
 
 ---
 
@@ -14,7 +14,7 @@ The LMS Core API defines **28 custom exceptions** organized by HTTP status codes
 - **Default Message**: `"An LMS error occurred"`
 - **Status Code**: 400
 - **Customizable**: Yes (detail and status_code)
-- **Usage**: Base exception for LMS Core API custom errors
+- **Usage**: Base exception for VerdoyLab API custom errors
 - **Example**:
   ```python
   raise LMSException("Custom error message")

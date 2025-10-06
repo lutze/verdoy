@@ -1,5 +1,5 @@
 """
-WebSocket middleware for LMS Core API.
+WebSocket middleware for VerdoyLab API.
 
 This module provides middleware for WebSocket connections,
 including connection management and authentication.

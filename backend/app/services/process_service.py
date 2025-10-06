@@ -1,5 +1,5 @@
 """
-Process service for the LMS Core system.
+Process service for the VerdoyLab system.
 
 This module provides business logic for process management, including
 process creation, updates, execution, and monitoring.

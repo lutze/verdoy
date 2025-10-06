@@ -1,5 +1,5 @@
 """
-Billing schemas for LMS Core API.
+Billing schemas for VerdoyLab API.
 
 This module contains Pydantic schemas for billing management,
 subscriptions, and payment processing.

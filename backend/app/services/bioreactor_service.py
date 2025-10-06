@@ -1,5 +1,5 @@
 """
-Bioreactor service for LMS Core API.
+Bioreactor service for VerdoyLab API.
 
 This module contains the BioreactorService class and related functionality
 for bioreactor business logic, CRUD operations, and safety management.

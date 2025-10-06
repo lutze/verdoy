@@ -1,5 +1,5 @@
 """
-Database configuration and session management for LMS Core API.
+Database configuration and session management for VerdoyLab API.
 
 This module handles database connections, session management, and
 initialization for the FastAPI application. Supports both PostgreSQL

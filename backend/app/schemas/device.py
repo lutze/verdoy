@@ -1,5 +1,5 @@
 """
-Device schemas for LMS Core API.
+Device schemas for VerdoyLab API.
 
 This module contains Pydantic schemas for device management,
 status updates, and health monitoring.

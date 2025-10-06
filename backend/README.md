@@ -1,10 +1,10 @@
-# LMS Core Backend API
+# VerdoyLab Backend API
 
 A modern, scalable IoT device management API built with FastAPI, designed for ESP32 device monitoring and control.
 
 ## 🏗️ Architecture Overview
 
-The LMS Core Backend follows a clean architecture pattern with clear separation of concerns:
+The VerdoyLab Backend follows a clean architecture pattern with clear separation of concerns:
 
 ```
 backend/
@@ -627,4 +627,4 @@ When requesting features, please include:
 
 ---
 
-**LMS Core Backend** - Modern IoT device management API built with FastAPI 
+**VerdoyLab Backend** - Modern IoT device management API built with FastAPI 

@@ -1,5 +1,5 @@
 """
-Core service tests for LMS Core API.
+Core service tests for VerdoyLab API.
 
 This package contains tests for:
 - AuthService: Authentication and user management

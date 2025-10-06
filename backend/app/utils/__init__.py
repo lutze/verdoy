@@ -1,5 +1,5 @@
 """
-Utility functions for LMS Core API.
+Utility functions for VerdoyLab API.
 
 This package contains common utility functions for data validation,
 export, and other helper functionality used across the application.

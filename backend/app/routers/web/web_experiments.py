@@ -1,5 +1,5 @@
 """
-Web experiment routes for the LMS Core API.
+Web experiment routes for the VerdoyLab API.
 
 This module provides HTML endpoints for experiment management
 in the web interface, including list, create, edit, and detail views.

@@ -1,5 +1,5 @@
 """
-Dependency injection for LMS Core API.
+Dependency injection for VerdoyLab API.
 
 This module provides dependency injection functions for database sessions,
 authentication, and other common dependencies used across the application.

@@ -1,5 +1,5 @@
 """
-Process models for the LMS Core system.
+Process models for the VerdoyLab system.
 
 This module defines the Process and ProcessInstance models that handle
 process definitions, templates, and execution instances.

@@ -1,5 +1,5 @@
 """
-Pytest configuration and fixtures for LMS Core API tests.
+Pytest configuration and fixtures for VerdoyLab API tests.
 
 This module provides shared fixtures and configuration for all test modules.
 """
@@ -77,7 +77,7 @@ def test_app():
         yield
         
     app = FastAPI(
-        title="LMS Core API - Test",
+        title="VerdoyLab API - Test",
         version="1.0.0",
         lifespan=test_lifespan
     )

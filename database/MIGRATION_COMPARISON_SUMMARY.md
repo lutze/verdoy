@@ -84,3 +84,4 @@ Old System:  21 migrations, 28 errors ⚠️
 *Comparison completed: $(date)*
 *Full report: `MIGRATION_COMPARISON_REPORT.md`*
 *Export files: `database/exports/`*
+

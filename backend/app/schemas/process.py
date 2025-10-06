@@ -1,5 +1,5 @@
 """
-Process schemas for the LMS Core system.
+Process schemas for the VerdoyLab system.
 
 This module defines Pydantic schemas for Process and ProcessInstance models,
 including validation rules and serialization formats.

@@ -1,4 +1,4 @@
-# LMS Core Platform - Mental Models & Information Architecture
+# VerdoyLab Platform - Mental Models & Information Architecture
 
 ## 🏗️ Core Entity Hierarchy
 

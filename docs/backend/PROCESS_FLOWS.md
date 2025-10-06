@@ -1,7 +1,7 @@
 # Process Flows: User & Organization Management
 
 ## Overview
-This document outlines the process flows for user creation, organization creation, user authentication, and user permissions in the LMS Core system. The design follows a single-table inheritance model where all entities (users, organizations, devices, etc.) are stored in the `entities` table with polymorphic identities.
+This document outlines the process flows for user creation, organization creation, user authentication, and user permissions in the VerdoyLab system. The design follows a single-table inheritance model where all entities (users, organizations, devices, etc.) are stored in the `entities` table with polymorphic identities.
 
 ## Key Design Principles
 

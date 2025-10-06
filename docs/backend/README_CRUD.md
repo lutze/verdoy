@@ -1,6 +1,6 @@
 # CRUD Operations Implementation
 
-This document describes the CRUD (Create, Read, Update, Delete) operations implemented for the LMS Core API.
+This document describes the CRUD (Create, Read, Update, Delete) operations implemented for the VerdoyLab API.
 
 ## Overview
 

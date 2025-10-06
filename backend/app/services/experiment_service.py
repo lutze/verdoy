@@ -1,5 +1,5 @@
 """
-Experiment service for the LMS Core API.
+Experiment service for the VerdoyLab API.
 
 This module provides business logic for experiment management,
 including CRUD operations, validation, and integration with

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the comprehensive testing strategy for the LMS Core API, covering all endpoints across all domains.
+This document outlines the comprehensive testing strategy for the VerdoyLab API, covering all endpoints across all domains.
 
 ## Testing Pyramid
 

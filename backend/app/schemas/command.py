@@ -1,5 +1,5 @@
 """
-Command schemas for LMS Core API.
+Command schemas for VerdoyLab API.
 
 This module contains Pydantic schemas for device command management,
 execution tracking, and command history.

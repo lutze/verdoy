@@ -1,5 +1,5 @@
 """
-Membership Removal Service for LMS Core API.
+Membership Removal Service for VerdoyLab API.
 
 This module contains the MembershipRemovalService for managing
 membership removal requests and approval workflows.

@@ -1,5 +1,5 @@
 """
-Organization schemas for LMS Core API.
+Organization schemas for VerdoyLab API.
 
 This module contains Pydantic schemas for organization management,
 membership, and settings.

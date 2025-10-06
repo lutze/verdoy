@@ -1,5 +1,5 @@
 """
-Alert schemas for LMS Core API.
+Alert schemas for VerdoyLab API.
 
 This module contains Pydantic schemas for alert management,
 alert rules, and notification handling.

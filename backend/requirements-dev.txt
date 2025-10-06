@@ -1,4 +1,4 @@
-# Development Dependencies for LMS Core Backend
+# Development Dependencies for VerdoyLab Backend
 # This file contains dependencies needed for development, testing, and code quality
 
 # Core development dependencies

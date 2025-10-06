@@ -1,5 +1,5 @@
 """
-Shared templates configuration for the LMS Core API.
+Shared templates configuration for the VerdoyLab API.
 
 This module provides a centralized Jinja2Templates instance with custom filters
 that can be imported and used consistently across all routers.

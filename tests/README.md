@@ -1,6 +1,6 @@
 # Frontend Testing with Playwright
 
-This directory contains frontend smoke tests for the LMS Core platform using Playwright.
+This directory contains frontend smoke tests for the VerdoyLab platform using Playwright.
 
 ## Overview
 

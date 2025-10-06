@@ -1,5 +1,5 @@
 """
-Service layer package for the LMS Core API.
+Service layer package for the VerdoyLab API.
 
 This package contains all business logic services organized by domain:
 - auth: Authentication and user management business logic

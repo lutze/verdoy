@@ -1,5 +1,5 @@
 """
-LMS Core API Application Package
+VerdoyLab API Application Package
 
 This package contains the main FastAPI application with all its components:
 - Configuration management
@@ -10,4 +10,4 @@ This package contains the main FastAPI application with all its components:
 """
 
 __version__ = "1.0.0"
-__author__ = "LMS Core Team" 
+__author__ = "VerdoyLab Team" 

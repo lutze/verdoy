@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the frontend testing strategy for the LMS Core platform, focusing on Playwright-based smoke tests for all major user-facing pages and components. The goal is to ensure robust, reliable, and maintainable quality assurance for the HTML-first, progressively enhanced frontend described in [FRONTEND_PLAN.md](../FRONTEND_PLAN.md).
+This document outlines the frontend testing strategy for the VerdoyLab platform, focusing on Playwright-based smoke tests for all major user-facing pages and components. The goal is to ensure robust, reliable, and maintainable quality assurance for the HTML-first, progressively enhanced frontend described in [FRONTEND_PLAN.md](../FRONTEND_PLAN.md).
 
 ---
 

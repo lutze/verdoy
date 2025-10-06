@@ -1,5 +1,5 @@
 """
-Event model for LMS Core API.
+Event model for VerdoyLab API.
 
 This module defines the Event model which represents system events
 and stores event data in the data JSON column.

@@ -1,5 +1,5 @@
 """
-Organization model for LMS Core API.
+Organization model for VerdoyLab API.
 
 This module contains the Organization model and related functionality
 for multi-tenant organization management.

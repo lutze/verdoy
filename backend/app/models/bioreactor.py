@@ -1,5 +1,5 @@
 """
-Bioreactor model for LMS Core API.
+Bioreactor model for VerdoyLab API.
 
 This module contains the Bioreactor model and related functionality
 for bioreactor management and control.

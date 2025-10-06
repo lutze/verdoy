@@ -7,7 +7,7 @@ test.describe('Authentication Pages', () => {
       await page.goto('/app/login');
       
       // Check that the page loads successfully
-      await expect(page).toHaveTitle(/Login|LMS Core/);
+      await expect(page).toHaveTitle(/Login|VerdoyLab/);
       
       // Check for login form elements
       await expect(page.locator('form')).toBeVisible();
@@ -74,7 +74,7 @@ test.describe('Authentication Pages', () => {
       await page.goto('/app/register');
       
       // Check that the page loads successfully
-      await expect(page).toHaveTitle(/Register|Sign Up|LMS Core/);
+      await expect(page).toHaveTitle(/Register|Sign Up|VerdoyLab/);
       
       // Check for registration form elements
       await expect(page.locator('form')).toBeVisible();

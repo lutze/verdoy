@@ -1,5 +1,5 @@
 """
-Base schemas for LMS Core API.
+Base schemas for VerdoyLab API.
 
 This module contains base Pydantic schemas that are shared
 across all domains and functionality.

@@ -1,5 +1,5 @@
 """
-Bioreactor schemas for LMS Core API.
+Bioreactor schemas for VerdoyLab API.
 
 This module contains Pydantic schemas for bioreactor operations
 including creation, updates, responses, and specialized operations.

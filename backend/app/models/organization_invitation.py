@@ -1,5 +1,5 @@
 """
-Organization Invitation model for LMS Core API.
+Organization Invitation model for VerdoyLab API.
 
 This module contains the OrganizationInvitation model for managing
 organization invitations and acceptance workflows.

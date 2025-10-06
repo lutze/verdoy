@@ -1,5 +1,5 @@
 """
-LMS Core API - Main Application Entry Point
+VerdoyLab API - Main Application Entry Point
 
 This is the main FastAPI application that orchestrates all components:
 - Configuration management
@@ -81,7 +81,7 @@ async def lifespan(app: FastAPI):
     - Graceful shutdown procedures
     """
     # Startup operations
-    logger.info("Starting up LMS Core API...")
+    logger.info("Starting up VerdoyLab API...")
     startup_time = datetime.utcnow()
     
     try:
@@ -121,7 +121,7 @@ async def lifespan(app: FastAPI):
     yield
     
     # Shutdown operations
-    logger.info("Shutting down LMS Core API...")
+    logger.info("Shutting down VerdoyLab API...")
     shutdown_time = datetime.utcnow()
     
     try:
@@ -140,7 +140,7 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI application instance
 app = FastAPI(
-    title="LMS Core API",
+    title="VerdoyLab API",
     description="""
     IoT SaaS API for ESP32 device management and monitoring.
     
@@ -277,7 +277,7 @@ def read_root():
         API information and status
     """
     return {
-        "message": "LMS Core API",
+        "message": "VerdoyLab API",
         "version": "1.0.0",
         "status": "running",
         "architecture": "clean-architecture",
@@ -410,7 +410,7 @@ async def startup_event():
     
     Logs startup information and validates critical components.
     """
-    logger.info("LMS Core API startup event triggered")
+    logger.info("VerdoyLab API startup event triggered")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"Debug mode: {settings.DEBUG}")
     logger.info(f"Database URL: {settings.database_url.split('@')[1] if '@' in settings.database_url else 'configured'}")
@@ -428,7 +428,7 @@ async def shutdown_event():
     
     Performs cleanup operations and logs shutdown information.
     """
-    logger.info("LMS Core API shutdown event triggered")
+    logger.info("VerdoyLab API shutdown event triggered")
     
     # TODO: Add shutdown cleanup
     # - Close database connections

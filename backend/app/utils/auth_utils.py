@@ -1,5 +1,5 @@
 """
-Authentication utilities for LMS Core API.
+Authentication utilities for VerdoyLab API.
 
 This module contains utility functions for authentication operations
 that are used across the application to avoid circular imports.
@@ -57,7 +57,17 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     Returns:
         True if password matches, False otherwise
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except ValueError as e:
+        if "password cannot be longer than 72 bytes" in str(e):
+            # This is a passlib bug detection issue, try with raw bcrypt
+            import bcrypt
+            try:
+                return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+            except Exception:
+                return False
+        raise
 
 
 def get_password_hash(password: str) -> str:
@@ -69,7 +79,12 @@ def get_password_hash(password: str) -> str:
         
     Returns:
         Hashed password string
+        
+    Raises:
+        ValueError: If password is longer than 72 bytes
     """
+    if len(password.encode('utf-8')) > 72:
+        raise ValueError("Password cannot be longer than 72 bytes")
     return pwd_context.hash(password)
 
 

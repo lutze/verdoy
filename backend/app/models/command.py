@@ -1,5 +1,5 @@
 """
-Command model for LMS Core API.
+Command model for VerdoyLab API.
 
 This module contains the Command model and related functionality
 for device command management and control.

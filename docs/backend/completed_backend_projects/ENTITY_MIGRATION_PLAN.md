@@ -32,7 +32,7 @@ The entity migration from hybrid to pure entity approach has been **successfully
 
 ## Overview
 
-This plan migrates the LMS Core system from a hybrid approach (separate tables for projects, users) to a pure entity approach where all entities are stored in the `entities` table with specialized fields in the `properties` JSONB column.
+This plan migrates the VerdoyLab system from a hybrid approach (separate tables for projects, users) to a pure entity approach where all entities are stored in the `entities` table with specialized fields in the `properties` JSONB column.
 
 ## Current State Analysis
 
@@ -463,7 +463,7 @@ class Project(Entity):
 
 ```python
 """
-User model for LMS Core API.
+User model for VerdoyLab API.
 
 This module contains the User model and related functionality
 for user authentication and management.
@@ -1066,7 +1066,7 @@ def test_create_project_pure_entity(db: Session, sample_organization: Organizati
 
 ## Overview
 
-The LMS Core API now uses a pure entity approach where all entities (users, projects, organizations, devices) are stored in the `entities` table with specialized fields in the `properties` JSONB column.
+The VerdoyLab API now uses a pure entity approach where all entities (users, projects, organizations, devices) are stored in the `entities` table with specialized fields in the `properties` JSONB column.
 
 ## Entity Types
 
@@ -1287,4 +1287,4 @@ CREATE INDEX IF NOT EXISTS idx_entities_active ON entities(entity_type, organiza
 
 This migration plan provides a comprehensive roadmap for transitioning from the hybrid approach to the pure entity approach. The plan ensures data integrity, maintains backward compatibility, and provides a clear path for team adoption.
 
-The pure entity approach will provide significant benefits in terms of consistency, flexibility, and maintainability, making the LMS Core system more robust and easier to extend in the future. 
+The pure entity approach will provide significant benefits in terms of consistency, flexibility, and maintainability, making the VerdoyLab system more robust and easier to extend in the future. 

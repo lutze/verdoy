@@ -1,6 +1,6 @@
 # Database Migrations
 
-This directory contains the database migrations for the LMS Core system.
+This directory contains the database migrations for the VerdoyLab system.
 
 ## Migration Order
 

@@ -1,5 +1,5 @@
 """
-Entity model for LMS Core API.
+Entity model for VerdoyLab API.
 
 This module defines the Entity model which represents generic entities
 in the system with flexible properties stored as JSON.

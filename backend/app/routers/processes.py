@@ -1,5 +1,5 @@
 """
-Process router for the LMS Core system.
+Process router for the VerdoyLab system.
 
 This module provides API and web endpoints for process management,
 including process creation, updates, execution, and monitoring.

@@ -1,5 +1,5 @@
 """
-Middleware package for LMS Core API.
+Middleware package for VerdoyLab API.
 
 This package contains custom middleware for CORS, logging,
 WebSocket handling, and other cross-cutting concerns.

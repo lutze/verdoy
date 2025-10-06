@@ -1,5 +1,5 @@
 """
-CORS middleware configuration for LMS Core API.
+CORS middleware configuration for VerdoyLab API.
 
 This module handles Cross-Origin Resource Sharing (CORS) configuration
 for the FastAPI application.

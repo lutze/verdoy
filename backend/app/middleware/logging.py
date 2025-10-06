@@ -1,5 +1,5 @@
 """
-Logging middleware for LMS Core API.
+Logging middleware for VerdoyLab API.
 
 This module provides middleware for logging HTTP requests and responses,
 including performance metrics and error tracking.

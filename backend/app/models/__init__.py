@@ -1,5 +1,5 @@
 """
-Database models for LMS Core API.
+Database models for VerdoyLab API.
 
 This package contains all SQLAlchemy models for the application,
 organized by domain and functionality.

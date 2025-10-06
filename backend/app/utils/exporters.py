@@ -1,5 +1,5 @@
 """
-Data export utilities for LMS Core API.
+Data export utilities for VerdoyLab API.
 
 This module provides functions for exporting data in various formats
 including CSV, JSON, and Excel.

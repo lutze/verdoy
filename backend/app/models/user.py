@@ -1,5 +1,5 @@
 """
-User model for LMS Core API.
+User model for VerdoyLab API.
 
 This module contains the User model and related functionality
 for user authentication and management.
@@ -94,7 +94,12 @@ class User(Entity):
             
         Returns:
             Hashed password
+            
+        Raises:
+            ValueError: If password is longer than 72 bytes
         """
+        if len(password.encode('utf-8')) > 72:
+            raise ValueError("Password cannot be longer than 72 bytes")
         return pwd_context.hash(password)
     
     @classmethod
@@ -109,7 +114,17 @@ class User(Entity):
         Returns:
             True if password matches, False otherwise
         """
-        return pwd_context.verify(plain_password, hashed_password)
+        try:
+            return pwd_context.verify(plain_password, hashed_password)
+        except ValueError as e:
+            if "password cannot be longer than 72 bytes" in str(e):
+                # This is a passlib bug detection issue, try with raw bcrypt
+                import bcrypt
+                try:
+                    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+                except Exception:
+                    return False
+            raise
     
     def check_password(self, plain_password: str) -> bool:
         """

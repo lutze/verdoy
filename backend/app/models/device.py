@@ -1,5 +1,5 @@
 """
-Device model for LMS Core API.
+Device model for VerdoyLab API.
 
 This module contains the Device model and related functionality
 for ESP32 device management and IoT operations.

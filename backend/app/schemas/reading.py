@@ -1,5 +1,5 @@
 """
-Reading schemas for LMS Core API.
+Reading schemas for VerdoyLab API.
 
 This module contains Pydantic schemas for sensor readings,
 data validation, and time-series data management.

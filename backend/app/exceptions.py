@@ -1,5 +1,5 @@
 """
-Custom exceptions for LMS Core API.
+Custom exceptions for VerdoyLab API.
 
 This module defines custom exceptions and exception handlers for
 consistent error handling across the application.
@@ -11,7 +11,7 @@ from fastapi.requests import Request
 
 
 class LMSException(HTTPException):
-    """Base exception for LMS Core API custom errors."""
+    """Base exception for VerdoyLab API custom errors."""
     def __init__(self, detail: str = "An LMS error occurred", status_code: int = status.HTTP_400_BAD_REQUEST):
         super().__init__(status_code=status_code, detail=detail)
 

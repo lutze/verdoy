@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Migration status checker for LMS Core database.
+Migration status checker for VerdoyLab database.
 Shows which migrations are applied, pending, or rolled back.
 """
 

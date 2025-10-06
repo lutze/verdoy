@@ -1,5 +1,5 @@
 """
-User schemas for LMS Core API.
+User schemas for VerdoyLab API.
 
 This module contains Pydantic schemas for user authentication,
 registration, and profile management.
@@ -25,6 +25,8 @@ class UserCreate(BaseModel):
         """Validate password strength."""
         if len(v) < 8:
             raise ValueError('Password must be at least 8 characters long')
+        if len(v.encode('utf-8')) > 72:
+            raise ValueError('Password cannot be longer than 72 bytes')
         return v
 
 
@@ -52,6 +54,8 @@ class PasswordChange(BaseModel):
         """Validate new password strength."""
         if len(v) < 8:
             raise ValueError('Password must be at least 8 characters long')
+        if len(v.encode('utf-8')) > 72:
+            raise ValueError('Password cannot be longer than 72 bytes')
         return v
 
 
@@ -75,6 +79,8 @@ class PasswordResetConfirm(BaseModel):
         """Validate new password strength."""
         if len(v) < 8:
             raise ValueError('Password must be at least 8 characters long')
+        if len(v.encode('utf-8')) > 72:
+            raise ValueError('Password cannot be longer than 72 bytes')
         return v
 
 

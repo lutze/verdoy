@@ -1,5 +1,5 @@
 """
-Configuration management for LMS Core API.
+Configuration management for VerdoyLab API.
 
 This module provides centralized configuration management using environment variables
 and Pydantic settings validation. It supports both development and production environments
@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     """
     
     # Application settings
-    app_name: str = "LMS Core API"
+    app_name: str = "VerdoyLab API"
     version: str = "1.0.0"
     debug: bool = Field(default=False, description="Enable debug mode")
     environment: str = Field(default="development", description="Environment (development, staging, production)")

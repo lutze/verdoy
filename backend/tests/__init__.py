@@ -1,5 +1,5 @@
 """
-Test suite for LMS Core API.
+Test suite for VerdoyLab API.
 
 This package contains comprehensive tests for:
 - Core services (AuthService, DeviceService, ReadingService)

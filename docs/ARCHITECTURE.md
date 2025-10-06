@@ -1,4 +1,4 @@
-# LMS Core Platform - Architectural Documentation
+# VerdoyLab Platform - Architectural Documentation
 
 ## 📋 Table of Contents
 
@@ -27,7 +27,7 @@
           └──────────────────────┼──────────────────────┘
                                  │
                     ┌─────────────▼─────────────┐
-                    │     LMS Core API          │
+                    │     VerdoyLab API          │
                     │    (FastAPI Backend)      │
                     └─────────────┬─────────────┘
                                   │
@@ -354,7 +354,7 @@ CREATE TABLE relationships (
 
 ### Dual Authentication System
 
-The LMS Core platform implements a sophisticated dual authentication system that supports both programmatic API clients and web browsers:
+The VerdoyLab platform implements a sophisticated dual authentication system that supports both programmatic API clients and web browsers:
 
 ```
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
@@ -522,7 +522,7 @@ class JSONType(TypeDecorator):
 
 ### Entity-Based Model Architecture
 
-The LMS Core platform has been enhanced with a robust Entity-based inheritance system that provides flexibility while maintaining data integrity:
+The VerdoyLab platform has been enhanced with a robust Entity-based inheritance system that provides flexibility while maintaining data integrity:
 
 ### Bioreactor Management Architecture
 
@@ -729,7 +729,7 @@ STEP_TYPES = [
 
 ### Entity-Based Model Architecture
 
-The LMS Core platform has been enhanced with a robust Entity-based inheritance system that provides flexibility while maintaining data integrity:
+The VerdoyLab platform has been enhanced with a robust Entity-based inheritance system that provides flexibility while maintaining data integrity:
 
 #### **Single-Table Inheritance Pattern**
 ```sql

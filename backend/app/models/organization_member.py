@@ -1,5 +1,5 @@
 """
-Organization Member model for LMS Core API.
+Organization Member model for VerdoyLab API.
 
 This module contains the OrganizationMember model for managing
 organization membership and roles.

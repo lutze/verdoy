@@ -1,5 +1,5 @@
 """
-Custom validators for LMS Core API.
+Custom validators for VerdoyLab API.
 
 This module contains custom validation functions for various data types
 used throughout the application.

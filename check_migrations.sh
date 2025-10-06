@@ -113,3 +113,4 @@ echo "   Reset database: docker compose down && docker compose up -d --build"
 echo "   View logs: docker logs lms-core-poc-backend-1"
 echo "   Access web: http://localhost:8000"
 echo ""
+

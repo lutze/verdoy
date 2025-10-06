@@ -1,5 +1,5 @@
 # Missing Exceptions Analysis
-# This file tracks all exceptions used across the LMS Core API codebase
+# This file tracks all exceptions used across the VerdoyLab API codebase
 
 ## EXCEPTIONS FOUND IN CODEBASE
 

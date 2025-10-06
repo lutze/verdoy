@@ -1,4 +1,4 @@
-# Consolidated To-Do List: LMS Core POC
+# Consolidated To-Do List: VerdoyLab POC
 
 ## 📊 **API ENDPOINT IMPLEMENTATION STATUS**
 

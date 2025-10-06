@@ -1,5 +1,5 @@
 """
-Alert model for LMS Core API.
+Alert model for VerdoyLab API.
 
 This module contains the Alert and AlertRule models and related functionality
 for managing alerts and alert rules.

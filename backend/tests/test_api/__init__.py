@@ -1,5 +1,5 @@
 """
-API endpoint tests for LMS Core API.
+API endpoint tests for VerdoyLab API.
 
 This package contains tests for:
 - Authentication endpoints

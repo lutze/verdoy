@@ -1,5 +1,5 @@
 """
-Reading model for LMS Core API.
+Reading model for VerdoyLab API.
 
 This module contains the Reading model and related functionality
 for storing and retrieving sensor data from ESP32 devices.
