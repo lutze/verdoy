@@ -6,3 +6,7 @@ When we plan work, use the Linear MCP connection to create, update and close tas
 If the tasks are part of a group of work, check for an existing Milestone that match the tasks. If a matching Milestone doesn't exist, create one before adding the tasks, and then add them inside it. Examples Milestones might be like "Phase 2: Frontend Templates" or "Phase 1 (Essential)". 
 
 All tasks for this repository go in the Linear project named "Verdoy".
+
+Use tags liberally to add semantic context to tickets and to enable future re-discovery.
+
+Once a task or sub-task's description is written, do not change it. Make updates in the ticket by adding comments only. 

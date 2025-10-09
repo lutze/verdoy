@@ -81,7 +81,7 @@ class AuthService(BaseService[User]):
                 description=f"User profile for {user_data.email}",
                 email=user_data.email,
                 hashed_password=User.hash_password(user_data.password),
-                is_superuser=user_data.is_superuser or False,
+                is_superuser=getattr(user_data, 'is_superuser', False),
                 organization_id=user_data.organization_id,
                 status="active"
             )

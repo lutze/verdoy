@@ -44,7 +44,7 @@
                             Process Name <span class="text-red-500">*</span>
                         </label>
                         <input type="text" id="name" name="name" required
-                               value="{{ form_data.name or process.name }}"
+                               value="{{ form_data.name or process.name or '' }}"
                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                placeholder="e.g., E. coli Fermentation Protocol">
                     </div>
@@ -54,7 +54,7 @@
                             Version <span class="text-red-500">*</span>
                         </label>
                         <input type="text" id="version" name="version" required
-                               value="{{ form_data.version or process.version }}"
+                               value="{{ form_data.version or process.version or '' }}"
                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                placeholder="e.g., 1.0.0">
                     </div>
@@ -68,7 +68,7 @@
                             <option value="">Select Process Type</option>
                             {% for process_type in process_types %}
                             <option value="{{ process_type }}" 
-                                    {% if form_data.process_type == process_type or process.process_type == process_type %}selected{% endif %}>
+                                    {% if form_data.process_type == process_type or (process.process_type and process.process_type == process_type) %}selected{% endif %}>
                                 {{ process_type.replace('_', ' ').title() }}
                             </option>
                             {% endfor %}
@@ -83,7 +83,7 @@
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                             {% for status in ['active', 'draft', 'inactive'] %}
                             <option value="{{ status }}" 
-                                    {% if form_data.status == status or process.status == status %}selected{% endif %}>
+                                    {% if form_data.status == status or (process.status and process.status == status) %}selected{% endif %}>
                                 {{ status.replace('_', ' ').title() }}
                             </option>
                             {% endfor %}
@@ -97,13 +97,13 @@
                     </label>
                     <textarea id="description" name="description" rows="3"
                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              placeholder="Describe the process, its purpose, and expected outcomes">{{ form_data.description or process.description or '' }}</textarea>
+                              placeholder="Describe the process, its purpose, and expected outcomes">{{ form_data.description or (process.description or '') }}</textarea>
                 </div>
                 
                 <div class="mt-6">
                     <label class="flex items-center">
                         <input type="checkbox" name="is_template" value="true"
-                               {% if form_data.is_template or process.is_template %}checked{% endif %}
+                               {% if form_data.is_template or (process.is_template and process.is_template) %}checked{% endif %}
                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                         <span class="ml-2 text-sm text-gray-700">Save as template for reuse</span>
                     </label>

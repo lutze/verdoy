@@ -99,17 +99,17 @@
                 </div>
             </div>
             
-            <div class="process-stats">
+                <div class="process-stats">
                 <div class="stat">
-                    <span class="stat-number">{{ process.step_count }}</span>
+                    <span class="stat-number">{{ process.step_count or 0 }}</span>
                     <span class="stat-label">Steps</span>
                 </div>
                 <div class="stat">
-                    <span class="stat-number">{{ process.version }}</span>
+                    <span class="stat-number">{{ process.version or 'N/A' }}</span>
                     <span class="stat-label">Version</span>
                 </div>
                 <div class="stat">
-                    <span class="stat-number">{{ process.process_type.replace('_', ' ').title() }}</span>
+                    <span class="stat-number">{{ (process.process_type or '').replace('_', ' ').title() }}</span>
                     <span class="stat-label">Type</span>
                 </div>
             </div>
@@ -117,12 +117,12 @@
             <div class="process-details">
                 <div class="detail-item">
                     <span class="detail-label">Type:</span>
-                    <span class="detail-value">{{ process.process_type.replace('_', ' ').title() }}</span>
+                    <span class="detail-value">{{ (process.process_type or '').replace('_', ' ').title() }}</span>
                 </div>
                 
                 <div class="detail-item">
                     <span class="detail-label">Version:</span>
-                    <span class="detail-value">{{ process.version }}</span>
+                    <span class="detail-value">{{ process.version or 'N/A' }}</span>
                 </div>
                 
                 {% if process.estimated_duration %}
@@ -134,7 +134,13 @@
                 
                 <div class="detail-item">
                     <span class="detail-label">Updated:</span>
-                    <span class="detail-value">{{ process.updated_at.strftime('%Y-%m-%d') if process.updated_at else 'N/A' }}</span>
+                    <span class="detail-value">
+                        {% if process.updated_at %}
+                            {{ process.updated_at.strftime('%Y-%m-%d') }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </span>
                 </div>
             </div>
             
@@ -187,10 +193,10 @@
                 <span class="template-badge-small">Template</span>
                 {% endif %}
             </div>
-            <div>{{ process.process_type.replace('_', ' ').title() }}</div>
-            <div><span class="status-{{ process.status }}">● {{ process.status.replace('_', ' ').title() }}</span></div>
-            <div>{{ process.step_count }}</div>
-            <div>{{ process.version }}</div>
+            <div>{{ (process.process_type or '').replace('_', ' ').title() }}</div>
+            <div><span class="status-{{ process.status }}">● {{ (process.status or '').replace('_', ' ').title() }}</span></div>
+            <div>{{ process.step_count or 0 }}</div>
+            <div>{{ process.version or 'N/A' }}</div>
             <div class="process-actions">
                 <a href="/app/processes/{{ process.id }}" class="action-btn" title="View">👁️</a>
                 <a href="/app/processes/{{ process.id }}/edit" class="action-btn" title="Edit">✏️</a>

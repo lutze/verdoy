@@ -48,9 +48,32 @@ TEST_DATABASE_URL = "sqlite:///./test.db"
 def test_engine():
     """Create a test database engine."""
     engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
-    Base.metadata.create_all(bind=engine)
+    
+    # Create only the tables we need for testing (exclude legacy models with JSONB)
+    # Import Base directly to avoid importing legacy models
+    from sqlalchemy.orm import declarative_base
+    TestBase = declarative_base()
+    
+    # Import only the models we need for testing
+    from app.models.entity import Entity
+    from app.models.user import User
+    from app.models.device import Device
+    from app.models.reading import Reading
+    from app.models.alert import Alert, AlertRule
+    from app.models.organization import Organization
+    from app.models.organization_member import OrganizationMember
+    from app.models.organization_invitation import OrganizationInvitation
+    from app.models.membership_removal_request import MembershipRemovalRequest
+    from app.models.billing import Billing, Subscription
+    from app.models.command import Command
+    from app.models.event import Event
+    from app.models.relationship import Relationship
+    
+    # Create tables for entity-based models only
+    TestBase.metadata.create_all(bind=engine)
+    
     yield engine
-    Base.metadata.drop_all(bind=engine)
+    TestBase.metadata.drop_all(bind=engine)
     # Clean up test database file
     try:
         os.remove("./test.db")
@@ -88,6 +111,7 @@ def test_app():
     from app.routers.commands import router as commands_router
     from app.routers.devices import router as devices_router
     from app.routers.readings import router as readings_router
+    from app.routers.processes import router as processes_router
     
     # Include routers for testing
     # Auth endpoints are now in app.routers.api.api_auth
@@ -98,6 +122,7 @@ def test_app():
     app.include_router(commands_router, prefix="/api/v1/commands")
     app.include_router(devices_router, prefix="/api/v1/devices")
     app.include_router(readings_router, prefix="/api/v1/readings")
+    app.include_router(processes_router, prefix="/api/v1/processes")
     from app.routers.api.api_organizations import router as api_organizations_router
     from app.routers.api.api_projects import router as api_projects_router
     app.include_router(api_organizations_router)
@@ -249,4 +274,10 @@ def sample_readings(reading_service, test_device) -> list:
 @pytest.fixture  
 def project_service(db_session) -> ProjectService:
     """Create ProjectService instance for testing."""
-    return ProjectService(db_session) 
+    return ProjectService(db_session)
+
+@pytest.fixture
+def process_service(db_session):
+    """Create ProcessServiceEntity instance for testing."""
+    from app.services.process_service_entity import ProcessServiceEntity
+    return ProcessServiceEntity(db_session) 
