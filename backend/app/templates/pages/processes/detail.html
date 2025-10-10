@@ -16,19 +16,19 @@
                         Processes
                     </a>
                 </div>
-                <h1 class="page-title">{{ process.name }}</h1>
-                {% if process.description %}
-                <p class="page-subtitle">{{ process.description }}</p>
+                <h1 class="page-title">{{ process.get_property('name', process.name) }}</h1>
+                {% if process.get_property('description') or process.description %}
+                <p class="page-subtitle">{{ process.get_property('description', process.description) }}</p>
                 {% endif %}
             </div>
             <div class="header-actions">
-                <div class="status-badge {% if process.status == 'active' %}active{% elif process.status == 'draft' %}draft{% else %}archived{% endif %}">
-                    {{ process.status|title }}
+                <div class="status-badge {% if process.get_property('status', 'draft') == 'active' %}active{% elif process.get_property('status', 'draft') == 'draft' %}draft{% else %}archived{% endif %}">
+                    {{ process.get_property('status', 'draft')|title }}
                 </div>
                 <a href="/app/processes/{{ process.id }}/edit" class="btn btn-secondary">
                     ✏️ Edit
                 </a>
-                {% if process.status != 'archived' %}
+                {% if process.get_property('status', 'draft') != 'archived' %}
                 <form method="POST" action="/app/processes/{{ process.id }}/archive" class="inline">
                     <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to archive this process?')">
                         🗑️ Archive
@@ -49,7 +49,7 @@
                 </svg>
             </div>
             <div class="stat-content">
-                <div class="stat-value">{{ (process.status or '').title() }}</div>
+                <div class="stat-value">{{ (process.get_property('status', 'draft') or '').title() }}</div>
                 <div class="stat-label">Status</div>
             </div>
         </div>
@@ -153,8 +153,8 @@
                             <div class="info-item">
                                 <span class="info-label">Status</span>
                                 <span class="info-value">
-                                    <span class="status-badge {% if process.status == 'active' %}active{% elif process.status == 'draft' %}draft{% else %}archived{% endif %}">
-                                        {{ (process.status or '').title() }}
+                                    <span class="status-badge {% if process.get_property('status', 'draft') == 'active' %}active{% elif process.get_property('status', 'draft') == 'draft' %}draft{% else %}archived{% endif %}">
+                                        {{ (process.get_property('status', 'draft') or '').title() }}
                                     </span>
                                 </span>
                             </div>

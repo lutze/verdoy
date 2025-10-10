@@ -16,14 +16,14 @@
                         Organizations
                     </a>
                 </div>
-                <h1 class="page-title">{{ organization.name }}</h1>
-                {% if organization.description %}
-                <p class="page-subtitle">{{ organization.description }}</p>
+                <h1 class="page-title">{{ organization.get_property('name', organization.name) }}</h1>
+                {% if organization.get_property('description') or organization.description %}
+                <p class="page-subtitle">{{ organization.get_property('description', organization.description) }}</p>
                 {% endif %}
             </div>
             <div class="header-actions">
-                <div class="status-badge {% if organization.status == 'active' %}active{% else %}inactive{% endif %}">
-                    {{ organization.status|title }}
+                <div class="status-badge {% if organization.get_property('status', 'active') == 'active' %}active{% else %}inactive{% endif %}">
+                    {{ organization.get_property('status', 'active')|title }}
                 </div>
                 <a href="/app/admin/organization/{{ organization.id }}/edit" class="btn btn-secondary">
                     ✏️ Edit
@@ -132,48 +132,48 @@
                         <div class="info-list">
                             <div class="info-item">
                                 <span class="info-label">Type</span>
-                                <span class="info-value">{{ organization.organization_type|replace('_', ' ')|title }}</span>
+                                <span class="info-value">{{ organization.get_property('organization_type', organization.organization_type)|replace('_', ' ')|title }}</span>
                             </div>
-                            {% if organization.contact_email %}
+                            {% if organization.get_property('contact_email') or organization.contact_email %}
                             <div class="info-item">
                                 <span class="info-label">Contact Email</span>
                                 <span class="info-value">
-                                    <a href="mailto:{{ organization.contact_email }}" class="link-primary">
-                                        {{ organization.contact_email }}
+                                    <a href="mailto:{{ organization.get_property('contact_email', organization.contact_email) }}" class="link-primary">
+                                        {{ organization.get_property('contact_email', organization.contact_email) }}
                                     </a>
                                 </span>
                             </div>
                             {% endif %}
-                            {% if organization.website %}
+                            {% if organization.get_property('website') or organization.website %}
                             <div class="info-item">
                                 <span class="info-label">Website</span>
                                 <span class="info-value">
-                                    <a href="{{ organization.website }}" target="_blank" class="link-primary">
-                                        {{ organization.website }}
+                                    <a href="{{ organization.get_property('website', organization.website) }}" target="_blank" class="link-primary">
+                                        {{ organization.get_property('website', organization.website) }}
                                     </a>
                                 </span>
                             </div>
                             {% endif %}
-                            {% if organization.timezone %}
+                            {% if organization.get_property('timezone') or organization.timezone %}
                             <div class="info-item">
                                 <span class="info-label">Timezone</span>
-                                <span class="info-value">{{ organization.timezone }}</span>
+                                <span class="info-value">{{ organization.get_property('timezone', organization.timezone) }}</span>
                             </div>
                             {% endif %}
                         </div>
                     </div>
 
                     <!-- Address -->
-                    {% if organization.address or organization.city or organization.country %}
+                    {% if organization.get_property('address') or organization.address or organization.get_property('city') or organization.city or organization.get_property('country') or organization.country %}
                     <div class="info-card">
                         <h3 class="card-title">Address</h3>
                         <div class="address-content">
-                            {% if organization.address %}{{ organization.address }}<br>{% endif %}
-                            {% if organization.city or organization.state %}
-                                {% if organization.city %}{{ organization.city }}{% endif %}{% if organization.city and organization.state %}, {% endif %}{% if organization.state %}{{ organization.state }}{% endif %}<br>
+                            {% if organization.get_property('address') or organization.address %}{{ organization.get_property('address', organization.address) }}<br>{% endif %}
+                            {% if organization.get_property('city') or organization.city or organization.get_property('state') or organization.state %}
+                                {% if organization.get_property('city') or organization.city %}{{ organization.get_property('city', organization.city) }}{% endif %}{% if (organization.get_property('city') or organization.city) and (organization.get_property('state') or organization.state) %}, {% endif %}{% if organization.get_property('state') or organization.state %}{{ organization.get_property('state', organization.state) }}{% endif %}<br>
                             {% endif %}
-                            {% if organization.postal_code %}{{ organization.postal_code }}<br>{% endif %}
-                            {% if organization.country %}{{ organization.country }}{% endif %}
+                            {% if organization.get_property('postal_code') or organization.postal_code %}{{ organization.get_property('postal_code', organization.postal_code) }}<br>{% endif %}
+                            {% if organization.get_property('country') or organization.country %}{{ organization.get_property('country', organization.country) }}{% endif %}
                         </div>
                     </div>
                     {% endif %}
@@ -320,16 +320,16 @@
                         <div class="settings-form">
                             <div class="form-group">
                                 <label class="form-label">Organization Name</label>
-                                <input type="text" value="{{ organization.name }}" class="form-input">
+                                <input type="text" value="{{ organization.get_property('name', organization.name) }}" class="form-input">
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Timezone</label>
                                 <select class="form-select">
-                                    <option value="UTC" {% if organization.timezone == 'UTC' %}selected{% endif %}>UTC</option>
-                                    <option value="America/New_York" {% if organization.timezone == 'America/New_York' %}selected{% endif %}>Eastern Time</option>
-                                    <option value="America/Chicago" {% if organization.timezone == 'America/Chicago' %}selected{% endif %}>Central Time</option>
-                                    <option value="America/Denver" {% if organization.timezone == 'America/Denver' %}selected{% endif %}>Mountain Time</option>
-                                    <option value="America/Los_Angeles" {% if organization.timezone == 'America/Los_Angeles' %}selected{% endif %}>Pacific Time</option>
+                                    <option value="UTC" {% if organization.get_property('timezone', organization.timezone) == 'UTC' %}selected{% endif %}>UTC</option>
+                                    <option value="America/New_York" {% if organization.get_property('timezone', organization.timezone) == 'America/New_York' %}selected{% endif %}>Eastern Time</option>
+                                    <option value="America/Chicago" {% if organization.get_property('timezone', organization.timezone) == 'America/Chicago' %}selected{% endif %}>Central Time</option>
+                                    <option value="America/Denver" {% if organization.get_property('timezone', organization.timezone) == 'America/Denver' %}selected{% endif %}>Mountain Time</option>
+                                    <option value="America/Los_Angeles" {% if organization.get_property('timezone', organization.timezone) == 'America/Los_Angeles' %}selected{% endif %}>Pacific Time</option>
                                 </select>
                             </div>
                         </div>
@@ -404,7 +404,7 @@ document.querySelectorAll('.tab-button').forEach(button => {
 
 // Confirm organization deletion
 function confirmDelete() {
-    const orgName = "{{ organization.name }}";
+    const orgName = "{{ organization.get_property('name', organization.name) }}";
     const confirmation = prompt(`To delete this organization, please type "delete" to confirm.\n\nWarning: This will permanently delete "${orgName}" and all associated data.`);
     
     if (confirmation && confirmation.toLowerCase() === 'delete') {

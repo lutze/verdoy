@@ -107,11 +107,11 @@ async def register_user(
         })
     # Handle organization creation/assignment as in original logic
     from ...schemas.user import UserCreate
-    from ...services.organization_service import OrganizationService
+    from ...services.organization_service_entity import OrganizationServiceEntity
     from ...schemas.organization import OrganizationCreate
     import uuid
     auth_service = AuthService(db)
-    org_service = OrganizationService(db)
+    org_service = OrganizationServiceEntity(db)
     org_id = None
     if organization_id and organization_id != "create_new":
         try:
@@ -181,16 +181,16 @@ async def profile_page(
     db: Session = Depends(get_db)
 ):
     """Display user profile page for web browsers."""
-    from ...services.organization_service import OrganizationService
+    from ...services.organization_service_entity import OrganizationServiceEntity
     
     # Get user's current organization
     organization = None
     if current_user.organization_id:
-        org_service = OrganizationService(db)
+        org_service = OrganizationServiceEntity(db)
         organization = org_service.get_by_id(current_user.organization_id)
     
     # Get all available organizations for the dropdown
-    org_service = OrganizationService(db)
+    org_service = OrganizationServiceEntity(db)
     organizations = org_service.get_all_organizations()
     
     return templates.TemplateResponse("pages/auth/profile.html", {
@@ -216,12 +216,12 @@ async def update_profile(
 ):
     """Update user profile including organization membership."""
     from ...services.auth_service import AuthService
-    from ...services.organization_service import OrganizationService
+    from ...services.organization_service_entity import OrganizationServiceEntity
     from ...schemas.user import UserUpdate
     import uuid
     
     auth_service = AuthService(db)
-    org_service = OrganizationService(db)
+    org_service = OrganizationServiceEntity(db)
     
     try:
         # Parse organization_id if provided

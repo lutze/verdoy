@@ -12,7 +12,7 @@ from uuid import UUID
 from ...dependencies import get_db, get_web_user
 from ...models.user import User
 from ...services.project_service import ProjectService
-from ...services.organization_service import OrganizationService
+from ...services.organization_service_entity import OrganizationServiceEntity
 from ...schemas.project import ProjectCreate, ProjectUpdate
 from ...templates_config import templates
 
@@ -30,7 +30,7 @@ async def list_projects_page(
 ):
     """List projects page for web interface (HTML only)."""
     project_service = ProjectService(db)
-    org_service = OrganizationService(db)
+    org_service = OrganizationServiceEntity(db)
     user_organizations = org_service.get_user_organizations(current_user.id)
     
     # Get projects based on filters
@@ -78,7 +78,7 @@ async def project_create_page(
     current_user: User = Depends(get_web_user),
     db: Session = Depends(get_db)
 ):
-    org_service = OrganizationService(db)
+    org_service = OrganizationServiceEntity(db)
     organizations = org_service.get_user_organizations(current_user.id)
     return templates.TemplateResponse(
         "pages/projects/create.html",
@@ -98,7 +98,7 @@ async def project_detail_page(
     db: Session = Depends(get_db)
 ):
     project_service = ProjectService(db)
-    org_service = OrganizationService(db)
+    org_service = OrganizationServiceEntity(db)
     
     project = project_service.get_by_id(project_id)
     if not project:
@@ -169,7 +169,7 @@ async def project_create(
     logger.info(f"  priority: {priority}")
     
     project_service = ProjectService(db)
-    org_service = OrganizationService(db)
+    org_service = OrganizationServiceEntity(db)
     
     # Parse form data
     form_data = {

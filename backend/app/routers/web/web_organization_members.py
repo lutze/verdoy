@@ -37,8 +37,8 @@ async def organization_members_page(
         removal_service = MembershipRemovalService(db)
         
         # Get organization details
-        from ...services.organization_service import OrganizationService
-        org_service = OrganizationService(db)
+        from ...services.organization_service_entity import OrganizationServiceEntity
+        org_service = OrganizationServiceEntity(db)
         organization = org_service.get_by_id(organization_id)
         if not organization:
             raise HTTPException(status_code=404, detail="Organization not found")
@@ -287,8 +287,8 @@ async def invitation_page(
             raise HTTPException(status_code=403, detail="This invitation is not for you")
         
         # Get organization details
-        from ...services.organization_service import OrganizationService
-        org_service = OrganizationService(db)
+        from ...services.organization_service_entity import OrganizationServiceEntity
+        org_service = OrganizationServiceEntity(db)
         organization = org_service.get_by_id(invitation.organization_id)
         
         return templates.TemplateResponse(

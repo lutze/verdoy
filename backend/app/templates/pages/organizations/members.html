@@ -8,7 +8,7 @@
     <div class="page-header">
         <div class="page-header-content">
             <div class="header-titles">
-                <h1 class="page-title">{{ organization.name }} - Members</h1>
+                <h1 class="page-title">{{ organization.get_property('name', organization.name) }} - Members</h1>
                 <p class="page-subtitle">Manage organization members and invitations</p>
             </div>
             <div class="header-actions">

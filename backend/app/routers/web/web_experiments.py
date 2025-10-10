@@ -13,11 +13,11 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from ...dependencies import get_db, get_current_user, get_optional_user
-from ...services.experiment_service import ExperimentService
+from ...services.experiment_service_entity import ExperimentServiceEntity
 from ...services.project_service import ProjectService
-from ...services.process_service import ProcessService
+from ...services.process_service_entity import ProcessServiceEntity
 from ...services.bioreactor_service import BioreactorService
-from ...services.organization_service import OrganizationService
+from ...services.organization_service_entity import OrganizationServiceEntity
 from ...schemas.experiment import (
     ExperimentCreate, ExperimentUpdate, ExperimentFilterRequest,
     ExperimentControlRequest, ExperimentStatsResponse
@@ -31,7 +31,7 @@ router = APIRouter(prefix="/app/experiments", tags=["experiments"])
 
 def get_user_organization_id(db: Session, user: User) -> Optional[UUID]:
     """Get the user's primary organization ID."""
-    org_service = OrganizationService(db)
+    org_service = OrganizationServiceEntity(db)
     user_organizations = org_service.get_user_organizations(user.id)
     if user_organizations:
         return user_organizations[0].id
@@ -59,7 +59,7 @@ async def experiment_list_page(
             return RedirectResponse(url="/app/login", status_code=302)
         
         # Get user's organizations
-        org_service = OrganizationService(db)
+        org_service = OrganizationServiceEntity(db)
         user_organizations = org_service.get_user_organizations(current_user.id)
         if not user_organizations:
             return templates.TemplateResponse(
@@ -86,14 +86,14 @@ async def experiment_list_page(
         )
         
         # Get experiments
-        experiment_service = ExperimentService(db)
+        experiment_service = ExperimentServiceEntity(db)
         experiments, total_count = experiment_service.get_user_accessible_experiments(
             current_user.id, filters
         )
         
         # Get related data for display
         project_service = ProjectService(db)
-        process_service = ProcessService(db)
+        process_service = ProcessServiceEntity(db)
         bioreactor_service = BioreactorService(db)
         
         # Get projects, processes, and bioreactors for filters
@@ -149,7 +149,7 @@ async def experiment_create_page(
             return RedirectResponse(url="/app/login", status_code=302)
         
         # Get user's organizations
-        org_service = OrganizationService(db)
+        org_service = OrganizationServiceEntity(db)
         user_organizations = org_service.get_user_organizations(current_user.id)
         if not user_organizations:
             return templates.TemplateResponse(
@@ -166,7 +166,7 @@ async def experiment_create_page(
         
         # Get available projects, processes, and bioreactors
         project_service = ProjectService(db)
-        process_service = ProcessService(db)
+        process_service = ProcessServiceEntity(db)
         bioreactor_service = BioreactorService(db)
         
         projects = project_service.get_projects_by_organization(organization_id)
@@ -219,7 +219,7 @@ async def experiment_create_post(
         templates = get_templates()
         
         # Get user's organizations
-        org_service = OrganizationService(db)
+        org_service = OrganizationServiceEntity(db)
         user_organizations = org_service.get_user_organizations(current_user.id)
         if not user_organizations:
             return templates.TemplateResponse(
@@ -264,7 +264,7 @@ async def experiment_create_post(
         if errors:
             # Get available data for form re-population
             project_service = ProjectService(db)
-            process_service = ProcessService(db)
+            process_service = ProcessServiceEntity(db)
             bioreactor_service = BioreactorService(db)
             
             projects = project_service.get_projects_by_organization(organization_id)
@@ -286,7 +286,7 @@ async def experiment_create_post(
             )
         
         # Create experiment
-        experiment_service = ExperimentService(db)
+        experiment_service = ExperimentServiceEntity(db)
         experiment_data = ExperimentCreate(
             name=name.strip(),
             description=description.strip() if description else None,
@@ -298,7 +298,7 @@ async def experiment_create_post(
             metadata={}     # Will be configured in next step
         )
         
-        experiment = experiment_service.create_experiment(experiment_data, current_user.id)
+        experiment = experiment_service.create_experiment(experiment_data, current_user)
         
         # Redirect to experiment detail page
         return RedirectResponse(
@@ -309,7 +309,7 @@ async def experiment_create_post(
     except HTTPException as e:
         # Get available data for form re-population
         project_service = ProjectService(db)
-        process_service = ProcessService(db)
+        process_service = ProcessServiceEntity(db)
         bioreactor_service = BioreactorService(db)
         
         projects = project_service.get_projects_by_organization(organization_id)
@@ -357,7 +357,7 @@ async def experiment_detail_page(
             return RedirectResponse(url="/app/login", status_code=302)
         
         # Get experiment
-        experiment_service = ExperimentService(db)
+        experiment_service = ExperimentServiceEntity(db)
         experiment = experiment_service.get_experiment_by_id(experiment_id)
         
         if not experiment:
@@ -386,7 +386,7 @@ async def experiment_detail_page(
         
         # Get related data
         project_service = ProjectService(db)
-        process_service = ProcessService(db)
+        process_service = ProcessServiceEntity(db)
         bioreactor_service = BioreactorService(db)
         
         project = project_service.get_by_id(experiment.project_id) if experiment.project_id else None
@@ -437,7 +437,7 @@ async def experiment_edit_page(
             return RedirectResponse(url="/app/login", status_code=302)
         
         # Get experiment
-        experiment_service = ExperimentService(db)
+        experiment_service = ExperimentServiceEntity(db)
         experiment = experiment_service.get_experiment_by_id(experiment_id)
         
         if not experiment:
@@ -478,7 +478,7 @@ async def experiment_edit_page(
         
         # Get available projects, processes, and bioreactors
         project_service = ProjectService(db)
-        process_service = ProcessService(db)
+        process_service = ProcessServiceEntity(db)
         bioreactor_service = BioreactorService(db)
         
         organization_id = get_user_organization_id(db, current_user)
@@ -538,7 +538,7 @@ async def experiment_edit_post(
         templates = get_templates()
         
         # Get experiment
-        experiment_service = ExperimentService(db)
+        experiment_service = ExperimentServiceEntity(db)
         experiment = experiment_service.get_experiment_by_id(experiment_id)
         
         if not experiment:
@@ -594,7 +594,7 @@ async def experiment_edit_post(
         if errors:
             # Get available data for form re-population
             project_service = ProjectService(db)
-            process_service = ProcessService(db)
+            process_service = ProcessServiceEntity(db)
             bioreactor_service = BioreactorService(db)
             
             organization_id = get_user_organization_id(db, current_user)
@@ -624,7 +624,7 @@ async def experiment_edit_post(
         )
         
         updated_experiment = experiment_service.update_experiment(
-            experiment_id, experiment_data, current_user.id
+            experiment_id, experiment_data, current_user
         )
         
         if not updated_experiment:
@@ -647,7 +647,7 @@ async def experiment_edit_post(
     except HTTPException as e:
         # Get available data for form re-population
         project_service = ProjectService(db)
-        process_service = ProcessService(db)
+        process_service = ProcessServiceEntity(db)
         bioreactor_service = BioreactorService(db)
         
         organization_id = get_user_organization_id(db, current_user)
@@ -693,7 +693,7 @@ async def experiment_archive_post(
         templates = get_templates()
         
         # Archive experiment
-        experiment_service = ExperimentService(db)
+        experiment_service = ExperimentServiceEntity(db)
         archived_experiment = experiment_service.archive_experiment(experiment_id, current_user.id)
         
         if not archived_experiment:
@@ -751,7 +751,7 @@ async def experiment_monitor_page(
             return RedirectResponse(url="/app/login", status_code=302)
         
         # Get experiment
-        experiment_service = ExperimentService(db)
+        experiment_service = ExperimentServiceEntity(db)
         experiment = experiment_service.get_experiment_by_id(experiment_id)
         
         if not experiment:
@@ -820,11 +820,11 @@ async def experiment_control_post(
         templates = get_templates()
         
         # Control experiment
-        experiment_service = ExperimentService(db)
+        experiment_service = ExperimentServiceEntity(db)
         control_data = ExperimentControlRequest(action=action)
         
         response = experiment_service.control_experiment(
-            experiment_id, control_data, current_user.id
+            experiment_id, control_data, current_user
         )
         
         # Redirect back to experiment detail page

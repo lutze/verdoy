@@ -27,19 +27,19 @@ os.environ["DATABASE_URL"] = "sqlite:///./test.db"
 os.environ["SECRET_KEY"] = "test-secret-key-32-chars-long-for-testing"
 
 # Import your app dependencies
-from app.database import get_db
-from app.models.base import Base
-from app.dependencies import get_current_user
-from app.models.user import User
-from app.models.entity import Entity
-from app.models.device import Device
-from app.models.organization import Organization
-from app.schemas.user import UserCreate
-from app.schemas.device import DeviceCreate
-from app.services.auth_service import AuthService
-from app.services.device_service import DeviceService
-from app.services.reading_service import ReadingService
-from app.services.project_service import ProjectService
+from backend.app.database import get_db
+from backend.app.models.base import Base
+from backend.app.dependencies import get_current_user
+from backend.app.models.user import User
+from backend.app.models.entity import Entity
+from backend.app.models.device import Device
+from backend.app.models.organization import Organization
+from backend.app.schemas.user import UserCreate
+from backend.app.schemas.device import DeviceCreate
+from backend.app.services.auth_service import AuthService
+from backend.app.services.device_service import DeviceService
+from backend.app.services.reading_service import ReadingService
+from backend.app.services.project_service import ProjectService
 
 # Test database configuration
 TEST_DATABASE_URL = "sqlite:///./test.db"

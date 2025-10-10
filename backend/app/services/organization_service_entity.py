@@ -788,6 +788,21 @@ class OrganizationServiceEntity(BaseService):
             properties['member_count'] = max(0, current_count + delta)
             organization.properties = properties
     
+    def get_all_organizations(self) -> List[Entity]:
+        """
+        Get all organizations (legacy compatibility method).
+        
+        Returns:
+            List of organization entities
+        """
+        try:
+            return self.db.query(Entity).filter(
+                Entity.entity_type == 'organization'
+            ).order_by(Entity.created_at.desc()).all()
+        except Exception as e:
+            logger.error(f"Error getting all organizations: {e}")
+            return []
+
     def _log_event(self, event_type: str, entity_id: UUID, entity_type: str, data: Dict[str, Any], user_id: Optional[UUID] = None):
         """
         Log organization event.

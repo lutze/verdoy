@@ -17,7 +17,7 @@
                     </a>
                     <span class="breadcrumb-separator">/</span>
                     <a href="/app/admin/organization/{{ organization.id }}" class="breadcrumb-link">
-                        {{ organization.name }}
+                        {{ organization.get_property('name', organization.name) }}
                     </a>
                 </div>
                 <h1 class="page-title">Edit Organization</h1>
@@ -59,7 +59,7 @@
                         <input type="text" 
                                id="name" 
                                name="name" 
-                               value="{{ form_data.name if form_data else organization.name }}"
+                               value="{{ form_data.name if form_data else organization.get_property('name', organization.name) }}"
                                required
                                class="form-input"
                                placeholder="Enter organization name">
@@ -69,7 +69,7 @@
                         <select id="organization_type" 
                                 name="organization_type"
                                 class="form-select">
-                            <option value="small_business" {% if (form_data and form_data.organization_type == 'small_business') or organization.organization_type == 'small_business' %}selected{% endif %}>Small Business</option>
+                            <option value="small_business" {% if (form_data and form_data.organization_type == 'small_business') or organization.get_property('organization_type', organization.organization_type) == 'small_business' %}selected{% endif %}>Small Business</option>
                             <option value="enterprise" {% if (form_data and form_data.organization_type == 'enterprise') or organization.organization_type == 'enterprise' %}selected{% endif %}>Enterprise</option>
                             <option value="startup" {% if (form_data and form_data.organization_type == 'startup') or organization.organization_type == 'startup' %}selected{% endif %}>Startup</option>
                             <option value="educational" {% if (form_data and form_data.organization_type == 'educational') or organization.organization_type == 'educational' %}selected{% endif %}>Educational</option>
@@ -84,7 +84,7 @@
                                   name="description" 
                                   rows="3"
                                   class="form-textarea"
-                                  placeholder="Describe your organization">{{ form_data.description if form_data else organization.description or '' }}</textarea>
+                                  placeholder="Describe your organization">{{ form_data.description if form_data else organization.get_property('description', organization.description) or '' }}</textarea>
                     </div>
                 </div>
             </div>

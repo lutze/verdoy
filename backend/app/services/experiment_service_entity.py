@@ -872,6 +872,171 @@ class ExperimentServiceEntity(BaseService):
         """Check if experiment can be stopped."""
         return self._is_experiment_running(experiment)
     
+    def get_experiment_by_id(self, experiment_id: UUID) -> Optional[Entity]:
+        """
+        Get experiment by ID (legacy compatibility method).
+        
+        Args:
+            experiment_id: Experiment ID
+            
+        Returns:
+            Experiment entity or None if not found
+        """
+        try:
+            return self.db.query(Entity).filter(
+                and_(
+                    Entity.id == experiment_id,
+                    Entity.entity_type == 'experiment'
+                )
+            ).first()
+        except Exception as e:
+            logger.error(f"Error getting experiment {experiment_id}: {e}")
+            return None
+    
+    def get_user_accessible_experiments(
+        self, 
+        user_id: UUID, 
+        filters: ExperimentFilterRequest
+    ) -> Tuple[List[Entity], int]:
+        """
+        Get experiments that a user has access to through organization membership.
+        
+        Args:
+            user_id: User ID
+            filters: Filter criteria
+            
+        Returns:
+            Tuple of (experiments, total_count)
+        """
+        try:
+            # Get user's organizations from user entity
+            user = self.db.query(Entity).filter(
+                and_(
+                    Entity.id == user_id,
+                    Entity.entity_type == 'user'
+                )
+            ).first()
+            
+            if not user:
+                return [], 0
+            
+            # Get user's organization_id
+            organization_id = user.organization_id
+            if not organization_id:
+                return [], 0
+            
+            # Build query for experiments in user's organization
+            query = self.db.query(Entity).filter(
+                and_(
+                    Entity.entity_type == 'experiment',
+                    Entity.organization_id == organization_id
+                )
+            )
+            
+            # Apply filters
+            if filters.status:
+                query = query.filter(Entity.status == filters.status)
+            
+            if filters.project_id:
+                query = query.filter(Entity.properties['project_id'].astext == str(filters.project_id))
+            
+            if filters.process_id:
+                query = query.filter(Entity.properties['process_id'].astext == str(filters.process_id))
+            
+            if filters.bioreactor_id:
+                query = query.filter(Entity.properties['bioreactor_id'].astext == str(filters.bioreactor_id))
+            
+            if filters.search:
+                search_term = f"%{filters.search}%"
+                query = query.filter(
+                    or_(
+                        Entity.name.ilike(search_term),
+                        Entity.description.ilike(search_term)
+                    )
+                )
+            
+            # Get total count
+            total_count = query.count()
+            
+            # Apply pagination
+            if filters.page and filters.page_size:
+                offset = (filters.page - 1) * filters.page_size
+                query = query.offset(offset).limit(filters.page_size)
+            
+            experiments = query.order_by(Entity.created_at.desc()).all()
+            return experiments, total_count
+            
+        except Exception as e:
+            logger.error(f"Error getting user accessible experiments: {e}")
+            return [], 0
+    
+    def archive_experiment(self, experiment_id: UUID, user_id: UUID) -> Optional[Entity]:
+        """
+        Archive an experiment.
+        
+        Args:
+            experiment_id: Experiment ID
+            user_id: ID of the user archiving the experiment
+            
+        Returns:
+            Archived experiment entity or None if not found
+        """
+        try:
+            experiment = self.get_experiment_by_id(experiment_id)
+            if not experiment:
+                return None
+            
+            # Prevent archiving running experiments
+            status = experiment.properties.get('status', 'draft')
+            if status in ['active', 'paused']:
+                raise BusinessLogicException("Cannot archive experiment while it is running")
+            
+            # Update status to archived
+            experiment.properties = experiment.properties or {}
+            experiment.properties['status'] = 'archived'
+            experiment.last_updated = datetime.utcnow()
+            
+            self.db.commit()
+            self.db.refresh(experiment)
+            
+            # Log event
+            self._log_event(
+                'experiment.archived',
+                experiment.id,
+                'experiment',
+                {'previous_status': status},
+                user_id
+            )
+            
+            return experiment
+            
+        except Exception as e:
+            logger.error(f"Error archiving experiment {experiment_id}: {e}")
+            self.db.rollback()
+            return None
+    
+    def get_trials_by_experiment(self, experiment_id: UUID) -> List[Entity]:
+        """
+        Get all trials for an experiment.
+        
+        Args:
+            experiment_id: Experiment ID
+            
+        Returns:
+            List of trial entities
+        """
+        try:
+            from sqlalchemy import Integer
+            return self.db.query(Entity).filter(
+                and_(
+                    Entity.entity_type == 'experiment.trial',
+                    Entity.properties['experiment_id'].astext == str(experiment_id)
+                )
+            ).order_by(Entity.properties['trial_number'].astext.cast(Integer)).all()
+        except Exception as e:
+            logger.error(f"Error getting trials for experiment {experiment_id}: {e}")
+            return []
+
     def _log_event(self, event_type: str, entity_id: UUID, entity_type: str, data: Dict[str, Any], user_id: Optional[UUID] = None):
         """
         Log experiment event.

@@ -11,7 +11,7 @@ from uuid import UUID
 
 from ...dependencies import get_db, get_web_user
 from ...models.user import User
-from ...services.organization_service import OrganizationService
+from ...services.organization_service_entity import OrganizationServiceEntity
 from ...templates_config import templates
 
 router = APIRouter(prefix="/app/admin/organization", tags=["Web Organizations"])
@@ -26,7 +26,7 @@ async def list_organizations_page(
     db: Session = Depends(get_db)
 ):
     """List organizations page for web interface (HTML only)."""
-    org_service = OrganizationService(db)
+    org_service = OrganizationServiceEntity(db)
     organizations = org_service.get_all_organizations()
     
     # Apply search filter if provided
@@ -80,7 +80,7 @@ async def organization_detail_page(
     current_user: User = Depends(get_web_user),
     db: Session = Depends(get_db)
 ):
-    org_service = OrganizationService(db)
+    org_service = OrganizationServiceEntity(db)
     organization = org_service.get_by_id(organization_id)
     stats = org_service.get_organization_stats(organization_id)
     return templates.TemplateResponse(
@@ -113,7 +113,7 @@ async def organization_create(
     db: Session = Depends(get_db)
 ):
     """Create a new organization."""
-    org_service = OrganizationService(db)
+    org_service = OrganizationServiceEntity(db)
     try:
         # Create OrganizationCreate object from form data
         from ...schemas.organization import OrganizationCreate
@@ -166,7 +166,7 @@ async def organization_edit_page(
     current_user: User = Depends(get_web_user),
     db: Session = Depends(get_db)
 ):
-    org_service = OrganizationService(db)
+    org_service = OrganizationServiceEntity(db)
     organization = org_service.get_by_id(organization_id)
     if not organization:
         raise HTTPException(status_code=404, detail="Organization not found")
@@ -200,7 +200,7 @@ async def organization_update(
     db: Session = Depends(get_db)
 ):
     """Update an existing organization."""
-    org_service = OrganizationService(db)
+    org_service = OrganizationServiceEntity(db)
     organization = org_service.get_by_id(organization_id)
     if not organization:
         raise HTTPException(status_code=404, detail="Organization not found")

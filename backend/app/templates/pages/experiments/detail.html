@@ -17,13 +17,13 @@
                     </a>
                 </div>
                 <h1 class="page-title">{{ experiment.name }}</h1>
-                {% if experiment.description %}
-                <p class="page-subtitle">{{ experiment.description }}</p>
+                {% if experiment.get_property('description') or experiment.description %}
+                <p class="page-subtitle">{{ experiment.get_property('description', experiment.description) }}</p>
                 {% endif %}
             </div>
             <div class="header-actions">
-                <div class="status-badge {% if experiment.status == 'active' %}active{% elif experiment.status == 'paused' %}paused{% elif experiment.status == 'completed' %}completed{% elif experiment.status == 'failed' %}failed{% else %}draft{% endif %}">
-                    {{ experiment.status|title }}
+                <div class="status-badge {% if experiment.get_property('status', 'draft') == 'active' %}active{% elif experiment.get_property('status', 'draft') == 'paused' %}paused{% elif experiment.get_property('status', 'draft') == 'completed' %}completed{% elif experiment.get_property('status', 'draft') == 'failed' %}failed{% else %}draft{% endif %}">
+                    {{ experiment.get_property('status', 'draft')|title }}
                 </div>
                 {% if experiment.is_running %}
                 <a href="/app/experiments/{{ experiment.id }}/monitor" class="btn btn-primary">
@@ -34,7 +34,7 @@
                     Monitor
                 </a>
                 {% endif %}
-                {% if not experiment.is_running %}
+                {% if experiment.get_property('status') not in ['active', 'paused'] %}
                 <a href="/app/experiments/{{ experiment.id }}/edit" class="btn btn-secondary">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -55,7 +55,7 @@
                 </svg>
             </div>
             <div class="stat-content">
-                <div class="stat-value">{{ experiment.status|title }}</div>
+                <div class="stat-value">{{ experiment.get_property('status', 'draft')|title }}</div>
                 <div class="stat-label">Status</div>
             </div>
         </div>
@@ -67,7 +67,7 @@
                 </svg>
             </div>
             <div class="stat-content">
-                <div class="stat-value">{{ experiment.progress_percentage }}%</div>
+                <div class="stat-value">{{ experiment.get_property('progress_percentage', 0) }}%</div>
                 <div class="stat-label">Progress</div>
             </div>
         </div>
@@ -79,7 +79,7 @@
                 </svg>
             </div>
             <div class="stat-content">
-                <div class="stat-value">{{ experiment.current_trial }}/{{ experiment.total_trials }}</div>
+                <div class="stat-value">{{ experiment.get_property('current_trial', 0) }}/{{ experiment.get_property('total_trials', 0) }}</div>
                 <div class="stat-label">Trials</div>
             </div>
         </div>
@@ -92,8 +92,8 @@
             </div>
             <div class="stat-content">
                 <div class="stat-value">
-                    {% if experiment.duration_minutes %}
-                        {{ experiment.duration_minutes }} min
+                    {% if experiment.get_property('duration_minutes') %}
+                        {{ experiment.get_property('duration_minutes') }} min
                     {% else %}
                         Not set
                     {% endif %}
@@ -161,34 +161,34 @@
                             {% endif %}
                             <div class="info-item">
                                 <span class="info-label">Status</span>
-                                <span class="info-value">{{ experiment.status|title }}</span>
+                                <span class="info-value">{{ experiment.get_property('status', 'draft')|title }}</span>
                             </div>
                             <div class="info-item">
                                 <span class="info-label">Trials</span>
-                                <span class="info-value">{{ experiment.current_trial }} of {{ experiment.total_trials }}</span>
+                                <span class="info-value">{{ experiment.get_property('current_trial', 0) }} of {{ experiment.get_property('total_trials', 0) }}</span>
                             </div>
-                            {% if experiment.duration_minutes %}
+                            {% if experiment.get_property('duration_minutes') %}
                             <div class="info-item">
                                 <span class="info-label">Duration</span>
-                                <span class="info-value">{{ experiment.duration_minutes }} minutes</span>
+                                <span class="info-value">{{ experiment.get_property('duration_minutes') }} minutes</span>
                             </div>
                             {% endif %}
-                            {% if experiment.started_at %}
+                            {% if experiment.get_property('started_at') %}
                             <div class="info-item">
                                 <span class="info-label">Started</span>
-                                <span class="info-value">{{ experiment.started_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                                <span class="info-value">{{ experiment.get_property('started_at') }}</span>
                             </div>
                             {% endif %}
-                            {% if experiment.completed_at %}
+                            {% if experiment.get_property('completed_at') %}
                             <div class="info-item">
                                 <span class="info-label">Completed</span>
-                                <span class="info-value">{{ experiment.completed_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                                <span class="info-value">{{ experiment.get_property('completed_at') }}</span>
                             </div>
                             {% endif %}
-                            {% if experiment.error_message %}
+                            {% if experiment.get_property('error_message') %}
                             <div class="info-item error">
                                 <span class="info-label">Error</span>
-                                <span class="info-value">{{ experiment.error_message }}</span>
+                                <span class="info-value">{{ experiment.get_property('error_message') }}</span>
                             </div>
                             {% endif %}
                         </div>

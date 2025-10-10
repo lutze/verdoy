@@ -10,7 +10,7 @@ from typing import Optional
 
 from ...dependencies import get_db, get_web_user
 from ...models.user import User
-from ...services.organization_service import OrganizationService
+from ...services.organization_service_entity import OrganizationServiceEntity
 from ...templates_config import templates
 
 router = APIRouter(prefix="/app/dashboard", tags=["Web Dashboard"])
@@ -23,7 +23,7 @@ async def dashboard_page(
 ):
     """Display user dashboard for web browsers."""
     # Get user's organizations
-    org_service = OrganizationService(db)
+    org_service = OrganizationServiceEntity(db)
     user_organizations = org_service.get_user_organizations(current_user.id)
     
     # Convert organizations to dashboard format

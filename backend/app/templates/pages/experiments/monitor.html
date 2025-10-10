@@ -36,10 +36,10 @@
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                        {% if experiment.status == 'active' %}bg-green-100 text-green-800
-                        {% elif experiment.status == 'paused' %}bg-yellow-100 text-yellow-800
+                        {% if experiment.get_property('status', 'draft') == 'active' %}bg-green-100 text-green-800
+                        {% elif experiment.get_property('status', 'draft') == 'paused' %}bg-yellow-100 text-yellow-800
                         {% else %}bg-gray-100 text-gray-800{% endif %}">
-                        {{ experiment.status|title }}
+                        {{ experiment.get_property('status', 'draft')|title }}
                     </span>
                     <div class="ml-4">
                         <div class="flex items-center">
@@ -296,7 +296,7 @@
                 <div class="space-y-3">
                     <div class="flex justify-between">
                         <span class="text-gray-600">Status</span>
-                        <span class="font-medium">{{ experiment.status|title }}</span>
+                        <span class="font-medium">{{ experiment.get_property('status', 'draft')|title }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-600">Progress</span>

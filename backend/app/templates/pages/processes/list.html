@@ -78,23 +78,23 @@
         {% for process in processes %}
         <div class="process-card">
             <div class="process-header">
-                <div class="process-status status-{{ process.status }}">
-                    ● {{ process.status.replace('_', ' ').title() }}
+                <div class="process-status status-{{ process.get_property('status', 'draft') }}">
+                    ● {{ process.get_property('status', 'draft').replace('_', ' ').title() }}
                 </div>
                 {% if process.is_template %}
                 <div class="process-template-badge">Template</div>
                 {% endif %}
-                <h3 class="process-name">{{ process.name }}</h3>
-                {% if process.description %}
-                <p class="process-description">{{ process.description }}</p>
+                <h3 class="process-name">{{ process.get_property('name', process.name) }}</h3>
+                {% if process.get_property('description') or process.description %}
+                <p class="process-description">{{ process.get_property('description', process.description) }}</p>
                 {% endif %}
                 <div class="process-progress">
                     <div class="progress-label">
                         <span>Status</span>
-                        <span>{{ process.status.replace('_', ' ').title() }}</span>
+                        <span>{{ process.get_property('status', 'draft').replace('_', ' ').title() }}</span>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress-fill {% if process.status == 'active' %}progress-fill-100{% elif process.status == 'draft' %}progress-fill-25{% elif process.status == 'archived' %}progress-fill-0{% else %}progress-fill-50{% endif %}"></div>
+                        <div class="progress-fill {% if process.get_property('status', 'draft') == 'active' %}progress-fill-100{% elif process.get_property('status', 'draft') == 'draft' %}progress-fill-25{% elif process.get_property('status', 'draft') == 'archived' %}progress-fill-0{% else %}progress-fill-50{% endif %}"></div>
                     </div>
                 </div>
             </div>
@@ -157,7 +157,7 @@
                 <div class="process-actions">
                     <a href="/app/processes/{{ process.id }}" class="action-btn" title="View Details">👁️</a>
                     <a href="/app/processes/{{ process.id }}/edit" class="action-btn" title="Edit">✏️</a>
-                    {% if process.status != 'archived' %}
+                    {% if process.get_property('status', 'draft') != 'archived' %}
                     <form method="POST" action="/app/processes/{{ process.id }}/archive" class="inline-form">
                         <button type="submit" class="action-btn danger" title="Archive" 
                                 onclick="return confirm('Are you sure you want to archive this process?')">
@@ -194,7 +194,7 @@
                 {% endif %}
             </div>
             <div>{{ (process.process_type or '').replace('_', ' ').title() }}</div>
-            <div><span class="status-{{ process.status }}">● {{ (process.status or '').replace('_', ' ').title() }}</span></div>
+            <div><span class="status-{{ process.get_property('status', 'draft') }}">● {{ (process.get_property('status', 'draft') or '').replace('_', ' ').title() }}</span></div>
             <div>{{ process.step_count or 0 }}</div>
             <div>{{ process.version or 'N/A' }}</div>
             <div class="process-actions">

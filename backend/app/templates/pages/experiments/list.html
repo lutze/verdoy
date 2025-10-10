@@ -85,30 +85,30 @@
         {% for experiment in experiments %}
         <div class="experiment-card">
             <div class="experiment-header">
-                <div class="experiment-status status-{{ experiment.status }}">
-                    ● {{ experiment.status|title }}
+                <div class="experiment-status status-{{ experiment.get_property('status', 'draft') }}">
+                    ● {{ experiment.get_property('status', 'draft')|title }}
                 </div>
                 <div class="experiment-project">
-                    {% if experiment.project_id %}
-                    Project: {{ experiment.project_id|string|truncate(20) }}
+                    {% if experiment.get_property('project_id') %}
+                    Project: {{ experiment.get_property('project_id')|string|truncate(20) }}
                     {% else %}
                     No Project
                     {% endif %}
                 </div>
-                <h3 class="experiment-name">{{ experiment.name }}</h3>
-                {% if experiment.description %}
-                <p class="experiment-description">{{ experiment.description }}</p>
+                <h3 class="experiment-name">{{ experiment.get_property('name', experiment.name) }}</h3>
+                {% if experiment.get_property('description') or experiment.description %}
+                <p class="experiment-description">{{ experiment.get_property('description', experiment.description) }}</p>
                 {% endif %}
                 
                 <!-- Progress Bar for Running Experiments -->
-                {% if experiment.is_running %}
+                {% if experiment.get_property('status') in ['active', 'paused'] %}
                 <div class="experiment-progress">
                     <div class="progress-label">
                         <span>Progress</span>
-                        <span>{{ experiment.progress_percentage }}%</span>
+                        <span>{{ experiment.get_property('progress_percentage', 0) }}%</span>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress-fill" data-progress="{{ experiment.progress_percentage }}"></div>
+                        <div class="progress-fill" data-progress="{{ experiment.get_property('progress_percentage', 0) }}"></div>
                     </div>
                 </div>
                 {% endif %}
@@ -116,40 +116,40 @@
             
             <div class="experiment-stats">
                 <div class="stat">
-                    <span class="stat-number">{{ experiment.current_trial }}</span>
+                    <span class="stat-number">{{ experiment.get_property('current_trial', 0) }}</span>
                     <span class="stat-label">Current Trial</span>
                 </div>
                 <div class="stat">
-                    <span class="stat-number">{{ experiment.total_trials }}</span>
+                    <span class="stat-number">{{ experiment.get_property('total_trials', 0) }}</span>
                     <span class="stat-label">Total Trials</span>
                 </div>
                 <div class="stat">
-                    <span class="stat-number">{{ experiment.duration_minutes|default(0) }}</span>
+                    <span class="stat-number">{{ experiment.get_property('duration_minutes', 0) }}</span>
                     <span class="stat-label">Minutes</span>
                 </div>
             </div>
             
             <div class="experiment-footer">
                 <div class="experiment-controls">
-                    {% if experiment.can_start %}
+                    {% if experiment.get_property('status') == 'draft' %}
                     <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="inline">
                         <input type="hidden" name="action" value="start">
                         <button type="submit" class="action-btn" title="Start">▶️</button>
                     </form>
                     {% endif %}
-                    {% if experiment.can_pause %}
+                    {% if experiment.get_property('status') == 'active' %}
                     <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="inline">
                         <input type="hidden" name="action" value="pause">
                         <button type="submit" class="action-btn" title="Pause">⏸️</button>
                     </form>
                     {% endif %}
-                    {% if experiment.can_resume %}
+                    {% if experiment.get_property('status') == 'paused' %}
                     <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="inline">
                         <input type="hidden" name="action" value="resume">
                         <button type="submit" class="action-btn" title="Resume">▶️</button>
                     </form>
                     {% endif %}
-                    {% if experiment.can_stop %}
+                    {% if experiment.get_property('status') in ['active', 'paused'] %}
                     <form method="POST" action="/app/experiments/{{ experiment.id }}/control" class="inline">
                         <input type="hidden" name="action" value="stop">
                         <button type="submit" class="action-btn danger" title="Stop">⏹️</button>
@@ -189,7 +189,7 @@
                 {% endif %}
             </div>
             <div>{{ experiment.project_id|string|truncate(20) if experiment.project_id else 'No Project' }}</div>
-            <div><span class="status-{{ experiment.status }}">● {{ experiment.status|title }}</span></div>
+            <div><span class="status-{{ experiment.get_property('status', 'draft') }}">● {{ experiment.get_property('status', 'draft')|title }}</span></div>
             <div>
                 {% if experiment.is_running %}
                 {{ experiment.progress_percentage }}%

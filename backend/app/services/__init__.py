@@ -30,7 +30,7 @@ from .reading_service import ReadingService
 from .command_service import CommandService
 from .analytics_service import AnalyticsService
 from .alert_service import AlertService
-from .organization_service import OrganizationService
+from .organization_service_entity import OrganizationServiceEntity
 from .organization_member_service import OrganizationMemberService
 from .organization_invitation_service import OrganizationInvitationService
 from .membership_removal_service import MembershipRemovalService

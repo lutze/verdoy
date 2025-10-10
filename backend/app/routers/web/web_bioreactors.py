@@ -14,7 +14,7 @@ from ...dependencies import get_db, get_web_user
 from ...models.user import User
 from ...models.bioreactor import Bioreactor
 from ...services.bioreactor_service import BioreactorService
-from ...services.organization_service import OrganizationService
+from ...services.organization_service_entity import OrganizationServiceEntity
 from ...schemas.bioreactor import BioreactorCreate, BioreactorUpdate, SensorConfig, ActuatorConfig
 from ...templates_config import templates
 
@@ -32,7 +32,7 @@ async def list_bioreactors_page(
 ):
     """List bioreactors page for web interface (HTML only)."""
     bioreactor_service = BioreactorService(db)
-    org_service = OrganizationService(db)
+    org_service = OrganizationServiceEntity(db)
     user_organizations = org_service.get_user_organizations(current_user.id)
     
     # Get bioreactors based on filters
@@ -95,7 +95,7 @@ async def enroll_bioreactor_page(
     db: Session = Depends(get_db)
 ):
     """Bioreactor enrollment page for web interface (HTML only)."""
-    org_service = OrganizationService(db)
+    org_service = OrganizationServiceEntity(db)
     user_organizations = org_service.get_user_organizations(current_user.id)
     
     if not user_organizations:
@@ -343,7 +343,7 @@ async def enroll_bioreactor_post(
         }
         
         # Get organization data for error context
-        org_service = OrganizationService(db)
+        org_service = OrganizationServiceEntity(db)
         user_organizations = org_service.get_user_organizations(current_user.id)
         selected_org = None
         if organization_id:
