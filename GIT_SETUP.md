@@ -28,10 +28,10 @@ Setting new remote paths is also quite easy:
 # Add a new remote
 git remote add <name> <url>
 #e.g.
-git remote add github git@github.com:lutze/probable-octo-broccoli.git
+git remote add github git@github.com:lutze/verdoy.git
 
 # Update the GitHub path
-git remote set-url github git@github.com:lutze/probable-octo-broccoli.git
+git remote set-url github git@github.com:lutze/verdoy.git
 
 # Update the GitLab path
 git remote set-url origin git@gitlab.com:lms-evo/lms-core-poc.git
