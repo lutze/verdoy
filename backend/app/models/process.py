@@ -10,10 +10,11 @@ from typing import Optional, Dict, Any, List
 from uuid import UUID, uuid4
 
 from sqlalchemy import Column, String, DateTime, JSON, ForeignKey, Text, Boolean
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from sqlalchemy.orm import relationship
 
 from .base import Base
+from ..database import JSONType
 
 
 class Process(Base):
@@ -30,7 +31,7 @@ class Process(Base):
     name = Column(String(200), nullable=False)
     version = Column(String(20), nullable=False)
     process_type = Column(String(100), nullable=False)
-    definition = Column(JSONB, nullable=False)  # Steps, parameters, expected outcomes
+    definition = Column(JSONType, nullable=False)  # Steps, parameters, expected outcomes
     status = Column(String(50), default="active")
     organization_id = Column(PostgresUUID(as_uuid=True), ForeignKey("entities.id"))
     created_by = Column(PostgresUUID(as_uuid=True), ForeignKey("entities.id"))
@@ -124,10 +125,10 @@ class ProcessInstance(Base):
     status = Column(String(50), default="running")  # running, completed, failed, paused
     started_at = Column(DateTime, default=datetime.utcnow)
     completed_at = Column(DateTime)
-    parameters = Column(JSONB, default={})  # Instance-specific parameters
-    results = Column(JSONB, default={})  # Execution results and data
+    parameters = Column(JSONType, default={})  # Instance-specific parameters
+    results = Column(JSONType, default={})  # Execution results and data
     current_step = Column(String(100))  # Current step being executed
-    step_results = Column(JSONB, default={})  # Results for each step
+    step_results = Column(JSONType, default={})  # Results for each step
     error_message = Column(Text)  # Error message if failed
     created_by = Column(PostgresUUID(as_uuid=True), ForeignKey("entities.id"))
     

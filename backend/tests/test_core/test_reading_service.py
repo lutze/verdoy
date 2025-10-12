@@ -48,12 +48,12 @@ class TestReadingService:
         
         # Assert
         assert reading is not None
-        assert reading.device_id == test_device.id
-        assert reading.sensor_type == "temperature"
-        assert reading.value == 25.5
-        assert reading.unit == "celsius"
-        assert reading.metadata["accuracy"] == 0.1
-        assert reading.metadata["location"] == "indoor"
+        assert reading.entity_id == test_device.id
+        assert reading.get_sensor_type() == "temperature"
+        assert reading.get_value() == 25.5
+        assert reading.get_unit() == "celsius"
+        assert reading.data["metadata"]["accuracy"] == 0.1
+        assert reading.data["metadata"]["location"] == "indoor"
         assert reading.created_at is not None
 
     def test_create_reading_invalid_device(self, reading_service: ReadingService):
@@ -96,7 +96,7 @@ class TestReadingService:
         
         # Assert
         assert len(readings) == 5  # From sample_readings fixture
-        assert all(reading.device_id == test_device.id for reading in readings)
+        assert all(reading.entity_id == test_device.id for reading in readings)
 
     def test_get_readings_by_device_with_filters(self, reading_service: ReadingService, test_device, sample_readings):
         """Test getting readings by device with filters."""
@@ -110,7 +110,7 @@ class TestReadingService:
         
         # Assert
         assert len(readings) == 5  # All sample readings are temperature
-        assert all(reading.sensor_type == "temperature" for reading in readings)
+        assert all(reading.get_sensor_type() == "temperature" for reading in readings)
 
     def test_get_latest_readings(self, reading_service: ReadingService, test_device, sample_readings):
         """Test getting latest readings."""
@@ -119,8 +119,9 @@ class TestReadingService:
         
         # Assert
         assert len(latest_readings) == 1  # Latest reading per sensor type
-        assert latest_readings[0].device_id == test_device.id
-        assert latest_readings[0].sensor_type == "temperature"
+        assert "temperature" in latest_readings
+        assert latest_readings["temperature"].entity_id == test_device.id
+        assert latest_readings["temperature"].get_sensor_type() == "temperature"
 
     def test_get_reading_statistics(self, reading_service: ReadingService, test_device, sample_readings):
         """Test getting reading statistics."""
@@ -215,7 +216,7 @@ class TestReadingService:
         # Assert
         assert reading is not None
         assert reading.id == created_reading.id
-        assert reading.value == 25.5
+        assert reading.get_value() == 25.5
 
     def test_get_by_id_not_found(self, reading_service: ReadingService):
         """Test reading retrieval by non-existent ID returns None."""
@@ -322,7 +323,7 @@ class TestReadingService:
         
         # Assert
         assert len(readings) == 3
-        assert all(reading.device_id == test_device.id for reading in readings)
+        assert all(reading.entity_id == test_device.id for reading in readings)
 
     def test_get_data_quality_metrics(self, reading_service: ReadingService, test_device, sample_readings):
         """Test getting data quality metrics."""

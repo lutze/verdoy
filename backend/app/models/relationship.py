@@ -11,9 +11,10 @@ from uuid import UUID
 
 from sqlalchemy import Column, String, DateTime, ForeignKey, Numeric
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 
 from .base import Base
+from ..database import JSONType
 
 
 class Relationship(Base):
@@ -29,7 +30,7 @@ class Relationship(Base):
     from_entity = Column(PostgresUUID(as_uuid=True), ForeignKey("entities.id"), nullable=False)
     to_entity = Column(PostgresUUID(as_uuid=True), ForeignKey("entities.id"), nullable=False)
     relationship_type = Column(String(100), nullable=False)
-    properties = Column(JSONB, default={})
+    properties = Column(JSONType, default={})
     strength = Column(Numeric(3, 2), default=1.0)  # Relationship strength (0.0-1.0)
     valid_from = Column(DateTime, default=datetime.utcnow)
     valid_to = Column(DateTime, nullable=True)

@@ -147,11 +147,17 @@ class ReadingService(BaseService[Reading]):
             self.validate_reading_data(reading_data)
             
             # Create reading entity
+            # Ensure timestamp is timezone-aware
+            timestamp = reading_data.timestamp or datetime.utcnow()
+            if timestamp.tzinfo is None:
+                from datetime import timezone
+                timestamp = timestamp.replace(tzinfo=timezone.utc)
+            
             reading = Reading(
                 entity_id=reading_data.device_id,
                 entity_type="device.esp32",
                 event_type="sensor.reading",
-                timestamp=reading_data.timestamp or datetime.utcnow(),
+                timestamp=timestamp,
                 data={
                     'sensorType': reading_data.sensor_type,
                     'value': reading_data.value,
@@ -169,7 +175,7 @@ class ReadingService(BaseService[Reading]):
             self.db.commit()
             self.db.refresh(reading)
             
-            logger.info(f"Reading created: {reading.sensor_type} = {reading.value} {reading.unit}")
+            logger.info(f"Reading created: {reading.get_sensor_type()} = {reading.get_value()} {reading.get_unit()}")
             return reading
             
         except IntegrityError as e:
@@ -276,18 +282,50 @@ class ReadingService(BaseService[Reading]):
             List of readings
         """
         try:
-            query = self.db.query(Reading).filter(Reading.device_id == device_id)
+            logger.debug(f"Starting get_readings_by_device for device {device_id}")
+            # Get all readings for the device
+            readings = self.db.query(Reading).filter(Reading.entity_id == device_id).all()
+            logger.debug(f"Retrieved {len(readings)} readings from database for device {device_id}")
             
+            # Apply filters in Python for database-agnostic approach
             if sensor_type:
-                query = query.filter(Reading.sensor_type == sensor_type)
+                logger.debug(f"Applying sensor_type filter: {sensor_type}")
+                readings = [r for r in readings if r.get_sensor_type() == sensor_type]
+                logger.debug(f"After sensor_type filter: {len(readings)} readings")
             
             if start_time:
-                query = query.filter(Reading.timestamp >= start_time)
+                # Convert string timestamp to datetime if needed
+                if isinstance(start_time, str):
+                    # Parse the timestamp and ensure it's timezone-aware
+                    if start_time.endswith('Z'):
+                        start_time = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+                    else:
+                        start_time = datetime.fromisoformat(start_time)
+                # Make sure both timestamps are timezone-aware for comparison
+                if start_time.tzinfo is None:
+                    start_time = start_time.replace(tzinfo=timezone.utc)
+                
+                # Convert database timestamps to timezone-aware for comparison
+                readings = [r for r in readings if r.timestamp.replace(tzinfo=timezone.utc) >= start_time]
             
             if end_time:
-                query = query.filter(Reading.timestamp <= end_time)
+                # Convert string timestamp to datetime if needed
+                if isinstance(end_time, str):
+                    # Parse the timestamp and ensure it's timezone-aware
+                    if end_time.endswith('Z'):
+                        end_time = datetime.fromisoformat(end_time.replace('Z', '+00:00'))
+                    else:
+                        end_time = datetime.fromisoformat(end_time)
+                # Make sure both timestamps are timezone-aware for comparison
+                if end_time.tzinfo is None:
+                    end_time = end_time.replace(tzinfo=timezone.utc)
+                
+                # Convert database timestamps to timezone-aware for comparison
+                readings = [r for r in readings if r.timestamp.replace(tzinfo=timezone.utc) <= end_time]
             
-            readings = query.order_by(desc(Reading.timestamp)).limit(limit).all()
+            # Sort by timestamp (most recent first) and limit
+            readings.sort(key=lambda x: x.timestamp, reverse=True)
+            readings = readings[:limit]
             
             logger.debug(f"Retrieved {len(readings)} readings for device {device_id}")
             return readings
@@ -318,10 +356,10 @@ class ReadingService(BaseService[Reading]):
             List of readings
         """
         try:
-            query = self.db.query(Reading).filter(Reading.organization_id == organization_id)
+            from ..models.device import Device
+            query = self.db.query(Reading).join(Device, Reading.entity_id == Device.id).filter(Device.organization_id == organization_id)
             
-            if sensor_type:
-                query = query.filter(Reading.sensor_type == sensor_type)
+            # Note: sensor_type filtering will be done in Python after the join
             
             if start_time:
                 query = query.filter(Reading.timestamp >= start_time)
@@ -329,7 +367,14 @@ class ReadingService(BaseService[Reading]):
             if end_time:
                 query = query.filter(Reading.timestamp <= end_time)
             
-            readings = query.order_by(desc(Reading.timestamp)).limit(limit).all()
+            readings = query.order_by(desc(Reading.timestamp)).all()
+            
+            # Apply sensor_type filter in Python if specified
+            if sensor_type:
+                readings = [r for r in readings if r.get_sensor_type() == sensor_type]
+            
+            # Apply limit
+            readings = readings[:limit]
             
             logger.debug(f"Retrieved {len(readings)} readings for organization {organization_id}")
             return readings
@@ -350,23 +395,19 @@ class ReadingService(BaseService[Reading]):
             Dictionary mapping sensor types to their latest readings
         """
         try:
-            query = self.db.query(Reading).filter(Reading.device_id == device_id)
+            # Get all readings for the device
+            readings = self.db.query(Reading).filter(Reading.entity_id == device_id).all()
             
+            # Filter by sensor types if provided
             if sensor_types:
-                query = query.filter(Reading.sensor_type.in_(sensor_types))
+                readings = [r for r in readings if r.get_sensor_type() in sensor_types]
             
-            # Get the latest reading for each sensor type
+            # Group by sensor type and get the latest for each
             latest_readings = {}
-            
-            # Get distinct sensor types
-            sensor_types_result = query.with_entities(Reading.sensor_type).distinct().all()
-            
-            for (sensor_type,) in sensor_types_result:
-                latest = query.filter(Reading.sensor_type == sensor_type)\
-                    .order_by(desc(Reading.timestamp))\
-                    .first()
-                if latest:
-                    latest_readings[sensor_type] = latest
+            for reading in readings:
+                sensor_type = reading.get_sensor_type()
+                if sensor_type not in latest_readings or reading.timestamp > latest_readings[sensor_type].timestamp:
+                    latest_readings[sensor_type] = reading
             
             logger.debug(f"Retrieved latest readings for {len(latest_readings)} sensor types")
             return latest_readings
@@ -395,27 +436,20 @@ class ReadingService(BaseService[Reading]):
             Dictionary containing statistical data
         """
         try:
-            query = self.db.query(Reading).filter(
-                Reading.device_id == device_id,
-                Reading.sensor_type == sensor_type
-            )
+            # Get all readings for the device
+            readings = self.db.query(Reading).filter(Reading.entity_id == device_id).all()
             
-            if start_time:
-                query = query.filter(Reading.timestamp >= start_time)
+            # Filter by sensor type and time range in Python
+            filtered_readings = []
+            for reading in readings:
+                if reading.get_sensor_type() == sensor_type:
+                    if start_time and reading.timestamp < start_time:
+                        continue
+                    if end_time and reading.timestamp > end_time:
+                        continue
+                    filtered_readings.append(reading)
             
-            if end_time:
-                query = query.filter(Reading.timestamp <= end_time)
-            
-            # Calculate statistics
-            stats = query.with_entities(
-                func.count(Reading.id).label('count'),
-                func.avg(Reading.value).label('average'),
-                func.min(Reading.value).label('minimum'),
-                func.max(Reading.value).label('maximum'),
-                func.stddev(Reading.value).label('stddev')
-            ).first()
-            
-            if not stats or stats.count == 0:
+            if not filtered_readings:
                 return {
                     "count": 0,
                     "average": None,
@@ -425,13 +459,24 @@ class ReadingService(BaseService[Reading]):
                     "range": None
                 }
             
+            # Calculate statistics in Python
+            values = [reading.get_value() for reading in filtered_readings]
+            count = len(values)
+            average = sum(values) / count
+            minimum = min(values)
+            maximum = max(values)
+            
+            # Calculate standard deviation
+            variance = sum((x - average) ** 2 for x in values) / count
+            stddev = variance ** 0.5
+            
             return {
-                "count": stats.count,
-                "average": float(stats.average) if stats.average else None,
-                "minimum": float(stats.minimum) if stats.minimum else None,
-                "maximum": float(stats.maximum) if stats.maximum else None,
-                "stddev": float(stats.stddev) if stats.stddev else None,
-                "range": float(stats.maximum - stats.minimum) if stats.maximum and stats.minimum else None
+                "count": count,
+                "average": float(average),
+                "minimum": float(minimum),
+                "maximum": float(maximum),
+                "stddev": float(stddev),
+                "range": float(maximum - minimum)
             }
             
         except Exception as e:
@@ -465,6 +510,19 @@ class ReadingService(BaseService[Reading]):
             List of hourly average data points
         """
         try:
+            # Convert string timestamps to datetime if needed
+            if isinstance(start_time, str):
+                if start_time.endswith('Z'):
+                    start_time = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+                else:
+                    start_time = datetime.fromisoformat(start_time)
+            
+            if isinstance(end_time, str):
+                if end_time.endswith('Z'):
+                    end_time = datetime.fromisoformat(end_time.replace('Z', '+00:00'))
+                else:
+                    end_time = datetime.fromisoformat(end_time)
+            
             # Generate hourly intervals
             intervals = []
             current_time = start_time.replace(minute=0, second=0, microsecond=0)
@@ -476,18 +534,28 @@ class ReadingService(BaseService[Reading]):
             
             hourly_averages = []
             
+            # Get all readings for the device and sensor type
+            readings = self.db.query(Reading).filter(Reading.entity_id == device_id).all()
+            sensor_readings = [r for r in readings if r.get_sensor_type() == sensor_type]
+            
             for interval_start, interval_end in intervals:
-                # Get average for this hour
-                avg_result = self.db.query(func.avg(Reading.value)).filter(
-                    Reading.device_id == device_id,
-                    Reading.sensor_type == sensor_type,
-                    Reading.timestamp >= interval_start,
-                    Reading.timestamp < interval_end
-                ).scalar()
+                # Filter readings for this hour
+                # Make sure database timestamps are timezone-aware for comparison
+                hour_readings = [
+                    r for r in sensor_readings 
+                    if interval_start <= r.timestamp.replace(tzinfo=timezone.utc) < interval_end
+                ]
+                
+                # Calculate average for this hour
+                if hour_readings:
+                    values = [r.get_value() for r in hour_readings]
+                    average = sum(values) / len(values)
+                else:
+                    average = None
                 
                 hourly_averages.append({
                     "timestamp": interval_start.isoformat(),
-                    "average": float(avg_result) if avg_result else None,
+                    "average_value": float(average) if average is not None else None,
                     "hour": interval_start.hour,
                     "date": interval_start.date().isoformat()
                 })
@@ -502,8 +570,8 @@ class ReadingService(BaseService[Reading]):
         self, 
         device_id: UUID, 
         sensor_type: str,
-        start_date: datetime,
-        end_date: datetime
+        start_time: datetime,
+        end_time: datetime
     ) -> List[Dict[str, Any]]:
         """
         Get daily averages for a sensor type over a date range.
@@ -511,36 +579,59 @@ class ReadingService(BaseService[Reading]):
         Args:
             device_id: Device ID
             sensor_type: Sensor type
-            start_date: Start date
-            end_date: End date
+            start_time: Start time
+            end_time: End time
             
         Returns:
             List of daily average data points
         """
         try:
+            # Convert string timestamps to datetime if needed
+            if isinstance(start_time, str):
+                if start_time.endswith('Z'):
+                    start_time = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+                else:
+                    start_time = datetime.fromisoformat(start_time)
+            
+            if isinstance(end_time, str):
+                if end_time.endswith('Z'):
+                    end_time = datetime.fromisoformat(end_time.replace('Z', '+00:00'))
+                else:
+                    end_time = datetime.fromisoformat(end_time)
+            
             # Generate daily intervals
             intervals = []
-            current_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            current_date = start_time.replace(hour=0, minute=0, second=0, microsecond=0)
             
-            while current_date <= end_date:
+            while current_date <= end_time:
                 next_day = current_date + timedelta(days=1)
                 intervals.append((current_date, next_day))
                 current_date = next_day
             
             daily_averages = []
             
+            # Get all readings for the device and sensor type
+            readings = self.db.query(Reading).filter(Reading.entity_id == device_id).all()
+            sensor_readings = [r for r in readings if r.get_sensor_type() == sensor_type]
+            
             for interval_start, interval_end in intervals:
-                # Get average for this day
-                avg_result = self.db.query(func.avg(Reading.value)).filter(
-                    Reading.device_id == device_id,
-                    Reading.sensor_type == sensor_type,
-                    Reading.timestamp >= interval_start,
-                    Reading.timestamp < interval_end
-                ).scalar()
+                # Filter readings for this day
+                # Make sure database timestamps are timezone-aware for comparison
+                day_readings = [
+                    r for r in sensor_readings 
+                    if interval_start <= r.timestamp.replace(tzinfo=timezone.utc) < interval_end
+                ]
+                
+                # Calculate average for this day
+                if day_readings:
+                    values = [r.get_value() for r in day_readings]
+                    average = sum(values) / len(values)
+                else:
+                    average = None
                 
                 daily_averages.append({
                     "date": interval_start.date().isoformat(),
-                    "average": float(avg_result) if avg_result else None,
+                    "average_value": float(average) if average is not None else None,
                     "day_of_week": interval_start.strftime("%A"),
                     "month": interval_start.strftime("%B")
                 })
@@ -588,7 +679,7 @@ class ReadingService(BaseService[Reading]):
         
         return True
     
-    def get_reading_statistics(self, organization_id: Optional[UUID] = None) -> Dict[str, Any]:
+    def get_reading_statistics(self, organization_id: Optional[UUID] = None, start_time: Optional[datetime] = None, end_time: Optional[datetime] = None) -> Dict[str, Any]:
         """
         Get reading statistics for analytics.
         
@@ -599,29 +690,45 @@ class ReadingService(BaseService[Reading]):
             Dictionary containing reading statistics
         """
         try:
+            from ..models.device import Device
             query = self.db.query(Reading)
             
             if organization_id:
-                query = query.filter(Reading.organization_id == organization_id)
+                query = query.join(Device, Reading.entity_id == Device.id).filter(Device.organization_id == organization_id)
             
             total_readings = query.count()
             
             # Get readings in last 24 hours
-            twenty_four_hours_ago = datetime.utcnow() - timedelta(hours=24)
+            twenty_four_hours_ago = datetime.now(timezone.utc) - timedelta(hours=24)
             recent_readings = query.filter(Reading.timestamp >= twenty_four_hours_ago).count()
             
-            # Get unique sensor types
-            sensor_types = query.with_entities(Reading.sensor_type).distinct().count()
+            # Get unique sensor types and value range (count in Python)
+            all_readings = query.all()
+            unique_sensor_types = set()
+            all_values = []
+            for reading in all_readings:
+                unique_sensor_types.add(reading.get_sensor_type())
+                all_values.append(reading.get_value())
+            sensor_types = len(unique_sensor_types)
+            
+            # Calculate value range and average
+            value_range = None
+            average_value = None
+            if all_values:
+                value_range = max(all_values) - min(all_values)
+                average_value = sum(all_values) / len(all_values)
             
             # Get unique devices
-            unique_devices = query.with_entities(Reading.device_id).distinct().count()
+            unique_devices = query.with_entities(Reading.entity_id).distinct().count()
             
             return {
                 "total_readings": total_readings,
                 "readings_24h": recent_readings,
-                "unique_sensor_types": sensor_types,
+                "sensor_types": sensor_types,
                 "unique_devices": unique_devices,
-                "readings_per_hour": recent_readings / 24 if recent_readings > 0 else 0
+                "readings_per_hour": recent_readings / 24 if recent_readings > 0 else 0,
+                "value_range": float(value_range) if value_range is not None else None,
+                "average_value": float(average_value) if average_value is not None else None
             }
             
         except Exception as e:
@@ -629,7 +736,9 @@ class ReadingService(BaseService[Reading]):
             return {
                 "total_readings": 0,
                 "readings_24h": 0,
-                "unique_sensor_types": 0,
+                "sensor_types": 0,
                 "unique_devices": 0,
-                "readings_per_hour": 0
+                "readings_per_hour": 0,
+                "value_range": None,
+                "average_value": None
             } 

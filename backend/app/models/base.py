@@ -7,12 +7,11 @@ functionality that all models inherit from.
 
 from datetime import datetime
 from sqlalchemy import Column, DateTime, Boolean
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import declared_attr
 from sqlalchemy import String, Text
 import uuid
-from ..database import JSONType
+from ..database import JSONType, UUIDType
 
 Base = declarative_base()
 
@@ -31,7 +30,7 @@ class BaseModel(Base):
     __abstract__ = True
     
     # Use UUID as primary key with auto-generation
-    id = Column(PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    id = Column(UUIDType, primary_key=True, default=uuid.uuid4, index=True)
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

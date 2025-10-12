@@ -11,11 +11,12 @@ from typing import Optional, List, Dict, Any
 from uuid import UUID, uuid4
 
 from sqlalchemy import Column, String, DateTime, JSON, ForeignKey, Text, Integer
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from sqlalchemy.orm import relationship
 
 from .base import Base, BaseModel
 from .entity import Entity
+from ..database import JSONType
 
 
 class Experiment(Entity):
@@ -366,8 +367,8 @@ class ExperimentTrial(Base):
     status = Column(String(50), default="pending")  # pending, running, completed, failed
     started_at = Column(DateTime)
     completed_at = Column(DateTime)
-    parameters = Column(JSONB, default={})  # Trial-specific parameters
-    results = Column(JSONB, default={})  # Trial results and data
+    parameters = Column(JSONType, default={})  # Trial-specific parameters
+    results = Column(JSONType, default={})  # Trial results and data
     error_message = Column(Text)
     created_by = Column(PostgresUUID(as_uuid=True), ForeignKey("entities.id"))
     created_at = Column(DateTime, default=datetime.utcnow)

@@ -11,8 +11,9 @@ from sqlalchemy import create_engine, text, Column, TypeDecorator, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool, StaticPool
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID as PostgresUUID
 import json
+import uuid
 
 from .config import settings
 
@@ -55,6 +56,60 @@ class JSONType(TypeDecorator):
         elif isinstance(value, (str, bytes)):
             # String that needs parsing (SQLite)
             return json.loads(value)
+        else:
+            # Fallback: return as-is
+            return value
+
+
+class UUIDType(TypeDecorator):
+    """
+    Custom UUID type that works with both PostgreSQL and SQLite.
+
+    In PostgreSQL, this will use UUID for better performance and native UUID support.
+    In SQLite, this will use String with UUID validation.
+    """
+    impl = String
+    cache_ok = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+    
+    def load_dialect_impl(self, dialect):
+        """Use UUID for PostgreSQL, String for SQLite."""
+        if dialect.name == 'postgresql':
+            return dialect.type_descriptor(PostgresUUID(as_uuid=True))
+        else:
+            return dialect.type_descriptor(String(36))
+    
+    def process_bind_param(self, value, dialect):
+        """Convert Python UUID to string for storage."""
+        if value is None:
+            return None
+        if isinstance(value, uuid.UUID):
+            return str(value)
+        if isinstance(value, str):
+            # Validate that it's a valid UUID string
+            try:
+                uuid.UUID(value)
+                return value
+            except ValueError:
+                raise ValueError(f"Invalid UUID string: {value}")
+        return str(value)
+    
+    def process_result_value(self, value, dialect):
+        """Convert string back to Python UUID."""
+        if value is None:
+            return None
+        
+        # PostgreSQL/TimescaleDB automatically parses UUID to UUID object
+        if isinstance(value, uuid.UUID):
+            return value
+        elif isinstance(value, (str, bytes)):
+            # String that needs parsing (SQLite)
+            try:
+                return uuid.UUID(str(value))
+            except ValueError:
+                return None
         else:
             # Fallback: return as-is
             return value

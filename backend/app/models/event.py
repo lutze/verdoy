@@ -5,14 +5,13 @@ This module defines the Event model which represents system events
 and stores event data in the data JSON column.
 """
 
-from sqlalchemy import Column, String, DateTime, ForeignKey, BigInteger, Integer
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
+from sqlalchemy import Column, String, DateTime, ForeignKey, Integer
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 from .base import Base
-from ..database import JSONType
+from ..database import JSONType, UUIDType
 
 
 class Event(Base):
@@ -29,10 +28,10 @@ class Event(Base):
     __tablename__ = "events"
     
     # Match the exact database schema from 001_initial_schema.sql
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
     event_type = Column(String(100), nullable=False, index=True)
-    entity_id = Column(PostgresUUID(as_uuid=True), nullable=False, index=True)
+    entity_id = Column(UUIDType, nullable=False, index=True)
     entity_type = Column(String(100), nullable=False, index=True)
     data = Column(JSONType, nullable=False)
     event_metadata = Column(JSONType, default={})

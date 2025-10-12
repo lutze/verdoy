@@ -49,7 +49,7 @@ __all__ = [
     "CommandService",
     "AnalyticsService",
     "AlertService",
-    "OrganizationService",
+    "OrganizationServiceEntity",
     "OrganizationMemberService",
     "OrganizationInvitationService",
     "MembershipRemovalService",

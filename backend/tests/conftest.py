@@ -49,12 +49,10 @@ def test_engine():
     """Create a test database engine."""
     engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
     
-    # Create only the tables we need for testing (exclude legacy models with JSONB)
-    # Import Base directly to avoid importing legacy models
-    from sqlalchemy.orm import declarative_base
-    TestBase = declarative_base()
+    # Import the main Base from models to ensure all models are registered
+    from app.models.base import Base
     
-    # Import only the models we need for testing
+    # Import all models to ensure they're registered with Base.metadata
     from app.models.entity import Entity
     from app.models.user import User
     from app.models.device import Device
@@ -68,12 +66,13 @@ def test_engine():
     from app.models.command import Command
     from app.models.event import Event
     from app.models.relationship import Relationship
+    from app.models.process import Process, ProcessInstance
     
-    # Create tables for entity-based models only
-    TestBase.metadata.create_all(bind=engine)
+    # Create all tables using the main Base metadata
+    Base.metadata.create_all(bind=engine)
     
     yield engine
-    TestBase.metadata.drop_all(bind=engine)
+    Base.metadata.drop_all(bind=engine)
     # Clean up test database file
     try:
         os.remove("./test.db")
@@ -258,14 +257,15 @@ def sample_readings(reading_service, test_device) -> list:
     """Create sample readings for testing."""
     readings = []
     for i in range(5):
-        reading_data = {
-            "device_id": test_device.id,
-            "sensor_type": "temperature",
-            "value": 20.0 + i,
-            "unit": "celsius",
-            "timestamp": f"2024-01-01T12:0{i}:00Z",
-            "metadata": {"test": True}
-        }
+        from app.schemas.reading import ReadingCreate
+        reading_data = ReadingCreate(
+            device_id=test_device.id,
+            sensor_type="temperature",
+            value=20.0 + i,
+            unit="celsius",
+            timestamp=f"2024-01-01T12:0{i}:00Z",
+            metadata={"test": True}
+        )
         reading = reading_service.create_reading(reading_data)
         readings.append(reading)
     

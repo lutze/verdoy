@@ -7,12 +7,11 @@ in the system with flexible properties stored as JSON.
 
 from sqlalchemy import Column, DateTime, String, Text, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from datetime import datetime
 import uuid
 
 from .base import BaseModel
-from ..database import JSONType
+from ..database import JSONType, UUIDType
 
 
 class Entity(BaseModel):
@@ -42,7 +41,7 @@ class Entity(BaseModel):
     description = Column(Text, nullable=True)
     properties = Column(JSONType, nullable=False, default={})
     status = Column(String(50), default="active")
-    organization_id = Column(PostgresUUID(as_uuid=True), nullable=True)
+    organization_id = Column(UUIDType, nullable=True)
     
     # Note: In pure entity approach, User and Entity are the same table
     # No separate relationships needed since User inherits from Entity

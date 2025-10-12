@@ -26,7 +26,7 @@ from .services import (
     CommandService,
     AnalyticsService,
     AlertService,
-    OrganizationService,
+    OrganizationServiceEntity,
     BillingService,
     CacheService,
     NotificationService,
@@ -252,7 +252,7 @@ def get_alert_service(db: Session = Depends(get_db)) -> AlertService:
     return AlertService(db)
 
 
-def get_organization_service(db: Session = Depends(get_db)) -> OrganizationService:
+def get_organization_service(db: Session = Depends(get_db)) -> OrganizationServiceEntity:
     """
     Get organization service instance.
     
@@ -260,9 +260,9 @@ def get_organization_service(db: Session = Depends(get_db)) -> OrganizationServi
         db: Database session
         
     Returns:
-        OrganizationService instance
+        OrganizationServiceEntity instance
     """
-    return OrganizationService(db)
+    return OrganizationServiceEntity(db)
 
 
 def get_billing_service(db: Session = Depends(get_db)) -> BillingService:

@@ -357,11 +357,15 @@ class DeviceService(BaseService[Device]):
             Device if found, None otherwise
         """
         try:
-            from sqlalchemy import text
-            return self.db.query(Device).filter(
-                Device.entity_type == "device.esp32",
-                text("properties->>'serial_number' = :serial_number")
-            ).params(serial_number=serial_number).first()
+            # Use database-agnostic approach for JSON field access
+            devices = self.db.query(Device).filter(
+                Device.entity_type == "device.esp32"
+            ).all()
+            
+            for device in devices:
+                if device.properties and device.properties.get('serial_number') == serial_number:
+                    return device
+            return None
         except Exception as e:
             logger.error(f"Error getting device by serial: {e}")
             return None
@@ -377,11 +381,15 @@ class DeviceService(BaseService[Device]):
             True if device exists, False otherwise
         """
         try:
-            from sqlalchemy import text
-            return self.db.query(Device).filter(
-                Device.entity_type == "device.esp32",
-                text("properties->>'serial_number' = :serial_number")
-            ).params(serial_number=serial_number).first() is not None
+            # Use database-agnostic approach for JSON field access
+            devices = self.db.query(Device).filter(
+                Device.entity_type == "device.esp32"
+            ).all()
+            
+            for device in devices:
+                if device.properties and device.properties.get('serial_number') == serial_number:
+                    return True
+            return False
         except Exception as e:
             logger.error(f"Error checking device existence by serial: {e}")
             return False
