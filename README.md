@@ -2,9 +2,11 @@
 
 Currently in pre-alpha and subject to significant breaking changes. 
 
-VerdoyLab is an experiment in building a modern SaaS platform from scratch using AI Copilots. Envisioned as an open-source Laboratory (Information) Management System designed for research labs and R&D facilities, VerdoyLab has been fully pair-programmed with Cursor, using intentional, top-down SDLC design/build practices. The eventual platform will be a simple, performant, and secure system to build the information management of an R&D lab. It will support remote programmatic integration for lab tools and sensors; multimodal data manage with native graph, vector and timeseries storage; project, process experiment and hardware management; and user/back-office management for one to many labs in one to many organizations, in an either multi- or data separated tenancy configuraiton. 
+VerdoyLab is an experiment in building a modern SaaS platform from scratch using AI Copilots. Envisioned as an open-source Laboratory (Information) Management System designed for research labs and R&D facilities, VerdoyLab has been fully pair-programmed with Cursor, using an intentional and iterative design/build practice. 
 
-Built on a FastAPI backend with Jinja 2 frontend, connected to a PostgreSQL + TimescaleDB database for high-performance data management and real-time IoT device integration.
+The eventual platform will, hopefully, be a simple, performant, and secure system to build the information management of an R&D lab. It will support remote programmatic integration for lab tools and sensors; multimodal data manage with native graph, vector and timeseries storage; project, process experiment and hardware management; and user/back-office management for one to many labs in one to many organizations, in an either multi- or data separated tenancy configuraiton. 
+
+VerdoyLab is built on a FastAPI backend with Jinja 2 frontend, connected to a PostgreSQL + TimescaleDB database for high-performance data management and real-time IoT device integration.
 
 Significant history of the work can be found in the project directories under /docs, and more recently stored in a Linear project that Cursor has been using to manage increasingly complicated dependencies and project structures (ask about access if you'd like to review). 
 
@@ -68,8 +70,8 @@ The system implements a simple architecture with separated concerns and a low-Ja
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/verdoylab.git
-   cd verdoylab
+   git clone https://github.com/lutze/verdoy.git
+   cd verdoy
    ```
 
 2. **Set up environment variables**
@@ -314,6 +316,7 @@ This project is licensed under the GNU Affero General Public License v3.0 - see 
 
 ## 🙏 Acknowledgments
 
+- MVP feature set refined through discussions with Ivan Labra and Alena Tanakra of [KaskBIO](https://kask.bio)
 - Built with [FastAPI](https://fastapi.tiangolo.com/)
 - Database powered by [PostgreSQL](https://www.postgresql.org/) and [TimescaleDB](https://www.timescale.com/)
 - IoT integration for [ESP32](https://www.espressif.com/en/products/socs/esp32) devices
