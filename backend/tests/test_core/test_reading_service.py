@@ -278,8 +278,8 @@ class TestReadingService:
         
         # Assert
         assert updated_reading is not None
-        assert updated_reading.value == 26.0
-        assert updated_reading.unit == "fahrenheit"
+        assert updated_reading.get_value() == 26.0
+        assert updated_reading.get_unit() == "fahrenheit"
 
     def test_delete_reading_success(self, reading_service: ReadingService, test_device):
         """Test successful reading deletion."""

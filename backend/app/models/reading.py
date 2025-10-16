@@ -260,6 +260,21 @@ class Reading(Event):
         """
         return self.get_quality() != "bad" and self.get_value() is not None
     
+    @property
+    def value(self) -> float:
+        """Get sensor value (backward compatibility)."""
+        return self.get_value()
+    
+    @property
+    def unit(self) -> str:
+        """Get sensor unit (backward compatibility)."""
+        return self.get_unit()
+    
+    @property
+    def sensor_type(self) -> str:
+        """Get sensor type (backward compatibility)."""
+        return self.get_sensor_type()
+    
     def __repr__(self):
         """String representation of the reading."""
         return f"<Reading(id={self.id}, sensor_type={self.get_sensor_type()}, value={self.get_value()})>" 

@@ -238,6 +238,7 @@ class ReadingCreate(BaseModel):
 
 class ReadingUpdate(BaseModel):
     """Schema for updating an existing reading."""
+    sensor_type: Optional[str] = None
     value: Optional[float] = None
     unit: Optional[str] = None
     timestamp: Optional[datetime] = None
