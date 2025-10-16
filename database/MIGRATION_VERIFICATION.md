@@ -24,7 +24,7 @@ For a detailed analysis of the database structure and data:
 
 ```bash
 docker cp verify_db.sql postgres-db:/tmp/
-docker exec postgres-db psql -U postgres -d lmsevo-db -f /tmp/verify_db.sql
+docker exec postgres-db psql -U postgres -d verdoy-db -f /tmp/verify_db.sql
 ```
 
 This provides:
@@ -71,17 +71,17 @@ This provides:
 ### If Migrations Are Missing
 ```bash
 # Check migration status
-docker exec postgres-db psql -U postgres -d lmsevo-db -c "SELECT version, applied_at FROM schema_migrations;"
+docker exec postgres-db psql -U postgres -d verdoy-db -c "SELECT version, applied_at FROM schema_migrations;"
 
 # Manually apply if needed
 docker cp database/migrations/002_test_data.sql postgres-db:/tmp/
-docker exec postgres-db psql -U postgres -d lmsevo-db -f /tmp/002_test_data.sql
+docker exec postgres-db psql -U postgres -d verdoy-db -f /tmp/002_test_data.sql
 ```
 
 ### If Entity Counts Are Wrong
 ```bash
 # Check what's in the database
-docker exec postgres-db psql -U postgres -d lmsevo-db -c "SELECT entity_type, COUNT(*) FROM entities GROUP BY entity_type;"
+docker exec postgres-db psql -U postgres -d verdoy-db -c "SELECT entity_type, COUNT(*) FROM entities GROUP BY entity_type;"
 
 # Reset if needed
 docker compose down

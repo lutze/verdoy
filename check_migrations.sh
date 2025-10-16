@@ -37,33 +37,33 @@ echo -e "${GREEN}✅ All containers running${NC}"
 # Check applied migrations
 echo ""
 echo "🔄 Checking applied migrations..."
-MIGRATIONS=$(docker exec postgres-db psql -U postgres -d lmsevo-db -t -c "SELECT COUNT(*) FROM schema_migrations;")
+MIGRATIONS=$(docker exec postgres-db psql -U postgres -d verdoy-db -t -c "SELECT COUNT(*) FROM schema_migrations;")
 MIGRATIONS=$(echo $MIGRATIONS | tr -d ' ')
 
 if [ "$MIGRATIONS" -eq 2 ]; then
     echo -e "${GREEN}✅ Both migrations applied (001_schema, 002_test_data)${NC}"
 else
     echo -e "${RED}❌ Expected 2 migrations, found $MIGRATIONS${NC}"
-    docker exec postgres-db psql -U postgres -d lmsevo-db -c "SELECT version, applied_at FROM schema_migrations ORDER BY applied_at;"
+    docker exec postgres-db psql -U postgres -d verdoy-db -c "SELECT version, applied_at FROM schema_migrations ORDER BY applied_at;"
 fi
 
 # Check entity counts
 echo ""
 echo "📊 Checking test data..."
-ENTITY_COUNT=$(docker exec postgres-db psql -U postgres -d lmsevo-db -t -c "SELECT COUNT(*) FROM entities;")
+ENTITY_COUNT=$(docker exec postgres-db psql -U postgres -d verdoy-db -t -c "SELECT COUNT(*) FROM entities;")
 ENTITY_COUNT=$(echo $ENTITY_COUNT | tr -d ' ')
 
 if [ "$ENTITY_COUNT" -eq 14 ]; then
     echo -e "${GREEN}✅ All 14 test entities loaded${NC}"
 else
     echo -e "${YELLOW}⚠️  Expected 14 entities, found $ENTITY_COUNT${NC}"
-    docker exec postgres-db psql -U postgres -d lmsevo-db -c "SELECT entity_type, COUNT(*) FROM entities GROUP BY entity_type ORDER BY entity_type;"
+    docker exec postgres-db psql -U postgres -d verdoy-db -c "SELECT entity_type, COUNT(*) FROM entities GROUP BY entity_type ORDER BY entity_type;"
 fi
 
 # Check TimescaleDB
 echo ""
 echo "⏰ Checking TimescaleDB..."
-HYPERTABLES=$(docker exec postgres-db psql -U postgres -d lmsevo-db -t -c "SELECT COUNT(*) FROM timescaledb_information.hypertables WHERE hypertable_name = 'events';")
+HYPERTABLES=$(docker exec postgres-db psql -U postgres -d verdoy-db -t -c "SELECT COUNT(*) FROM timescaledb_information.hypertables WHERE hypertable_name = 'events';")
 HYPERTABLES=$(echo $HYPERTABLES | tr -d ' ')
 
 if [ "$HYPERTABLES" -eq 1 ]; then
@@ -84,7 +84,7 @@ fi
 # Check data integrity
 echo ""
 echo "🔍 Checking data integrity..."
-VIOLATIONS=$(docker exec postgres-db psql -U postgres -d lmsevo-db -t -c "
+VIOLATIONS=$(docker exec postgres-db psql -U postgres -d verdoy-db -t -c "
     SELECT COUNT(*) FROM entities e1 
     WHERE e1.organization_id IS NOT NULL 
     AND NOT EXISTS (
@@ -108,7 +108,7 @@ echo "=========="
 echo -e "${GREEN}✅ Migration system is working correctly!${NC}"
 echo ""
 echo "📋 Quick commands:"
-echo "   Full verification: docker exec postgres-db psql -U postgres -d lmsevo-db -f /tmp/verify_db.sql"
+echo "   Full verification: docker exec postgres-db psql -U postgres -d verdoy-db -f /tmp/verify_db.sql"
 echo "   Reset database: docker compose down && docker compose up -d --build"
 echo "   View logs: docker logs lms-core-poc-backend-1"
 echo "   Access web: http://localhost:8000"

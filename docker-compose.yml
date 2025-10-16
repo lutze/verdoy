@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
-      POSTGRES_DB: ${POSTGRES_DB:-lmsevo-db}
+      POSTGRES_DB: ${POSTGRES_DB:-verdoy-db}
     ports:
       - "5432:5432"
     volumes:
@@ -33,7 +33,7 @@ services:
     environment:
       - DB_HOST=${DB_HOST:-db}
       - DB_PORT=${DB_PORT:-5432}
-      - DB_NAME=${DB_NAME:-lmsevo-db}
+      - DB_NAME=${DB_NAME:-verdoy-db}
       - DB_USER=${DB_USER:-postgres}
       - DB_PASSWORD=${DB_PASSWORD:-password}
     depends_on:
@@ -49,7 +49,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:password@db:5432/lmsevo-db}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:password@db:5432/verdoy-db}
       - SECRET_KEY=${SECRET_KEY:-your-very-long-secret-key-here-at-least-32-characters}
     depends_on:
       - db
