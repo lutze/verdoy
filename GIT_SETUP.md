@@ -1,5 +1,7 @@
 # Git Configuration for Dual Remotes
 
+_Notes for maintaining working repositories and separate release repositories_
+
 ## Add Git Aliases
 
 Add these aliases to your `~/.gitconfig` file for convenient dual remote management:
@@ -28,13 +30,13 @@ Setting new remote paths is also quite easy:
 # Add a new remote
 git remote add <name> <url>
 #e.g.
-git remote add github git@github.com:lutze/verdoy.git
+git remote add github git@github.com:<your-username>/verdoy.git
 
 # Update the GitHub path
-git remote set-url github git@github.com:lutze/verdoy.git
+git remote set-url github git@github.com:<your-username>/verdoy.git
 
 # Update the GitLab path
-git remote set-url origin git@gitlab.com:lms-evo/lms-core-poc.git
+git remote set-url origin git@gitlab.com:<path>/<to-project>.git
 
 ```
 
