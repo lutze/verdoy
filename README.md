@@ -24,6 +24,7 @@ As development continues, progress updates will be documented here: (TBD)
 - **Multi-tenant Architecture**: Organization-based data isolation (in progress)
 - **Event Sourcing**: Immutable audit trail for all system changes (in progress)
 - **Knowledge Graph**: Rich entity relationships and graph queries (working representation)
+- **MCP Service**: An MCP server that streamlines Agentic-LLM-to-API interaction. (future)
 
 ## 🏗️ Architecture
 
