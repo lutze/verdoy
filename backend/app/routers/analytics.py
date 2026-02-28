@@ -10,6 +10,7 @@ This router handles:
 """
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import Optional
 from uuid import UUID
@@ -27,8 +28,7 @@ async def get_dashboard_summary(
     db: Session = Depends(get_db)
 ):
     """Get dashboard summary analytics."""
-    # TODO: Implement dashboard summary logic
-    return {"summary": "Not implemented"}
+    return JSONResponse(status_code=501, content={"detail": "Not implemented"})
 
 @router.get("/trends")
 async def get_trends(
@@ -36,8 +36,7 @@ async def get_trends(
     db: Session = Depends(get_db)
 ):
     """Get time-based trends for analytics."""
-    # TODO: Implement trends logic
-    return {"trends": "Not implemented"}
+    return JSONResponse(status_code=501, content={"detail": "Not implemented"})
 
 @router.get("/alerts")
 async def get_active_alerts_analytics(
@@ -45,8 +44,7 @@ async def get_active_alerts_analytics(
     db: Session = Depends(get_db)
 ):
     """Get analytics for active alerts."""
-    # TODO: Implement active alerts analytics
-    return {"alerts": "Not implemented"}
+    return JSONResponse(status_code=501, content={"detail": "Not implemented"})
 
 @router.get("/reports")
 async def get_reports(
@@ -54,5 +52,4 @@ async def get_reports(
     db: Session = Depends(get_db)
 ):
     """Get predefined analytics reports."""
-    # TODO: Implement reports logic
-    return {"reports": "Not implemented"} 
+    return JSONResponse(status_code=501, content={"detail": "Not implemented"})

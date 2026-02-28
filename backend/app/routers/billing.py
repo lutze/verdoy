@@ -9,6 +9,7 @@ This router handles:
 """
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import Optional
 from uuid import UUID
@@ -25,8 +26,7 @@ async def get_subscription(
     db: Session = Depends(get_db)
 ):
     """Get current subscription plan."""
-    # TODO: Implement subscription retrieval
-    return {"subscription": "Not implemented"}
+    return JSONResponse(status_code=501, content={"detail": "Not implemented"})
 
 @router.post("/subscription")
 async def update_subscription(
@@ -34,8 +34,7 @@ async def update_subscription(
     db: Session = Depends(get_db)
 ):
     """Update subscription plan."""
-    # TODO: Implement subscription update
-    return {"subscription": "Not implemented"}
+    return JSONResponse(status_code=501, content={"detail": "Not implemented"})
 
 @router.get("/usage")
 async def get_usage(
@@ -43,5 +42,4 @@ async def get_usage(
     db: Session = Depends(get_db)
 ):
     """Get usage statistics."""
-    # TODO: Implement usage statistics
-    return {"usage": "Not implemented"} 
+    return JSONResponse(status_code=501, content={"detail": "Not implemented"})

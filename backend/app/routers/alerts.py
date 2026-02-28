@@ -9,6 +9,7 @@ This router handles:
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status, Body, Query
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import Optional, List
 from uuid import UUID, uuid4
@@ -115,8 +116,7 @@ async def list_alerts(
     db: Session = Depends(get_db)
 ):
     """List alert history."""
-    # TODO: Implement alert history listing
-    return {"alerts": "Not implemented"}
+    return JSONResponse(status_code=501, content={"detail": "Not implemented"})
 
 @router.get("/active")
 async def list_active_alerts(
@@ -124,8 +124,7 @@ async def list_active_alerts(
     db: Session = Depends(get_db)
 ):
     """List currently active alerts."""
-    # TODO: Implement active alerts listing
-    return {"active_alerts": "Not implemented"}
+    return JSONResponse(status_code=501, content={"detail": "Not implemented"})
 
 @router.put("/{alert_id}/acknowledge")
 async def acknowledge_alert(
@@ -134,5 +133,4 @@ async def acknowledge_alert(
     db: Session = Depends(get_db)
 ):
     """Acknowledge an alert (mark as seen)."""
-    # TODO: Implement alert acknowledge
-    return {"acknowledged": "Not implemented"} 
+    return JSONResponse(status_code=501, content={"detail": "Not implemented"}) 

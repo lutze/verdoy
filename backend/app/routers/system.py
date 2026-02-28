@@ -8,6 +8,7 @@ This router handles:
 """
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from ..dependencies import get_db
 
@@ -16,17 +17,14 @@ router = APIRouter(tags=["System"])
 @router.get("/health")
 async def health_check():
     """API health check endpoint."""
-    # TODO: Implement health check logic
     return {"status": "ok"}
 
 @router.get("/metrics")
 async def get_metrics():
     """System metrics endpoint."""
-    # TODO: Implement metrics logic
-    return {"metrics": "Not implemented"}
+    return JSONResponse(status_code=501, content={"detail": "Not implemented"})
 
 @router.get("/version")
 async def get_version():
     """API version information."""
-    # TODO: Implement version info
-    return {"version": "Not implemented"} 
+    return JSONResponse(status_code=501, content={"detail": "Not implemented"})
