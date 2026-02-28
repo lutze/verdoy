@@ -151,14 +151,10 @@ class User(Entity):
         Returns:
             User instance or None
         """
-        # Get all users and filter in Python to avoid JSONB operator issues
-        users = db.query(cls).filter(cls.entity_type == "user").all()
-        
-        for user in users:
-            if user.email == email:
-                return user
-        
-        return None
+        return db.query(cls).filter(
+            cls.entity_type == "user",
+            cls.properties['email'].astext == email
+        ).first()
     
     @classmethod
     def get_active_users(cls, db, skip: int = 0, limit: int = 100):

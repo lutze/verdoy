@@ -718,21 +718,32 @@ class ExperimentServiceEntity(BaseService):
             raise PermissionException("Access denied to organization")
         
         try:
-            # Get experiment counts by status
-            experiments = self.db.query(Entity).filter(
-                and_(
-                    Entity.entity_type == 'experiment',
-                    Entity.organization_id == organization_id
-                )
-            ).all()
-            
+            from sqlalchemy import func, case
+
+            base_filter = and_(
+                Entity.entity_type == 'experiment',
+                Entity.organization_id == organization_id
+            )
+
+            # Use SQL-level JSONB filtering for status counts
+            status_counts = self.db.query(
+                func.count().label('total'),
+                func.count().filter(Entity.properties['status'].astext == 'active').label('active'),
+                func.count().filter(Entity.properties['status'].astext == 'completed').label('completed'),
+                func.count().filter(Entity.properties['status'].astext == 'failed').label('failed'),
+                func.count().filter(Entity.properties['status'].astext == 'draft').label('draft'),
+                func.count().filter(Entity.properties['status'].astext == 'archived').label('archived'),
+            ).filter(base_filter).first()
+
+            experiments = self.db.query(Entity).filter(base_filter).all()
+
             stats = {
-                'total_experiments': len(experiments),
-                'active_experiments': len([e for e in experiments if e.properties.get('status') == 'active']),
-                'completed_experiments': len([e for e in experiments if e.properties.get('status') == 'completed']),
-                'failed_experiments': len([e for e in experiments if e.properties.get('status') == 'failed']),
-                'draft_experiments': len([e for e in experiments if e.properties.get('status') == 'draft']),
-                'archived_experiments': len([e for e in experiments if e.properties.get('status') == 'archived']),
+                'total_experiments': status_counts.total if status_counts else 0,
+                'active_experiments': status_counts.active if status_counts else 0,
+                'completed_experiments': status_counts.completed if status_counts else 0,
+                'failed_experiments': status_counts.failed if status_counts else 0,
+                'draft_experiments': status_counts.draft if status_counts else 0,
+                'archived_experiments': status_counts.archived if status_counts else 0,
                 'total_trials': 0,
                 'running_trials': 0
             }

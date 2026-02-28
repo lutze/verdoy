@@ -251,10 +251,7 @@ class OrganizationService(BaseService[Organization]):
             )
             
             if role:
-                # Filter by role stored in user properties
-                # Use Python filtering instead of JSONB operators to avoid SQLAlchemy issues
-                users = query.all()
-                return [user for user in users if user.get_property('organization_role') == role]
+                query = query.filter(User.properties['organization_role'].astext == role)
             
             users = query.all()
             logger.debug(f"Retrieved {len(users)} users for organization {organization_id}")

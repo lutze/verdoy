@@ -298,50 +298,33 @@ class ReadingService(BaseService[Reading]):
         """
         try:
             logger.debug(f"Starting get_readings_by_device for device {device_id}")
-            # Get all readings for the device
-            readings = self.db.query(Reading).filter(Reading.entity_id == device_id).all()
-            logger.debug(f"Retrieved {len(readings)} readings from database for device {device_id}")
-            
-            # Apply filters in Python for database-agnostic approach
+            query = self.db.query(Reading).filter(Reading.entity_id == device_id)
+
             if sensor_type:
-                logger.debug(f"Applying sensor_type filter: {sensor_type}")
-                readings = [r for r in readings if r.get_sensor_type() == sensor_type]
-                logger.debug(f"After sensor_type filter: {len(readings)} readings")
-            
+                query = query.filter(Reading.data['sensorType'].astext == sensor_type)
+
             if start_time:
-                # Convert string timestamp to datetime if needed
                 if isinstance(start_time, str):
-                    # Parse the timestamp and ensure it's timezone-aware
                     if start_time.endswith('Z'):
                         start_time = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
                     else:
                         start_time = datetime.fromisoformat(start_time)
-                # Make sure both timestamps are timezone-aware for comparison
-                if start_time.tzinfo is None:
-                    start_time = start_time.replace(tzinfo=timezone.utc)
-                
-                # Convert database timestamps to timezone-aware for comparison
-                readings = [r for r in readings if r.timestamp.replace(tzinfo=timezone.utc) >= start_time]
-            
+                if start_time.tzinfo is not None:
+                    start_time = start_time.replace(tzinfo=None)
+                query = query.filter(Reading.timestamp >= start_time)
+
             if end_time:
-                # Convert string timestamp to datetime if needed
                 if isinstance(end_time, str):
-                    # Parse the timestamp and ensure it's timezone-aware
                     if end_time.endswith('Z'):
                         end_time = datetime.fromisoformat(end_time.replace('Z', '+00:00'))
                     else:
                         end_time = datetime.fromisoformat(end_time)
-                # Make sure both timestamps are timezone-aware for comparison
-                if end_time.tzinfo is None:
-                    end_time = end_time.replace(tzinfo=timezone.utc)
-                
-                # Convert database timestamps to timezone-aware for comparison
-                readings = [r for r in readings if r.timestamp.replace(tzinfo=timezone.utc) <= end_time]
-            
-            # Sort by timestamp (most recent first) and limit
-            readings.sort(key=lambda x: x.timestamp, reverse=True)
-            readings = readings[:limit]
-            
+                if end_time.tzinfo is not None:
+                    end_time = end_time.replace(tzinfo=None)
+                query = query.filter(Reading.timestamp <= end_time)
+
+            readings = query.order_by(desc(Reading.timestamp)).limit(limit).all()
+
             logger.debug(f"Retrieved {len(readings)} readings for device {device_id}")
             return readings
             
@@ -382,14 +365,10 @@ class ReadingService(BaseService[Reading]):
             if end_time:
                 query = query.filter(Reading.timestamp <= end_time)
             
-            readings = query.order_by(desc(Reading.timestamp)).all()
-            
-            # Apply sensor_type filter in Python if specified
             if sensor_type:
-                readings = [r for r in readings if r.get_sensor_type() == sensor_type]
-            
-            # Apply limit
-            readings = readings[:limit]
+                query = query.filter(Reading.data['sensorType'].astext == sensor_type)
+
+            readings = query.order_by(desc(Reading.timestamp)).limit(limit).all()
             
             logger.debug(f"Retrieved {len(readings)} readings for organization {organization_id}")
             return readings
@@ -410,13 +389,13 @@ class ReadingService(BaseService[Reading]):
             Dictionary mapping sensor types to their latest readings
         """
         try:
-            # Get all readings for the device
-            readings = self.db.query(Reading).filter(Reading.entity_id == device_id).all()
-            
-            # Filter by sensor types if provided
+            query = self.db.query(Reading).filter(Reading.entity_id == device_id)
+
             if sensor_types:
-                readings = [r for r in readings if r.get_sensor_type() in sensor_types]
-            
+                query = query.filter(Reading.data['sensorType'].astext.in_(sensor_types))
+
+            readings = query.order_by(desc(Reading.timestamp)).all()
+
             # Group by sensor type and get the latest for each
             latest_readings = {}
             for reading in readings:
@@ -451,19 +430,17 @@ class ReadingService(BaseService[Reading]):
             Dictionary containing statistical data
         """
         try:
-            # Get all readings for the device
-            readings = self.db.query(Reading).filter(Reading.entity_id == device_id).all()
-            
-            # Filter by sensor type and time range in Python
-            filtered_readings = []
-            for reading in readings:
-                if reading.get_sensor_type() == sensor_type:
-                    if start_time and reading.timestamp < start_time:
-                        continue
-                    if end_time and reading.timestamp > end_time:
-                        continue
-                    filtered_readings.append(reading)
-            
+            query = self.db.query(Reading).filter(
+                Reading.entity_id == device_id,
+                Reading.data['sensorType'].astext == sensor_type
+            )
+            if start_time:
+                query = query.filter(Reading.timestamp >= start_time)
+            if end_time:
+                query = query.filter(Reading.timestamp <= end_time)
+
+            filtered_readings = query.all()
+
             if not filtered_readings:
                 return {
                     "count": 0,
@@ -549,15 +526,18 @@ class ReadingService(BaseService[Reading]):
             
             hourly_averages = []
             
-            # Get all readings for the device and sensor type
-            readings = self.db.query(Reading).filter(Reading.entity_id == device_id).all()
-            sensor_readings = [r for r in readings if r.get_sensor_type() == sensor_type]
-            
+            # Get filtered readings from DB for the full time range
+            sensor_readings = self.db.query(Reading).filter(
+                Reading.entity_id == device_id,
+                Reading.data['sensorType'].astext == sensor_type,
+                Reading.timestamp >= start_time,
+                Reading.timestamp <= end_time
+            ).all()
+
             for interval_start, interval_end in intervals:
-                # Filter readings for this hour
-                # Make sure database timestamps are timezone-aware for comparison
+                # Filter readings for this hour from pre-fetched set
                 hour_readings = [
-                    r for r in sensor_readings 
+                    r for r in sensor_readings
                     if interval_start <= r.timestamp.replace(tzinfo=timezone.utc) < interval_end
                 ]
                 
@@ -625,15 +605,18 @@ class ReadingService(BaseService[Reading]):
             
             daily_averages = []
             
-            # Get all readings for the device and sensor type
-            readings = self.db.query(Reading).filter(Reading.entity_id == device_id).all()
-            sensor_readings = [r for r in readings if r.get_sensor_type() == sensor_type]
-            
+            # Get filtered readings from DB for the full time range
+            sensor_readings = self.db.query(Reading).filter(
+                Reading.entity_id == device_id,
+                Reading.data['sensorType'].astext == sensor_type,
+                Reading.timestamp >= start_time,
+                Reading.timestamp <= end_time
+            ).all()
+
             for interval_start, interval_end in intervals:
-                # Filter readings for this day
-                # Make sure database timestamps are timezone-aware for comparison
+                # Filter readings for this day from pre-fetched set
                 day_readings = [
-                    r for r in sensor_readings 
+                    r for r in sensor_readings
                     if interval_start <= r.timestamp.replace(tzinfo=timezone.utc) < interval_end
                 ]
                 
@@ -746,40 +729,37 @@ class ReadingService(BaseService[Reading]):
             Dictionary containing reading statistics
         """
         try:
-            # Get all readings for the device
-            readings = self.db.query(Reading).filter(Reading.entity_id == device_id).all()
-            
-            # Apply time filters if provided
+            query = self.db.query(Reading).filter(Reading.entity_id == device_id)
+
             if start_time:
-                # Convert string timestamp to datetime if needed
                 if isinstance(start_time, str):
                     if start_time.endswith('Z'):
                         start_time = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
                     else:
                         start_time = datetime.fromisoformat(start_time)
-                # Make sure both timestamps are timezone-aware for comparison
-                if start_time.tzinfo is None:
-                    start_time = start_time.replace(tzinfo=timezone.utc)
-                
-                readings = [r for r in readings if r.timestamp.replace(tzinfo=timezone.utc) >= start_time]
+                if start_time.tzinfo is not None:
+                    start_time = start_time.replace(tzinfo=None)
+                query = query.filter(Reading.timestamp >= start_time)
+
             if end_time:
-                # Convert string timestamp to datetime if needed
                 if isinstance(end_time, str):
                     if end_time.endswith('Z'):
                         end_time = datetime.fromisoformat(end_time.replace('Z', '+00:00'))
                     else:
                         end_time = datetime.fromisoformat(end_time)
-                # Make sure both timestamps are timezone-aware for comparison
-                if end_time.tzinfo is None:
-                    end_time = end_time.replace(tzinfo=timezone.utc)
-                
-                readings = [r for r in readings if r.timestamp.replace(tzinfo=timezone.utc) <= end_time]
-            
+                if end_time.tzinfo is not None:
+                    end_time = end_time.replace(tzinfo=None)
+                query = query.filter(Reading.timestamp <= end_time)
+
+            readings = query.all()
             total_readings = len(readings)
-            
-            # Get readings in last 24 hours
-            twenty_four_hours_ago = datetime.now(timezone.utc) - timedelta(hours=24)
-            recent_readings = len([r for r in readings if r.timestamp.replace(tzinfo=timezone.utc) >= twenty_four_hours_ago])
+
+            # Count readings in last 24 hours via SQL
+            twenty_four_hours_ago = datetime.utcnow() - timedelta(hours=24)
+            recent_readings = self.db.query(func.count(Reading.id)).filter(
+                Reading.entity_id == device_id,
+                Reading.timestamp >= twenty_four_hours_ago
+            ).scalar() or 0
             
             # Get unique sensor types and value range
             unique_sensor_types = set()
