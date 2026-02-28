@@ -20,7 +20,7 @@
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   IoT Devices   │    │   Web Frontend  │    │   Mobile App    │
-│   (ESP32)       │    │   (Next.js)     │    │   (Future)      │
+│   (ESP32)       │    │ (Jinja2/HTMX)  │    │   (Future)      │
 └─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
           │                      │                      │
           │                      │                      │
@@ -909,8 +909,8 @@ This architectural evolution provides a robust foundation for future development
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
 │  │   Frontend  │  │   Backend   │  │  Database   │        │
-│  │  (Next.js)  │  │  (FastAPI)  │  │(PostgreSQL) │        │
-│  │   Port 3000 │  │   Port 8000 │  │   Port 5432 │        │
+│  │(Jinja2/HTMX)│  │  (FastAPI)  │  │(PostgreSQL) │        │
+│  │   Port 8000 │  │   Port 8000 │  │   Port 5432 │        │
 │  └─────────────┘  └─────────────┘  └─────────────┘        │
 └─────────────────────────────────────────────────────────────┘
 ```

@@ -30,7 +30,7 @@ Which manages data in,
 ### Key Components
 
 - **IoT Devices**: ESP32 microcontrollers with sensors
-- **Web Frontend**: Next.js dashboard for data visualization
+- **Web Frontend**: Jinja2 templates with HTMX for data visualization
 - **API Backend**: FastAPI application with REST and WebSocket endpoints
 - **Database**: PostgreSQL with TimescaleDB extension for time-series data
 - **Real-time Communication**: WebSocket connections for live data streaming
