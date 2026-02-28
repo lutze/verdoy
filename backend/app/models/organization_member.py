@@ -6,13 +6,13 @@ organization membership and roles.
 """
 
 from sqlalchemy import Column, String, Boolean, ForeignKey, DateTime
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
 from .base import BaseModel
+from ..database import UUIDType
 
 
 class OrganizationMember(BaseModel):
@@ -25,9 +25,9 @@ class OrganizationMember(BaseModel):
     __tablename__ = "organization_members"
     
     # Foreign keys
-    organization_id = Column(PostgresUUID, ForeignKey("entities.id", ondelete="CASCADE"), nullable=False)
-    user_id = Column(PostgresUUID, ForeignKey("entities.id", ondelete="CASCADE"), nullable=False)
-    invited_by = Column(PostgresUUID, ForeignKey("entities.id", ondelete="SET NULL"), nullable=True)
+    organization_id = Column(UUIDType, ForeignKey("entities.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUIDType, ForeignKey("entities.id", ondelete="CASCADE"), nullable=False)
+    invited_by = Column(UUIDType, ForeignKey("entities.id", ondelete="SET NULL"), nullable=True)
     
     # Member properties
     role = Column(String(50), nullable=False, default="member")

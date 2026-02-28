@@ -6,13 +6,13 @@ organization invitations and acceptance workflows.
 """
 
 from sqlalchemy import Column, String, ForeignKey, DateTime, Text
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from sqlalchemy.orm import relationship
 from datetime import datetime, timedelta
 from typing import Optional
 from uuid import UUID
 
 from .base import BaseModel
+from ..database import UUIDType
 
 
 class OrganizationInvitation(BaseModel):
@@ -25,8 +25,8 @@ class OrganizationInvitation(BaseModel):
     __tablename__ = "organization_invitations"
     
     # Foreign keys
-    organization_id = Column(PostgresUUID, ForeignKey("entities.id", ondelete="CASCADE"), nullable=False)
-    invited_by = Column(PostgresUUID, ForeignKey("entities.id", ondelete="CASCADE"), nullable=False)
+    organization_id = Column(UUIDType, ForeignKey("entities.id", ondelete="CASCADE"), nullable=False)
+    invited_by = Column(UUIDType, ForeignKey("entities.id", ondelete="CASCADE"), nullable=False)
     
     # Invitation properties
     email = Column(String(255), nullable=False)

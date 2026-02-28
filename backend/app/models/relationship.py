@@ -11,10 +11,9 @@ from uuid import UUID
 
 from sqlalchemy import Column, String, DateTime, ForeignKey, Numeric
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 
 from .base import Base
-from ..database import JSONType
+from ..database import JSONType, UUIDType
 
 
 class Relationship(Base):
@@ -26,9 +25,9 @@ class Relationship(Base):
     """
     __tablename__ = "relationships"
     
-    id = Column(PostgresUUID(as_uuid=True), primary_key=True, default=lambda: str(UUID()))
-    from_entity = Column(PostgresUUID(as_uuid=True), ForeignKey("entities.id"), nullable=False)
-    to_entity = Column(PostgresUUID(as_uuid=True), ForeignKey("entities.id"), nullable=False)
+    id = Column(UUIDType, primary_key=True, default=lambda: str(UUID()))
+    from_entity = Column(UUIDType, ForeignKey("entities.id"), nullable=False)
+    to_entity = Column(UUIDType, ForeignKey("entities.id"), nullable=False)
     relationship_type = Column(String(100), nullable=False)
     properties = Column(JSONType, default={})
     strength = Column(Numeric(3, 2), default=1.0)  # Relationship strength (0.0-1.0)

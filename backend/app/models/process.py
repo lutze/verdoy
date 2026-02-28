@@ -10,11 +10,10 @@ from typing import Optional, Dict, Any, List
 from uuid import UUID, uuid4
 
 from sqlalchemy import Column, String, DateTime, JSON, ForeignKey, Text, Boolean
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from sqlalchemy.orm import relationship
 
 from .base import Base
-from ..database import JSONType
+from ..database import JSONType, UUIDType
 
 
 class Process(Base):
@@ -27,14 +26,14 @@ class Process(Base):
     """
     __tablename__ = "processes"
     
-    id = Column(PostgresUUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(UUIDType, primary_key=True, default=uuid4)
     name = Column(String(200), nullable=False)
     version = Column(String(20), nullable=False)
     process_type = Column(String(100), nullable=False)
     definition = Column(JSONType, nullable=False)  # Steps, parameters, expected outcomes
     status = Column(String(50), default="active")
-    organization_id = Column(PostgresUUID(as_uuid=True), ForeignKey("entities.id"))
-    created_by = Column(PostgresUUID(as_uuid=True), ForeignKey("entities.id"))
+    organization_id = Column(UUIDType, ForeignKey("entities.id"))
+    created_by = Column(UUIDType, ForeignKey("entities.id"))
     description = Column(Text)
     is_template = Column(Boolean, default=False)  # Whether this is a reusable template
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -119,8 +118,8 @@ class ProcessInstance(Base):
     """
     __tablename__ = "process_instances"
     
-    id = Column(PostgresUUID(as_uuid=True), primary_key=True, default=uuid4)
-    process_id = Column(PostgresUUID(as_uuid=True), ForeignKey("processes.id"), nullable=False)
+    id = Column(UUIDType, primary_key=True, default=uuid4)
+    process_id = Column(UUIDType, ForeignKey("processes.id"), nullable=False)
     batch_id = Column(String(100))  # Optional batch identifier
     status = Column(String(50), default="running")  # running, completed, failed, paused
     started_at = Column(DateTime, default=datetime.utcnow)
@@ -130,7 +129,7 @@ class ProcessInstance(Base):
     current_step = Column(String(100))  # Current step being executed
     step_results = Column(JSONType, default={})  # Results for each step
     error_message = Column(Text)  # Error message if failed
-    created_by = Column(PostgresUUID(as_uuid=True), ForeignKey("entities.id"))
+    created_by = Column(UUIDType, ForeignKey("entities.id"))
     
     # Relationships
     process = relationship("Process", back_populates="instances")
