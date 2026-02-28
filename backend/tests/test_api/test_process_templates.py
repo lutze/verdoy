@@ -12,7 +12,7 @@ from uuid import uuid4
 
 from app.models.user import User
 from app.models.entity import Entity
-from app.services.process_service_entity import ProcessServiceEntity
+from app.services.process_service import ProcessService
 from app.schemas.process import ProcessCreate, ProcessType, ProcessDefinition
 
 
@@ -22,7 +22,7 @@ class TestProcessTemplateRendering:
     def test_process_list_template_rendering(self, authenticated_client: TestClient, test_user: User, db_session: Session):
         """Test that process list template renders correctly with entity properties."""
         # Create a process with entity-based service
-        service = ProcessServiceEntity(db_session)
+        service = ProcessService(db_session)
         process_data = ProcessCreate(
             name="Template Test Process",
             version="1.0",
@@ -67,7 +67,7 @@ class TestProcessTemplateRendering:
     def test_process_detail_template_rendering(self, authenticated_client: TestClient, test_user: User, db_session: Session):
         """Test that process detail template renders correctly with entity properties."""
         # Create a process with entity-based service
-        service = ProcessServiceEntity(db_session)
+        service = ProcessService(db_session)
         process_data = ProcessCreate(
             name="Detail Template Test Process",
             version="2.0",
@@ -141,7 +141,7 @@ class TestProcessTemplateRendering:
     def test_process_edit_template_rendering(self, authenticated_client: TestClient, test_user: User, db_session: Session):
         """Test that process edit template renders correctly with entity properties."""
         # Create a process with entity-based service
-        service = ProcessServiceEntity(db_session)
+        service = ProcessService(db_session)
         process_data = ProcessCreate(
             name="Edit Template Test Process",
             version="1.5",
@@ -217,7 +217,7 @@ class TestProcessTemplateRendering:
     def test_template_entity_property_access(self, authenticated_client: TestClient, test_user: User, db_session: Session):
         """Test that templates properly access entity properties through service layer."""
         # Create a process with comprehensive entity properties
-        service = ProcessServiceEntity(db_session)
+        service = ProcessService(db_session)
         process_data = ProcessCreate(
             name="Comprehensive Test Process",
             version="3.0",
@@ -282,7 +282,7 @@ class TestProcessTemplateRendering:
     def test_template_form_submission_with_entity_properties(self, authenticated_client: TestClient, test_user: User, db_session: Session):
         """Test that form submission works correctly with entity-based data."""
         # Create a process first
-        service = ProcessServiceEntity(db_session)
+        service = ProcessService(db_session)
         process_data = ProcessCreate(
             name="Form Test Process",
             version="1.0",
@@ -345,7 +345,7 @@ class TestProcessTemplateRendering:
     def test_template_pagination_with_entity_data(self, authenticated_client: TestClient, test_user: User, db_session: Session):
         """Test that template pagination works correctly with entity-based data."""
         # Create multiple processes
-        service = ProcessServiceEntity(db_session)
+        service = ProcessService(db_session)
         for i in range(15):
             process_data = ProcessCreate(
                 name=f"Pagination Test Process {i}",
@@ -381,7 +381,7 @@ class TestProcessTemplateRendering:
     def test_template_search_with_entity_data(self, authenticated_client: TestClient, test_user: User, db_session: Session):
         """Test that template search works correctly with entity-based data."""
         # Create processes with searchable content
-        service = ProcessServiceEntity(db_session)
+        service = ProcessService(db_session)
         
         searchable_data = ProcessCreate(
             name="Unique Searchable Process",

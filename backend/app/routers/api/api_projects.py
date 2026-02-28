@@ -12,7 +12,7 @@ from ...dependencies import get_db, get_api_user
 from ...schemas.base import BaseResponse, ErrorResponse
 from ...models.user import User
 from ...services.project_service import ProjectService
-from ...services.organization_service_entity import OrganizationServiceEntity
+from ...services.organization_service import OrganizationService
 
 router = APIRouter(prefix="/api/v1/projects", tags=["API Projects"])
 
@@ -29,7 +29,7 @@ async def list_projects_api(
     if organization_id:
         projects = project_service.get_projects_by_organization(organization_id, status)
     else:
-        org_service = OrganizationServiceEntity(db)
+        org_service = OrganizationService(db)
         user_organizations = org_service.get_user_organizations(current_user.id)
         projects = []
         for org in user_organizations:

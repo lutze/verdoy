@@ -12,7 +12,7 @@ from ...dependencies import get_db, get_api_user
 from ...schemas.base import BaseResponse, ErrorResponse
 from ...schemas.organization import OrganizationCreate
 from ...models.user import User
-from ...services.organization_service_entity import OrganizationServiceEntity
+from ...services.organization_service import OrganizationService
 
 router = APIRouter(prefix="/api/v1/organizations", tags=["API Organizations"])
 
@@ -23,7 +23,7 @@ async def list_organizations_api(
     db: Session = Depends(get_db)
 ):
     """List organizations for API clients (JSON only)."""
-    org_service = OrganizationServiceEntity(db)
+    org_service = OrganizationService(db)
     organizations = org_service.get_all_organizations()
     # Convert organizations to serializable format
     serialized_organizations = []
@@ -63,7 +63,7 @@ async def create_organization_api(
     db: Session = Depends(get_db)
 ):
     """Create a new organization for API clients (JSON only)."""
-    org_service = OrganizationServiceEntity(db)
+    org_service = OrganizationService(db)
     try:
         organization = org_service.create_organization(org_data, current_user)
         return BaseResponse(

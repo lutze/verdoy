@@ -83,7 +83,7 @@ class TestProcessAPIUnit:
         }
         
         # Mock the service class
-        with patch('app.routers.processes.ProcessServiceEntity') as mock_service_class:
+        with patch('app.routers.processes.ProcessService') as mock_service_class:
             mock_service_class.return_value = mock_service
             
             # Make request
@@ -145,7 +145,7 @@ class TestProcessAPIUnit:
         process_id = uuid4()
         
         # Mock the service class
-        with patch('app.routers.processes.ProcessServiceEntity') as mock_service_class:
+        with patch('app.routers.processes.ProcessService') as mock_service_class:
             mock_service_class.return_value = mock_service
             
             # Make request
@@ -192,7 +192,7 @@ class TestProcessAPIUnit:
         client = TestClient(app)
         
         # Mock the service class
-        with patch('app.routers.processes.ProcessServiceEntity') as mock_service_class:
+        with patch('app.routers.processes.ProcessService') as mock_service_class:
             mock_service_class.return_value = mock_service
             
             # Test getting non-existent process
@@ -308,7 +308,7 @@ class TestProcessAPIUnit:
         }
         
         # Mock the service class
-        with patch('app.routers.processes.ProcessServiceEntity') as mock_service_class:
+        with patch('app.routers.processes.ProcessService') as mock_service_class:
             mock_service_class.return_value = mock_service
             
             response = client.post("/api/v1/processes/", json=process_data)

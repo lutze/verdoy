@@ -13,7 +13,7 @@ from datetime import datetime
 from ...dependencies import get_db, get_web_user, get_optional_user
 from ...models.user import User
 from ...models.entity import Entity
-from ...services.process_service_entity import ProcessServiceEntity
+from ...services.process_service import ProcessService
 from ...schemas.process import ProcessCreate, ProcessUpdate, ProcessType, ProcessStatus
 from ...templates_config import templates
 
@@ -37,7 +37,7 @@ async def list_processes_page(
         return RedirectResponse(url="/app/login", status_code=303)
     
     try:
-        service = ProcessServiceEntity(db)
+        service = ProcessService(db)
         
         # Convert string status to enum if provided
         status_enum = None
@@ -235,7 +235,7 @@ async def create_process_post(
     elif step == 3:
         # Step 3: Create the process
         try:
-            service = ProcessServiceEntity(db)
+            service = ProcessService(db)
             
             # Convert parameters list to dictionary format
             parameters_dict = {}
@@ -304,7 +304,7 @@ async def process_detail_page(
         return RedirectResponse(url="/app/login", status_code=303)
     
     try:
-        service = ProcessServiceEntity(db)
+        service = ProcessService(db)
         process = service.get_process(process_id, current_user)
         
         return templates.TemplateResponse(
@@ -338,7 +338,7 @@ async def edit_process_form(
         return RedirectResponse(url="/app/login", status_code=303)
     
     try:
-        service = ProcessServiceEntity(db)
+        service = ProcessService(db)
         process = service.get_process(process_id, current_user)
         
         # Get organizations for dropdown
@@ -388,7 +388,7 @@ async def edit_process_post(
         return RedirectResponse(url="/app/login", status_code=303)
     
     try:
-        service = ProcessServiceEntity(db)
+        service = ProcessService(db)
         
         # Create update data
         update_data = ProcessUpdate(
@@ -450,7 +450,7 @@ async def archive_process_post(
         return RedirectResponse(url="/app/login", status_code=303)
     
     try:
-        service = ProcessServiceEntity(db)
+        service = ProcessService(db)
         process = service.archive_process(process_id, current_user)
         
         return RedirectResponse(url="/app/processes", status_code=302)

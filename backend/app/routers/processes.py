@@ -20,7 +20,7 @@ from ..schemas.process import (
     ProcessInstanceCreate, ProcessInstanceUpdate, ProcessInstanceResponse, ProcessInstanceListResponse,
     ProcessType, ProcessStatus, ProcessInstanceStatus, StepType
 )
-from ..services.process_service_entity import ProcessServiceEntity
+from ..services.process_service import ProcessService
 from ..exceptions import (
     ValidationException, NotFoundException, PermissionException,
     ConflictException, BusinessLogicException
@@ -40,7 +40,7 @@ async def create_process_api(
 ):
     """Create a new process (API endpoint)."""
     try:
-        service = ProcessServiceEntity(db)
+        service = ProcessService(db)
         process = service.create_process(process_data, current_user)
         response_data = service._entity_to_process_dict(process)
         return ProcessResponse(**response_data)
@@ -64,7 +64,7 @@ async def list_processes_api(
 ):
     """List processes with filtering and pagination (API endpoint)."""
     try:
-        service = ProcessServiceEntity(db)
+        service = ProcessService(db)
         return service.list_processes(
             current_user=current_user,
             organization_id=organization_id,
@@ -89,7 +89,7 @@ async def get_process_api(
 ):
     """Get a process by ID (API endpoint)."""
     try:
-        service = ProcessServiceEntity(db)
+        service = ProcessService(db)
         process = service.get_process(process_id, current_user)
         response_data = service._entity_to_process_dict(process)
         response_data["step_count"] = service._get_step_count(process)
@@ -112,7 +112,7 @@ async def update_process_api(
 ):
     """Update a process (API endpoint)."""
     try:
-        service = ProcessServiceEntity(db)
+        service = ProcessService(db)
         process = service.update_process(process_id, process_data, current_user)
         response_data = service._entity_to_process_dict(process)
         response_data["step_count"] = service._get_step_count(process)
@@ -136,7 +136,7 @@ async def archive_process_api(
 ):
     """Archive a process (API endpoint)."""
     try:
-        service = ProcessServiceEntity(db)
+        service = ProcessService(db)
         process = service.archive_process(process_id, current_user)
         response_data = service._entity_to_process_dict(process)
         response_data["step_count"] = service._get_step_count(process)
@@ -162,7 +162,7 @@ async def create_process_instance_api(
 ):
     """Create a new process instance (API endpoint)."""
     try:
-        service = ProcessServiceEntity(db)
+        service = ProcessService(db)
         instance = service.create_process_instance(instance_data, current_user)
         response_data = service._entity_to_process_instance_dict(instance)
         response_data["duration"] = service._get_duration(instance)
@@ -184,7 +184,7 @@ async def list_process_instances_api(
 ):
     """List process instances with filtering and pagination (API endpoint)."""
     try:
-        service = ProcessServiceEntity(db)
+        service = ProcessService(db)
         return service.list_process_instances(
             current_user=current_user,
             process_id=process_id,
@@ -206,7 +206,7 @@ async def get_process_instance_api(
 ):
     """Get a process instance by ID (API endpoint)."""
     try:
-        service = ProcessServiceEntity(db)
+        service = ProcessService(db)
         instance = service.get_process_instance(instance_id, current_user)
         response_data = service._entity_to_process_instance_dict(instance)
         response_data["duration"] = service._get_duration(instance)
@@ -228,7 +228,7 @@ async def update_process_instance_api(
 ):
     """Update a process instance (API endpoint)."""
     try:
-        service = ProcessServiceEntity(db)
+        service = ProcessService(db)
         instance = service.update_process_instance(instance_id, instance_data, current_user)
         response_data = service._entity_to_process_instance_dict(instance)
         response_data["duration"] = service._get_duration(instance)
@@ -263,7 +263,7 @@ async def list_processes_web(
         return RedirectResponse(url="/app/login", status_code=303)
     
     try:
-        service = ProcessServiceEntity(db)
+        service = ProcessService(db)
         
         # Convert string status to enum if provided
         status_enum = None
@@ -397,7 +397,7 @@ async def create_process_web(
             }
         )
         
-        service = ProcessServiceEntity(db)
+        service = ProcessService(db)
         process = service.create_process(process_data, current_user)
         
         return RedirectResponse(url=f"/app/processes/{process.id}", status_code=303)
@@ -453,7 +453,7 @@ async def get_process_web(
         return RedirectResponse(url="/app/login", status_code=303)
     
     try:
-        service = ProcessServiceEntity(db)
+        service = ProcessService(db)
         process = service.get_process(process_id, current_user)
         
         # Get process instances
@@ -519,7 +519,7 @@ async def edit_process_form(
         return RedirectResponse(url="/app/login", status_code=303)
     
     try:
-        service = ProcessServiceEntity(db)
+        service = ProcessService(db)
         process = service.get_process(process_id, current_user)
         
         # Get organizations for dropdown
@@ -600,7 +600,7 @@ async def edit_process_web(
             is_template=is_template
         )
         
-        service = ProcessServiceEntity(db)
+        service = ProcessService(db)
         process = service.update_process(process_id, process_data, current_user)
         
         return RedirectResponse(url=f"/app/processes/{process.id}", status_code=303)
@@ -608,7 +608,7 @@ async def edit_process_web(
     except (ValidationException, PermissionException, ConflictException) as e:
         # Get process for form re-render
         try:
-            service = ProcessServiceEntity(db)
+            service = ProcessService(db)
             process = service.get_process(process_id, current_user)
         except:
             process = None
@@ -664,7 +664,7 @@ async def archive_process_web(
         return RedirectResponse(url="/app/login", status_code=303)
     
     try:
-        service = ProcessServiceEntity(db)
+        service = ProcessService(db)
         process = service.archive_process(process_id, current_user)
         
         return RedirectResponse(url="/app/processes", status_code=303)

@@ -1,8 +1,8 @@
 """
-Process service for the VerdoyLab system.
+Process service for the VerdoyLab system - Entity-based implementation.
 
-This module provides business logic for process management, including
-process creation, updates, execution, and monitoring.
+This module provides business logic for process management using the pure entity architecture,
+including process creation, updates, execution, and monitoring.
 """
 
 from datetime import datetime
@@ -10,13 +10,13 @@ from typing import Optional, List, Dict, Any, Tuple
 from uuid import UUID, uuid4
 
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, desc, asc
+from sqlalchemy import and_, or_, desc, asc, text
 from sqlalchemy.exc import IntegrityError
 
-from ..models.process import Process, ProcessInstance
 from ..models.entity import Entity
 from ..models.user import User
 from ..models.event import Event
+from ..models.relationship import Relationship
 from ..schemas.process import (
     ProcessCreate, ProcessUpdate, ProcessResponse, ProcessListResponse,
     ProcessInstanceCreate, ProcessInstanceUpdate, ProcessInstanceResponse, ProcessInstanceListResponse,
@@ -34,21 +34,22 @@ logger = logging.getLogger(__name__)
 
 class ProcessService(BaseService):
     """
-    Service for managing processes and process instances.
+    Entity-based service for managing processes and process instances.
     
-    Provides business logic for process creation, updates, execution,
-    and monitoring with proper validation and error handling.
+    This service works with the pure entity architecture, storing all process
+    data in the entities table with entity_type = 'process.definition' and
+    entity_type = 'process.instance'.
     """
     
     @property
     def model_class(self):
-        """Return the Process model class."""
-        return Process
+        """Return the Entity model class."""
+        return Entity
     
     def __init__(self, db: Session):
         super().__init__(db)
     
-    def get_processes_by_organization(self, organization_id: UUID, status: Optional[str] = None) -> List[Process]:
+    def get_processes_by_organization(self, organization_id: UUID, status: Optional[str] = None) -> List[Entity]:
         """
         Get processes for a specific organization.
         
@@ -57,17 +58,20 @@ class ProcessService(BaseService):
             status: Optional status filter
             
         Returns:
-            List of processes
+            List of process entities
         """
         try:
-            query = self.db.query(Process).filter(
-                Process.organization_id == organization_id
+            query = self.db.query(Entity).filter(
+                and_(
+                    Entity.entity_type == 'process.definition',
+                    Entity.organization_id == organization_id
+                )
             )
             
             if status:
-                query = query.filter(Process.status == status)
+                query = query.filter(Entity.status == status)
             
-            processes = query.order_by(Process.created_at.desc()).all()
+            processes = query.order_by(Entity.created_at.desc()).all()
             return processes
             
         except Exception as e:
@@ -78,16 +82,16 @@ class ProcessService(BaseService):
         self, 
         process_data: ProcessCreate, 
         current_user: User
-    ) -> Process:
+    ) -> Entity:
         """
-        Create a new process.
+        Create a new process using entity architecture.
         
         Args:
             process_data: Process creation data
             current_user: Current authenticated user
             
         Returns:
-            Created process
+            Created process entity
             
         Raises:
             ValidationException: If process data is invalid
@@ -104,36 +108,46 @@ class ProcessService(BaseService):
             if self._process_name_exists(process_data.name, process_data.organization_id):
                 raise ConflictException(f"Process with name '{process_data.name}' already exists")
             
-            # Create process
-            process = Process(
+            # Validate against schema if available
+            self._validate_process_schema(process_data)
+            
+            # Create process entity
+            process_entity = Entity(
+                entity_type='process.definition',
                 name=process_data.name,
-                version=process_data.version,
-                process_type=process_data.process_type.value,
-                definition=process_data.definition.dict(),
                 description=process_data.description,
+                status=ProcessStatus.ACTIVE.value,
                 organization_id=process_data.organization_id,
-                created_by=current_user.id,
-                is_template=process_data.is_template,
-                status=ProcessStatus.ACTIVE.value
+                properties={
+                    'version': process_data.version,
+                    'process_type': process_data.process_type.value,
+                    'definition': process_data.definition.dict(),
+                    'is_template': process_data.is_template,
+                    'created_by': str(current_user.id)
+                }
             )
             
-            self.db.add(process)
+            self.db.add(process_entity)
             self.db.flush()  # Flush to get the ID without committing
             
-            # Log creation event (added to same transaction)
+            # Log creation event
             self._log_event(
-                "process.created",
-                process.id,
-                "process",
-                {"process_name": process.name, "process_type": process.process_type},
+                "entity.created",
+                process_entity.id,
+                "process.definition",
+                {
+                    "process_name": process_entity.name,
+                    "process_type": process_data.process_type.value,
+                    "version": process_data.version
+                },
                 current_user.id
             )
             
             # Commit both process and event together
             self.db.commit()
-            self.db.refresh(process)
+            self.db.refresh(process_entity)
             
-            return process
+            return process_entity
             
         except IntegrityError as e:
             self.db.rollback()
@@ -142,22 +156,27 @@ class ProcessService(BaseService):
             self.db.rollback()
             raise BusinessLogicException(f"Process creation failed: {str(e)}")
     
-    def get_process(self, process_id: UUID, current_user: User) -> Process:
+    def get_process(self, process_id: UUID, current_user: User) -> Entity:
         """
-        Get a process by ID.
+        Get a process by ID using entity architecture.
         
         Args:
             process_id: Process ID
             current_user: Current authenticated user
             
         Returns:
-            Process object
+            Process entity object
             
         Raises:
             NotFoundException: If process not found
             PermissionException: If user lacks access
         """
-        process = self.db.query(Process).filter(Process.id == process_id).first()
+        process = self.db.query(Entity).filter(
+            and_(
+                Entity.id == process_id,
+                Entity.entity_type == 'process.definition'
+            )
+        ).first()
         
         if not process:
             raise NotFoundException("Process not found")
@@ -180,7 +199,7 @@ class ProcessService(BaseService):
         search: Optional[str] = None
     ) -> ProcessListResponse:
         """
-        List processes with filtering and pagination.
+        List processes with filtering and pagination using entity architecture.
         
         Args:
             current_user: Current authenticated user
@@ -195,46 +214,52 @@ class ProcessService(BaseService):
         Returns:
             Paginated list of processes
         """
-        # Build query
-        query = self.db.query(Process)
+        # Build query for process entities
+        query = self.db.query(Entity).filter(Entity.entity_type == 'process.definition')
         
         # Apply organization filter
         if organization_id:
             if not self._user_has_org_access(current_user, organization_id):
                 raise PermissionException("Access denied to organization")
-            query = query.filter(Process.organization_id == organization_id)
+            query = query.filter(Entity.organization_id == organization_id)
         else:
             # Show processes from user's organization or public templates
             user_org_id = current_user.organization_id if current_user else None
             if user_org_id:
                 query = query.filter(
                     or_(
-                        Process.organization_id == user_org_id,
-                        and_(Process.is_template == True, Process.status == ProcessStatus.ACTIVE.value)
+                        Entity.organization_id == user_org_id,
+                        and_(
+                            Entity.properties.op('->>')('is_template') == 'true',
+                            Entity.status == ProcessStatus.ACTIVE.value
+                        )
                     )
                 )
             else:
                 # Standalone user - only show public templates
                 query = query.filter(
-                    and_(Process.is_template == True, Process.status == ProcessStatus.ACTIVE.value)
+                    and_(
+                        Entity.properties.op('->>')('is_template') == 'true',
+                        Entity.status == ProcessStatus.ACTIVE.value
+                    )
                 )
         
-        # Apply filters
+        # Apply filters using JSONB properties
         if process_type:
-            query = query.filter(Process.process_type == process_type)
+            query = query.filter(Entity.properties.op('->>')('process_type') == process_type)
         
         if status:
-            query = query.filter(Process.status == status.value)
+            query = query.filter(Entity.status == status.value)
         
         if is_template is not None:
-            query = query.filter(Process.is_template == is_template)
+            query = query.filter(Entity.properties.op('->>')('is_template') == str(is_template).lower())
         
         if search:
             search_term = f"%{search}%"
             query = query.filter(
                 or_(
-                    Process.name.ilike(search_term),
-                    Process.description.ilike(search_term)
+                    Entity.name.ilike(search_term),
+                    Entity.description.ilike(search_term)
                 )
             )
         
@@ -242,14 +267,14 @@ class ProcessService(BaseService):
         total = query.count()
         
         # Apply pagination and ordering
-        processes = query.order_by(desc(Process.updated_at)).offset((page - 1) * per_page).limit(per_page).all()
+        processes = query.order_by(desc(Entity.updated_at)).offset((page - 1) * per_page).limit(per_page).all()
         
         # Convert to response format
         process_responses = []
         for process in processes:
-            response_data = process.to_dict()
-            response_data["step_count"] = process.get_step_count()
-            response_data["estimated_duration"] = process.get_estimated_duration()
+            response_data = self._entity_to_process_dict(process)
+            response_data["step_count"] = self._get_step_count(process)
+            response_data["estimated_duration"] = self._get_estimated_duration(process)
             process_responses.append(ProcessResponse(**response_data))
         
         return ProcessListResponse(
@@ -264,9 +289,9 @@ class ProcessService(BaseService):
         process_id: UUID,
         process_data: ProcessUpdate,
         current_user: User
-    ) -> Process:
+    ) -> Entity:
         """
-        Update a process.
+        Update a process using entity architecture.
         
         Args:
             process_id: Process ID
@@ -274,7 +299,7 @@ class ProcessService(BaseService):
             current_user: Current authenticated user
             
         Returns:
-            Updated process
+            Updated process entity
             
         Raises:
             NotFoundException: If process not found
@@ -288,27 +313,41 @@ class ProcessService(BaseService):
             if self._process_name_exists(process_data.name, process.organization_id, exclude_id=process_id):
                 raise ConflictException(f"Process with name '{process_data.name}' already exists")
         
-        # Update fields
+        # Update entity fields
         update_data = process_data.dict(exclude_unset=True)
-        for field, value in update_data.items():
-            if field == "definition" and value:
-                setattr(process, field, value.dict())
-            elif field == "process_type" and value:
-                setattr(process, field, value.value)
-            elif field == "status" and value:
-                setattr(process, field, value.value)
-            else:
-                setattr(process, field, value)
         
+        # Update basic entity fields
+        if 'name' in update_data:
+            process.name = update_data['name']
+        if 'description' in update_data:
+            process.description = update_data['description']
+        if 'status' in update_data:
+            process.status = update_data['status'].value
+        
+        # Update properties
+        properties = process.properties.copy()
+        if 'version' in update_data:
+            properties['version'] = update_data['version']
+        if 'process_type' in update_data:
+            properties['process_type'] = update_data['process_type'].value
+        if 'definition' in update_data:
+            properties['definition'] = update_data['definition'].dict()
+        if 'is_template' in update_data:
+            properties['is_template'] = update_data['is_template']
+        
+        process.properties = properties
         process.updated_at = datetime.utcnow()
         
         try:
-            # Log update event (added to same transaction)
+            # Log update event
             self._log_event(
-                "process.updated",
+                "entity.updated",
                 process.id,
-                "process",
-                {"process_name": process.name, "updated_fields": list(update_data.keys())},
+                "process.definition",
+                {
+                    "process_name": process.name,
+                    "updated_fields": list(update_data.keys())
+                },
                 current_user.id
             )
             
@@ -325,16 +364,16 @@ class ProcessService(BaseService):
             self.db.rollback()
             raise BusinessLogicException(f"Process update failed: {str(e)}")
     
-    def archive_process(self, process_id: UUID, current_user: User) -> Process:
+    def archive_process(self, process_id: UUID, current_user: User) -> Entity:
         """
-        Archive a process (soft delete).
+        Archive a process (soft delete) using entity architecture.
         
         Args:
             process_id: Process ID
             current_user: Current authenticated user
             
         Returns:
-            Archived process
+            Archived process entity
             
         Raises:
             NotFoundException: If process not found
@@ -343,10 +382,11 @@ class ProcessService(BaseService):
         process = self.get_process(process_id, current_user)
         
         # Check if process has running instances
-        running_instances = self.db.query(ProcessInstance).filter(
+        running_instances = self.db.query(Entity).filter(
             and_(
-                ProcessInstance.process_id == process_id,
-                ProcessInstance.status == ProcessInstanceStatus.RUNNING.value
+                Entity.entity_type == 'process.instance',
+                Entity.properties.op('->>')('process_id') == str(process_id),
+                Entity.status == ProcessInstanceStatus.RUNNING.value
             )
         ).count()
         
@@ -357,12 +397,15 @@ class ProcessService(BaseService):
         process.updated_at = datetime.utcnow()
         
         try:
-            # Log archive event (added to same transaction)
+            # Log archive event
             self._log_event(
-                "process.archived",
+                "entity.updated",
                 process.id,
-                "process",
-                {"process_name": process.name},
+                "process.definition",
+                {
+                    "process_name": process.name,
+                    "status": "archived"
+                },
                 current_user.id
             )
             
@@ -380,16 +423,16 @@ class ProcessService(BaseService):
         self,
         instance_data: ProcessInstanceCreate,
         current_user: User
-    ) -> ProcessInstance:
+    ) -> Entity:
         """
-        Create a new process instance.
+        Create a new process instance using entity architecture.
         
         Args:
             instance_data: Process instance creation data
             current_user: Current authenticated user
             
         Returns:
-            Created process instance
+            Created process instance entity
             
         Raises:
             NotFoundException: If process not found
@@ -403,37 +446,57 @@ class ProcessService(BaseService):
         if process.status != ProcessStatus.ACTIVE.value:
             raise ValidationException("Cannot create instance from inactive process")
         
-        # Create process instance
-        instance = ProcessInstance(
-            process_id=instance_data.process_id,
-            batch_id=instance_data.batch_id,
-            parameters=instance_data.parameters,
+        # Create process instance entity
+        instance_entity = Entity(
+            entity_type='process.instance',
+            name=instance_data.batch_id or f"Instance {uuid4()}",
+            description=f"Process instance for {process.name}",
             status=ProcessInstanceStatus.RUNNING.value,
-            created_by=current_user.id
+            organization_id=process.organization_id,
+            properties={
+                'process_id': str(instance_data.process_id),
+                'batch_id': instance_data.batch_id,
+                'started_at': datetime.utcnow().isoformat(),
+                'parameters': instance_data.parameters or {},
+                'results': {},
+                'created_by': str(current_user.id)
+            }
         )
         
         try:
-            self.db.add(instance)
+            self.db.add(instance_entity)
             self.db.flush()  # Flush to get the ID without committing
             
-            # Log instance creation event (added to same transaction)
+            # Create relationship between instance and process
+            relationship = Relationship(
+                from_entity=instance_entity.id,
+                to_entity=instance_data.process_id,
+                relationship_type='instance_of',
+                properties={
+                    'batch_id': instance_data.batch_id,
+                    'created_by': str(current_user.id)
+                }
+            )
+            self.db.add(relationship)
+            
+            # Log instance creation event
             self._log_event(
-                "process_instance.created",
-                instance.id,
-                "process_instance",
+                "entity.created",
+                instance_entity.id,
+                "process.instance",
                 {
-                    "process_id": str(instance.process_id),
-                    "batch_id": instance.batch_id,
-                    "status": instance.status
+                    "process_id": str(instance_data.process_id),
+                    "batch_id": instance_data.batch_id,
+                    "status": ProcessInstanceStatus.RUNNING.value
                 },
                 current_user.id
             )
             
-            # Commit both instance and event together
+            # Commit instance, relationship, and event together
             self.db.commit()
-            self.db.refresh(instance)
+            self.db.refresh(instance_entity)
             
-            return instance
+            return instance_entity
             
         except IntegrityError as e:
             self.db.rollback()
@@ -442,28 +505,34 @@ class ProcessService(BaseService):
             self.db.rollback()
             raise BusinessLogicException(f"Process instance creation failed: {str(e)}")
     
-    def get_process_instance(self, instance_id: UUID, current_user: User) -> ProcessInstance:
+    def get_process_instance(self, instance_id: UUID, current_user: User) -> Entity:
         """
-        Get a process instance by ID.
+        Get a process instance by ID using entity architecture.
         
         Args:
             instance_id: Process instance ID
             current_user: Current authenticated user
             
         Returns:
-            Process instance object
+            Process instance entity object
             
         Raises:
             NotFoundException: If instance not found
             PermissionException: If user lacks access
         """
-        instance = self.db.query(ProcessInstance).filter(ProcessInstance.id == instance_id).first()
+        instance = self.db.query(Entity).filter(
+            and_(
+                Entity.id == instance_id,
+                Entity.entity_type == 'process.instance'
+            )
+        ).first()
         
         if not instance:
             raise NotFoundException("Process instance not found")
         
         # Check access through the associated process
-        process = self.get_process(instance.process_id, current_user)
+        process_id = UUID(instance.properties.get('process_id'))
+        process = self.get_process(process_id, current_user)
         
         return instance
     
@@ -476,7 +545,7 @@ class ProcessService(BaseService):
         per_page: int = 10
     ) -> ProcessInstanceListResponse:
         """
-        List process instances with filtering and pagination.
+        List process instances with filtering and pagination using entity architecture.
         
         Args:
             current_user: Current authenticated user
@@ -488,35 +557,35 @@ class ProcessService(BaseService):
         Returns:
             Paginated list of process instances
         """
-        # Build query
-        query = self.db.query(ProcessInstance).join(Process)
+        # Build query for process instance entities
+        query = self.db.query(Entity).filter(Entity.entity_type == 'process.instance')
         
-        # Apply organization filter based on process
+        # Apply organization filter based on user's access
         user_org_id = current_user.organization_id if current_user else None
         if user_org_id:
-            query = query.filter(Process.organization_id == user_org_id)
+            query = query.filter(Entity.organization_id == user_org_id)
         else:
             # Standalone user - no instances to show
             return ProcessInstanceListResponse(instances=[], total=0, page=page, per_page=per_page)
         
         # Apply filters
         if process_id:
-            query = query.filter(ProcessInstance.process_id == process_id)
+            query = query.filter(Entity.properties.op('->>')('process_id') == str(process_id))
         
         if status:
-            query = query.filter(ProcessInstance.status == status.value)
+            query = query.filter(Entity.status == status.value)
         
         # Get total count
         total = query.count()
         
         # Apply pagination and ordering
-        instances = query.order_by(desc(ProcessInstance.started_at)).offset((page - 1) * per_page).limit(per_page).all()
+        instances = query.order_by(desc(Entity.created_at)).offset((page - 1) * per_page).limit(per_page).all()
         
         # Convert to response format
         instance_responses = []
         for instance in instances:
-            response_data = instance.to_dict()
-            response_data["duration"] = instance.get_duration()
+            response_data = self._entity_to_process_instance_dict(instance)
+            response_data["duration"] = self._get_duration(instance)
             instance_responses.append(ProcessInstanceResponse(**response_data))
         
         return ProcessInstanceListResponse(
@@ -531,9 +600,9 @@ class ProcessService(BaseService):
         instance_id: UUID,
         instance_data: ProcessInstanceUpdate,
         current_user: User
-    ) -> ProcessInstance:
+    ) -> Entity:
         """
-        Update a process instance.
+        Update a process instance using entity architecture.
         
         Args:
             instance_id: Process instance ID
@@ -541,7 +610,7 @@ class ProcessService(BaseService):
             current_user: Current authenticated user
             
         Returns:
-            Updated process instance
+            Updated process instance entity
             
         Raises:
             NotFoundException: If instance not found
@@ -552,32 +621,50 @@ class ProcessService(BaseService):
         
         # Update fields
         update_data = instance_data.dict(exclude_unset=True)
-        for field, value in update_data.items():
-            if field == "status" and value:
-                setattr(instance, field, value.value)
-            else:
-                setattr(instance, field, value)
+        
+        # Update basic entity fields
+        if 'status' in update_data:
+            instance.status = update_data['status'].value
+        
+        # Update properties
+        properties = instance.properties.copy()
+        if 'parameters' in update_data:
+            properties['parameters'] = update_data['parameters']
+        if 'results' in update_data:
+            properties['results'] = update_data['results']
+        if 'error_message' in update_data:
+            properties['error_message'] = update_data['error_message']
         
         # Handle status transitions
         if "status" in update_data:
             new_status = update_data["status"]
             if new_status == ProcessInstanceStatus.COMPLETED:
-                instance.complete(update_data.get("results"))
+                properties['completed_at'] = datetime.utcnow().isoformat()
+                if 'results' in update_data:
+                    properties['results'] = update_data['results']
             elif new_status == ProcessInstanceStatus.FAILED:
-                instance.fail(update_data.get("error_message", "Unknown error"))
+                properties['completed_at'] = datetime.utcnow().isoformat()
+                if 'error_message' in update_data:
+                    properties['error_message'] = update_data['error_message']
             elif new_status == ProcessInstanceStatus.PAUSED:
-                instance.pause()
+                # Pause the process instance
+                properties['paused_at'] = datetime.utcnow().isoformat()
             elif new_status == ProcessInstanceStatus.RUNNING:
-                instance.resume()
+                # Resume the process instance
+                if 'paused_at' in properties:
+                    del properties['paused_at']
+        
+        instance.properties = properties
+        instance.updated_at = datetime.utcnow()
         
         try:
-            # Log update event (added to same transaction)
+            # Log update event
             self._log_event(
-                "process_instance.updated",
+                "entity.updated",
                 instance.id,
-                "process_instance",
+                "process.instance",
                 {
-                    "process_id": str(instance.process_id),
+                    "process_id": instance.properties.get('process_id'),
                     "status": instance.status,
                     "updated_fields": list(update_data.keys())
                 },
@@ -594,6 +681,73 @@ class ProcessService(BaseService):
             self.db.rollback()
             raise BusinessLogicException(f"Process instance update failed: {str(e)}")
     
+    def batch_update_process_instances(
+        self,
+        instance_ids: List[UUID],
+        update_data: ProcessInstanceUpdate,
+        current_user: User
+    ) -> List[Entity]:
+        """
+        Update multiple process instances in batch using entity architecture.
+        
+        Args:
+            instance_ids: List of process instance IDs to update
+            update_data: Process instance update data
+            current_user: Current authenticated user
+            
+        Returns:
+            List of updated process instance entities
+            
+        Raises:
+            ValidationException: If update data is invalid
+            PermissionException: If user lacks access to any instance
+        """
+        updated_instances = []
+        
+        try:
+            for instance_id in instance_ids:
+                instance = self.update_process_instance(instance_id, update_data, current_user)
+                updated_instances.append(instance)
+            
+            return updated_instances
+            
+        except Exception as e:
+            self.db.rollback()
+            raise BusinessLogicException(f"Batch process instance update failed: {str(e)}")
+    
+    def batch_update_instance_status(
+        self,
+        instance_ids: List[UUID],
+        new_status: ProcessInstanceStatus,
+        current_user: User,
+        additional_data: Optional[Dict[str, Any]] = None
+    ) -> List[Entity]:
+        """
+        Update status for multiple process instances in batch.
+        
+        Args:
+            instance_ids: List of process instance IDs to update
+            new_status: New status to set
+            current_user: Current authenticated user
+            additional_data: Optional additional data (results, error_message, etc.)
+            
+        Returns:
+            List of updated process instance entities
+        """
+        update_data = ProcessInstanceUpdate(status=new_status)
+        
+        if additional_data:
+            if 'results' in additional_data:
+                update_data.results = additional_data['results']
+            if 'error_message' in additional_data:
+                update_data.error_message = additional_data['error_message']
+            if 'parameters' in additional_data:
+                update_data.parameters = additional_data['parameters']
+        
+        return self.batch_update_process_instances(instance_ids, update_data, current_user)
+    
+    # Helper methods for entity-based operations
+    
     def _process_name_exists(
         self, 
         name: str, 
@@ -601,16 +755,17 @@ class ProcessService(BaseService):
         exclude_id: Optional[UUID] = None
     ) -> bool:
         """Check if a process name already exists in the organization."""
-        query = self.db.query(Process).filter(
+        query = self.db.query(Entity).filter(
             and_(
-                Process.name == name,
-                Process.organization_id == organization_id,
-                Process.status != ProcessStatus.ARCHIVED.value
+                Entity.entity_type == 'process.definition',
+                Entity.name == name,
+                Entity.organization_id == organization_id,
+                Entity.status != ProcessStatus.ARCHIVED.value
             )
         )
         
         if exclude_id:
-            query = query.filter(Process.id != exclude_id)
+            query = query.filter(Entity.id != exclude_id)
         
         return query.first() is not None
     
@@ -634,6 +789,80 @@ class ProcessService(BaseService):
         
         # Fall back to legacy organization_id field for backward compatibility
         return user.organization_id == organization_id
+    
+    def _validate_process_schema(self, process_data: ProcessCreate) -> None:
+        """Validate process data against schema if available."""
+        try:
+            # Check if schema validation function exists
+            result = self.db.execute(
+                text("SELECT validate_against_schema(:data, :schema_id)"),
+                {
+                    'data': str(process_data.definition.dict()),
+                    'schema_id': 'process.definition'
+                }
+            ).scalar()
+            
+            if not result:
+                raise ValidationException("Process definition does not match required schema")
+                
+        except Exception as e:
+            # If schema validation fails, log but don't block creation
+            logger.warning(f"Schema validation failed: {e}")
+    
+    def _entity_to_process_dict(self, entity: Entity) -> Dict[str, Any]:
+        """Convert process entity to dictionary representation."""
+        return {
+            "id": str(entity.id),
+            "name": entity.name,
+            "version": entity.properties.get('version'),
+            "process_type": entity.properties.get('process_type'),
+            "definition": entity.properties.get('definition'),
+            "status": entity.status,
+            "organization_id": str(entity.organization_id) if entity.organization_id else None,
+            "created_by": entity.properties.get('created_by'),
+            "description": entity.description,
+            "is_template": entity.properties.get('is_template', False),
+            "created_at": entity.created_at.isoformat() if entity.created_at else None,
+            "updated_at": entity.updated_at.isoformat() if entity.updated_at else None
+        }
+    
+    def _entity_to_process_instance_dict(self, entity: Entity) -> Dict[str, Any]:
+        """Convert process instance entity to dictionary representation."""
+        return {
+            "id": str(entity.id),
+            "process_id": entity.properties.get('process_id'),
+            "batch_id": entity.properties.get('batch_id'),
+            "status": entity.status,
+            "started_at": entity.properties.get('started_at'),
+            "completed_at": entity.properties.get('completed_at'),
+            "parameters": entity.properties.get('parameters', {}),
+            "results": entity.properties.get('results', {}),
+            "error_message": entity.properties.get('error_message'),
+            "created_by": entity.properties.get('created_by')
+        }
+    
+    def _get_step_count(self, process_entity: Entity) -> int:
+        """Get the number of steps in this process."""
+        definition = process_entity.properties.get('definition', {})
+        steps = definition.get("steps", [])
+        return len(steps)
+    
+    def _get_estimated_duration(self, process_entity: Entity) -> Optional[int]:
+        """Get estimated duration in minutes."""
+        definition = process_entity.properties.get('definition', {})
+        return definition.get("estimated_duration")
+    
+    def _get_duration(self, instance_entity: Entity) -> Optional[int]:
+        """Get execution duration in minutes."""
+        started_at = instance_entity.properties.get('started_at')
+        completed_at = instance_entity.properties.get('completed_at')
+        
+        if started_at and completed_at:
+            start = datetime.fromisoformat(started_at.replace('Z', '+00:00'))
+            end = datetime.fromisoformat(completed_at.replace('Z', '+00:00'))
+            duration = end - start
+            return int(duration.total_seconds() / 60)
+        return None
     
     def _log_event(self, event_type: str, entity_id: UUID, entity_type: str, data: Dict[str, Any], user_id: Optional[UUID] = None):
         """
@@ -662,4 +891,4 @@ class ProcessService(BaseService):
             self.db.add(event)
             # Note: No commit here - let the calling method handle the transaction
         except Exception as e:
-            self.logger.error(f"Failed to log process event: {str(e)}") 
+            logger.error(f"Failed to log process event: {str(e)}")

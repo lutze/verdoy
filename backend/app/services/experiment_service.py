@@ -1,635 +1,758 @@
 """
-Experiment service for the VerdoyLab API.
+Experiment service for the VerdoyLab system - Entity-based implementation.
 
-This module provides business logic for experiment management,
-including CRUD operations, validation, and integration with
-processes and bioreactors.
+This module provides business logic for experiment management using the pure entity architecture,
+including experiment creation, updates, execution, and trial management.
 """
 
-import logging
 from datetime import datetime
 from typing import Optional, List, Dict, Any, Tuple
 from uuid import UUID, uuid4
-from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, text
-from fastapi import HTTPException
 
-from ..models.experiment import Experiment, ExperimentTrial
+from sqlalchemy.orm import Session
+from sqlalchemy import and_, or_, desc, asc, text
+from sqlalchemy.exc import IntegrityError
+
 from ..models.entity import Entity
-from ..models.project import Project
-from ..models.process import Process
-from ..models.bioreactor import Bioreactor
+from ..models.user import User
+from ..models.event import Event
+from ..models.relationship import Relationship
 from ..schemas.experiment import (
     ExperimentCreate, ExperimentUpdate, ExperimentResponse,
     ExperimentTrialCreate, ExperimentTrialUpdate, ExperimentTrialResponse,
     ExperimentListResponse, ExperimentStatsResponse, ExperimentControlRequest,
     ExperimentControlResponse, ExperimentFilterRequest
 )
+from ..exceptions import (
+    ValidationException, NotFoundException, PermissionException,
+    ConflictException, BusinessLogicException
+)
 from .base import BaseService
-from .project_service import ProjectService
-from .process_service import ProcessService
-from .bioreactor_service import BioreactorService
+import logging
 
 logger = logging.getLogger(__name__)
 
 
-class ExperimentService(BaseService[Experiment]):
+class ExperimentService(BaseService):
     """
-    Service for experiment management operations.
+    Entity-based service for managing experiments and experiment trials.
     
-    Provides CRUD operations, validation, and business logic
-    for experiments and their trials.
+    This service works with the pure entity architecture, storing all experiment
+    data in the entities table with entity_type = 'experiment' and
+    entity_type = 'experiment.trial'.
     """
     
     @property
-    def model_class(self) -> type[Experiment]:
-        """Return the Experiment model class."""
-        return Experiment
+    def model_class(self):
+        """Return the Entity model class."""
+        return Entity
     
     def __init__(self, db: Session):
         super().__init__(db)
-        self.project_service = ProjectService(db)
-        self.process_service = ProcessService(db)
-        self.bioreactor_service = BioreactorService(db)
     
-    def create_experiment(self, experiment_data: ExperimentCreate, user_id: UUID) -> Experiment:
+    def create_experiment(
+        self, 
+        experiment_data: ExperimentCreate, 
+        current_user: User
+    ) -> Entity:
         """
-        Create a new experiment.
+        Create a new experiment using entity architecture.
         
         Args:
             experiment_data: Experiment creation data
-            user_id: ID of the user creating the experiment
+            current_user: Current authenticated user
             
         Returns:
-            Created experiment
+            Created experiment entity
             
         Raises:
-            HTTPException: If validation fails or resources not found
+            ValidationException: If experiment data is invalid
+            PermissionException: If user lacks permission
+            ConflictException: If experiment name already exists
         """
         try:
-            # Validate that project exists and user has access
-            project = self.project_service.get_project_by_id(experiment_data.project_id)
-            if not project:
-                raise HTTPException(status_code=404, detail="Project not found")
+            # Validate organization access if specified
+            if experiment_data.organization_id:
+                if not self._user_has_org_access(current_user, experiment_data.organization_id):
+                    raise PermissionException("Access denied to organization")
             
-            # Validate that process exists and is accessible
-            process = self.process_service.get_process_by_id(experiment_data.process_id)
-            if not process:
-                raise HTTPException(status_code=404, detail="Process not found")
+            # Check for duplicate experiment name in organization
+            if self._experiment_name_exists(experiment_data.name, experiment_data.organization_id):
+                raise ConflictException(f"Experiment with name '{experiment_data.name}' already exists")
             
-            # Validate that bioreactor exists and is available
-            bioreactor = self.bioreactor_service.get_bioreactor_by_id(experiment_data.bioreactor_id)
-            if not bioreactor:
-                raise HTTPException(status_code=404, detail="Bioreactor not found")
+            # Validate against schema if available
+            self._validate_experiment_schema(experiment_data)
             
-            # Check if bioreactor is available for experiments
-            if bioreactor.is_running_experiment():
-                raise HTTPException(status_code=409, detail="Bioreactor is already running an experiment")
-            
-            # Create experiment
-            experiment = Experiment(
+            # Create experiment entity
+            experiment_entity = Entity(
+                entity_type='experiment',
                 name=experiment_data.name,
                 description=experiment_data.description,
-                organization_id=project.organization_id,
-                project_id=experiment_data.project_id,
-                process_id=experiment_data.process_id,
-                bioreactor_id=experiment_data.bioreactor_id,
-                parameters=experiment_data.parameters,
-                metadata=experiment_data.metadata,
-                total_trials=experiment_data.total_trials,
-                status='draft'
+                status='draft',
+                organization_id=experiment_data.organization_id,
+                properties={
+                    'project_id': str(experiment_data.project_id),
+                    'process_id': str(experiment_data.process_id),
+                    'bioreactor_id': str(experiment_data.bioreactor_id),
+                    'parameters': experiment_data.parameters or {},
+                    'metadata': experiment_data.metadata or {},
+                    'total_trials': experiment_data.total_trials,
+                    'current_trial': 1,
+                    'started_at': None,
+                    'completed_at': None,
+                    'results': {},
+                    'error_message': None,
+                    'created_by': str(current_user.id)
+                }
             )
             
-            self.db.add(experiment)
+            self.db.add(experiment_entity)
+            self.db.flush()  # Flush to get the ID without committing
+            
+            # Log creation event
+            self._log_event(
+                "entity.created",
+                experiment_entity.id,
+                "experiment",
+                {
+                    "experiment_name": experiment_entity.name,
+                    "project_id": str(experiment_data.project_id),
+                    "process_id": str(experiment_data.process_id),
+                    "bioreactor_id": str(experiment_data.bioreactor_id)
+                },
+                current_user.id
+            )
+            
+            # Commit both experiment and event together
             self.db.commit()
-            self.db.refresh(experiment)
+            self.db.refresh(experiment_entity)
             
-            logger.info(f"Created experiment {experiment.id} by user {user_id}")
-            return experiment
+            return experiment_entity
             
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error(f"Error creating experiment: {e}")
+        except IntegrityError as e:
             self.db.rollback()
-            raise HTTPException(status_code=500, detail="Failed to create experiment")
+            raise ConflictException("Experiment creation failed due to database constraint")
+        except Exception as e:
+            self.db.rollback()
+            raise BusinessLogicException(f"Experiment creation failed: {str(e)}")
     
-    def get_experiment_by_id(self, experiment_id: UUID) -> Optional[Experiment]:
+    def get_experiment(self, experiment_id: UUID, current_user: User) -> Entity:
         """
-        Get experiment by ID.
+        Get an experiment by ID using entity architecture.
         
         Args:
             experiment_id: Experiment ID
+            current_user: Current authenticated user
             
         Returns:
-            Experiment or None if not found
+            Experiment entity object
+            
+        Raises:
+            NotFoundException: If experiment not found
+            PermissionException: If user lacks access
         """
-        try:
-            return self.db.query(Experiment).filter(
-                Experiment.id == experiment_id,
-                Experiment.entity_type == 'experiment'
-            ).first()
-        except Exception as e:
-            logger.error(f"Error getting experiment {experiment_id}: {e}")
-            return None
+        experiment = self.db.query(Entity).filter(
+            and_(
+                Entity.id == experiment_id,
+                Entity.entity_type == 'experiment'
+            )
+        ).first()
+        
+        if not experiment:
+            raise NotFoundException("Experiment not found")
+        
+        # Check organization access
+        if experiment.organization_id and not self._user_has_org_access(current_user, experiment.organization_id):
+            raise PermissionException("Access denied to experiment")
+        
+        return experiment
     
-    def get_experiments_by_organization(
-        self, 
-        organization_id: UUID, 
-        filters: ExperimentFilterRequest
-    ) -> Tuple[List[Experiment], int]:
+    def list_experiments(
+        self,
+        current_user: User,
+        organization_id: Optional[UUID] = None,
+        project_id: Optional[UUID] = None,
+        process_id: Optional[UUID] = None,
+        bioreactor_id: Optional[UUID] = None,
+        status: Optional[str] = None,
+        page: int = 1,
+        per_page: int = 10,
+        search: Optional[str] = None
+    ) -> ExperimentListResponse:
         """
-        Get experiments for an organization with filtering.
+        List experiments with filtering and pagination using entity architecture.
         
         Args:
-            organization_id: Organization ID
-            filters: Filter criteria
+            current_user: Current authenticated user
+            organization_id: Filter by organization
+            project_id: Filter by project
+            process_id: Filter by process
+            bioreactor_id: Filter by bioreactor
+            status: Filter by status
+            page: Page number
+            per_page: Items per page
+            search: Search term for name/description
             
         Returns:
-            Tuple of (experiments, total_count)
+            Paginated list of experiments
         """
-        try:
-            query = self.db.query(Experiment).filter(
-                Experiment.organization_id == organization_id,
-                Experiment.entity_type == 'experiment'
-            )
-            
-            # Apply filters
-            if filters.status:
-                query = query.filter(Experiment.status == filters.status)
-            
-            if filters.project_id:
-                query = query.filter(Experiment.project_id == filters.project_id)
-            
-            if filters.process_id:
-                query = query.filter(Experiment.process_id == filters.process_id)
-            
-            if filters.bioreactor_id:
-                query = query.filter(Experiment.bioreactor_id == filters.bioreactor_id)
-            
-            if filters.search:
-                search_term = f"%{filters.search}%"
-                query = query.filter(
-                    or_(
-                        Experiment.name.ilike(search_term),
-                        Experiment.description.ilike(search_term)
-                    )
-                )
-            
-            # Get total count
-            total_count = query.count()
-            
-            # Apply pagination
-            offset = (filters.page - 1) * filters.page_size
-            experiments = query.offset(offset).limit(filters.page_size).all()
-            
-            return experiments, total_count
-            
-        except Exception as e:
-            logger.error(f"Error getting experiments for organization {organization_id}: {e}")
-            return [], 0
-    
-    def get_user_accessible_experiments(
-        self, 
-        user_id: UUID, 
-        filters: ExperimentFilterRequest
-    ) -> Tuple[List[Experiment], int]:
-        """
-        Get experiments that a user has access to through organization membership.
+        # Build query for experiment entities
+        query = self.db.query(Entity).filter(Entity.entity_type == 'experiment')
         
-        Args:
-            user_id: User ID
-            filters: Filter criteria
-            
-        Returns:
-            Tuple of (experiments, total_count)
-        """
-        try:
-            from ..models.organization_member import OrganizationMember
-            from ..models.user import User
-            
-            # Get user's organizations from membership table
-            user_orgs = self.db.query(OrganizationMember.organization_id).filter(
-                and_(
-                    OrganizationMember.user_id == user_id,
-                    OrganizationMember.is_active == True
-                )
-            ).all()
-            
-            # Get user's legacy organization_id
-            user = self.db.query(User).filter(User.id == user_id).first()
-            legacy_org_id = user.organization_id if user else None
-            
-            # Build list of accessible organization IDs
-            org_ids = [org[0] for org in user_orgs]  # Extract UUID from tuple
-            if legacy_org_id and legacy_org_id not in org_ids:
-                org_ids.append(legacy_org_id)
-            
-            if not org_ids:
-                return [], 0
-            
-            # Query experiments from accessible organizations
-            query = self.db.query(Experiment).filter(
-                and_(
-                    Experiment.organization_id.in_(org_ids),
-                    Experiment.entity_type == 'experiment'
+        # Apply organization filter
+        if organization_id:
+            if not self._user_has_org_access(current_user, organization_id):
+                raise PermissionException("Access denied to organization")
+            query = query.filter(Entity.organization_id == organization_id)
+        else:
+            # Show experiments from user's organization
+            user_org_id = current_user.organization_id if current_user else None
+            if user_org_id:
+                query = query.filter(Entity.organization_id == user_org_id)
+            else:
+                # Standalone user - no experiments to show
+                return ExperimentListResponse(experiments=[], total=0, page=page, per_page=per_page)
+        
+        # Apply filters using JSONB properties
+        if project_id:
+            query = query.filter(Entity.properties.op('->>')('project_id') == str(project_id))
+        
+        if process_id:
+            query = query.filter(Entity.properties.op('->>')('process_id') == str(process_id))
+        
+        if bioreactor_id:
+            query = query.filter(Entity.properties.op('->>')('bioreactor_id') == str(bioreactor_id))
+        
+        if status:
+            query = query.filter(Entity.properties.op('->>')('status') == status)
+        
+        if search:
+            search_term = f"%{search}%"
+            query = query.filter(
+                or_(
+                    Entity.name.ilike(search_term),
+                    Entity.description.ilike(search_term)
                 )
             )
-            
-            # Apply filters
-            if filters.status:
-                query = query.filter(Experiment.status == filters.status)
-            
-            if filters.project_id:
-                query = query.filter(Experiment.project_id == filters.project_id)
-            
-            if filters.process_id:
-                query = query.filter(Experiment.process_id == filters.process_id)
-            
-            if filters.bioreactor_id:
-                query = query.filter(Experiment.bioreactor_id == filters.bioreactor_id)
-            
-            if filters.search:
-                search_term = f"%{filters.search}%"
-                query = query.filter(
-                    or_(
-                        Experiment.name.ilike(search_term),
-                        Experiment.description.ilike(search_term)
-                    )
-                )
-            
-            # Get total count
-            total_count = query.count()
-            
-            # Apply pagination
-            offset = (filters.page - 1) * filters.page_size
-            experiments = query.offset(offset).limit(filters.page_size).all()
-            
-            return experiments, total_count
-            
-        except Exception as e:
-            logger.error(f"Error getting user accessible experiments: {e}")
-            return [], 0
+        
+        # Get total count
+        total = query.count()
+        
+        # Apply pagination and ordering
+        experiments = query.order_by(desc(Entity.updated_at)).offset((page - 1) * per_page).limit(per_page).all()
+        
+        # Convert to response format
+        experiment_responses = []
+        for experiment in experiments:
+            response_data = self._entity_to_experiment_dict(experiment)
+            experiment_responses.append(ExperimentResponse(**response_data))
+        
+        return ExperimentListResponse(
+            experiments=experiment_responses,
+            total=total,
+            page=page,
+            per_page=per_page
+        )
     
     def update_experiment(
-        self, 
-        experiment_id: UUID, 
+        self,
+        experiment_id: UUID,
         experiment_data: ExperimentUpdate,
-        user_id: UUID
-    ) -> Optional[Experiment]:
+        current_user: User
+    ) -> Entity:
         """
-        Update an experiment.
+        Update an experiment using entity architecture.
         
         Args:
             experiment_id: Experiment ID
-            experiment_data: Update data
-            user_id: ID of the user updating the experiment
+            experiment_data: Experiment update data
+            current_user: Current authenticated user
             
         Returns:
-            Updated experiment or None if not found
+            Updated experiment entity
             
         Raises:
-            HTTPException: If validation fails or experiment is running
+            NotFoundException: If experiment not found
+            PermissionException: If user lacks access
+            ValidationException: If update data is invalid
         """
-        try:
-            experiment = self.get_experiment_by_id(experiment_id)
-            if not experiment:
-                raise HTTPException(status_code=404, detail="Experiment not found")
-            
-            # Prevent updates to running experiments
-            if experiment.is_running:
-                raise HTTPException(
-                    status_code=409, 
-                    detail="Cannot update experiment while it is running"
-                )
-            
-            # Update fields
-            if experiment_data.name is not None:
-                experiment.name = experiment_data.name
-            
-            if experiment_data.description is not None:
-                experiment.description = experiment_data.description
-            
-            if experiment_data.parameters is not None:
-                experiment.parameters = experiment_data.parameters
-            
-            if experiment_data.metadata is not None:
-                experiment.metadata = experiment_data.metadata
-            
-            if experiment_data.total_trials is not None:
-                experiment.total_trials = experiment_data.total_trials
-            
-            experiment.last_updated = datetime.utcnow()
-            
-            self.db.commit()
-            self.db.refresh(experiment)
-            
-            logger.info(f"Updated experiment {experiment_id} by user {user_id}")
-            return experiment
-            
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error(f"Error updating experiment {experiment_id}: {e}")
-            self.db.rollback()
-            raise HTTPException(status_code=500, detail="Failed to update experiment")
-    
-    def archive_experiment(self, experiment_id: UUID, user_id: UUID) -> Optional[Experiment]:
-        """
-        Archive an experiment.
+        experiment = self.get_experiment(experiment_id, current_user)
         
-        Args:
-            experiment_id: Experiment ID
-            user_id: ID of the user archiving the experiment
-            
-        Returns:
-            Archived experiment or None if not found
-            
-        Raises:
-            HTTPException: If experiment is running
-        """
+        # Check if experiment is running
+        if self._is_experiment_running(experiment):
+            raise ValidationException("Cannot update experiment while it is running")
+        
+        # Check if name is being changed and if it conflicts
+        if experiment_data.name and experiment_data.name != experiment.name:
+            if self._experiment_name_exists(experiment_data.name, experiment.organization_id, exclude_id=experiment_id):
+                raise ConflictException(f"Experiment with name '{experiment_data.name}' already exists")
+        
+        # Update entity fields
+        update_data = experiment_data.dict(exclude_unset=True)
+        
+        # Update basic entity fields
+        if 'name' in update_data:
+            experiment.name = update_data['name']
+        if 'description' in update_data:
+            experiment.description = update_data['description']
+        
+        # Update properties
+        properties = experiment.properties.copy()
+        if 'parameters' in update_data:
+            properties['parameters'] = update_data['parameters']
+        if 'metadata' in update_data:
+            properties['metadata'] = update_data['metadata']
+        if 'total_trials' in update_data:
+            properties['total_trials'] = update_data['total_trials']
+        
+        experiment.properties = properties
+        experiment.updated_at = datetime.utcnow()
+        
         try:
-            experiment = self.get_experiment_by_id(experiment_id)
-            if not experiment:
-                raise HTTPException(status_code=404, detail="Experiment not found")
+            # Log update event
+            self._log_event(
+                "entity.updated",
+                experiment.id,
+                "experiment",
+                {
+                    "experiment_name": experiment.name,
+                    "updated_fields": list(update_data.keys())
+                },
+                current_user.id
+            )
             
-            # Prevent archiving running experiments
-            if experiment.is_running:
-                raise HTTPException(
-                    status_code=409, 
-                    detail="Cannot archive experiment while it is running"
-                )
-            
-            experiment.archive_experiment()
-            experiment.last_updated = datetime.utcnow()
-            
+            # Commit both experiment update and event together
             self.db.commit()
             self.db.refresh(experiment)
             
-            logger.info(f"Archived experiment {experiment_id} by user {user_id}")
             return experiment
             
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error(f"Error archiving experiment {experiment_id}: {e}")
+        except IntegrityError as e:
             self.db.rollback()
-            raise HTTPException(status_code=500, detail="Failed to archive experiment")
+            raise ConflictException("Experiment update failed due to database constraint")
+        except Exception as e:
+            self.db.rollback()
+            raise BusinessLogicException(f"Experiment update failed: {str(e)}")
     
     def control_experiment(
-        self, 
-        experiment_id: UUID, 
+        self,
+        experiment_id: UUID,
         control_data: ExperimentControlRequest,
-        user_id: UUID
+        current_user: User
     ) -> ExperimentControlResponse:
         """
-        Control an experiment (start, pause, resume, stop, complete, fail).
+        Control an experiment (start, pause, resume, stop, complete, fail) using entity architecture.
         
         Args:
             experiment_id: Experiment ID
             control_data: Control action data
-            user_id: ID of the user controlling the experiment
+            current_user: Current authenticated user
             
         Returns:
             Control response
             
         Raises:
-            HTTPException: If action is invalid or experiment not found
+            NotFoundException: If experiment not found
+            PermissionException: If user lacks access
+            ValidationException: If action is invalid
         """
+        experiment = self.get_experiment(experiment_id, current_user)
+        
+        action = control_data.action
+        message = ""
+        
+        # Update properties
+        properties = experiment.properties.copy()
+        
+        if action == 'start':
+            if not self._can_start_experiment(experiment):
+                raise ValidationException("Experiment cannot be started. Check that project, process, and bioreactor are set.")
+            
+            properties['status'] = 'active'
+            properties['started_at'] = datetime.utcnow().isoformat()
+            properties['error_message'] = None
+            message = "Experiment started successfully"
+            
+        elif action == 'pause':
+            if not self._can_pause_experiment(experiment):
+                raise ValidationException("Experiment cannot be paused")
+            
+            properties['status'] = 'paused'
+            message = "Experiment paused successfully"
+            
+        elif action == 'resume':
+            if not self._can_resume_experiment(experiment):
+                raise ValidationException("Experiment cannot be resumed")
+            
+            properties['status'] = 'active'
+            message = "Experiment resumed successfully"
+            
+        elif action == 'stop':
+            if not self._can_stop_experiment(experiment):
+                raise ValidationException("Experiment cannot be stopped")
+            
+            properties['status'] = 'failed'
+            properties['completed_at'] = datetime.utcnow().isoformat()
+            properties['error_message'] = "Experiment stopped by user"
+            message = "Experiment stopped successfully"
+            
+        elif action == 'complete':
+            if not self._is_experiment_running(experiment):
+                raise ValidationException("Experiment is not running")
+            
+            properties['status'] = 'completed'
+            properties['completed_at'] = datetime.utcnow().isoformat()
+            if control_data.results:
+                properties['results'] = control_data.results
+            message = "Experiment completed successfully"
+            
+        elif action == 'fail':
+            if not self._is_experiment_running(experiment):
+                raise ValidationException("Experiment is not running")
+            
+            properties['status'] = 'failed'
+            properties['completed_at'] = datetime.utcnow().isoformat()
+            properties['error_message'] = control_data.error_message or "Experiment failed"
+            message = "Experiment marked as failed"
+        
+        else:
+            raise ValidationException(f"Invalid action: {action}")
+        
+        experiment.properties = properties
+        experiment.updated_at = datetime.utcnow()
+        
         try:
-            experiment = self.get_experiment_by_id(experiment_id)
-            if not experiment:
-                raise HTTPException(status_code=404, detail="Experiment not found")
+            # Log control event
+            self._log_event(
+                "entity.updated",
+                experiment.id,
+                "experiment",
+                {
+                    "experiment_name": experiment.name,
+                    "action": action,
+                    "status": properties['status']
+                },
+                current_user.id
+            )
             
-            action = control_data.action
-            bioreactor = None
-            
-            # Get bioreactor for status updates
-            if experiment.bioreactor_id:
-                bioreactor = self.bioreactor_service.get_bioreactor_by_id(experiment.bioreactor_id)
-            
-            if action == 'start':
-                if not experiment.can_start():
-                    raise HTTPException(
-                        status_code=409, 
-                        detail="Experiment cannot be started. Check that project, process, and bioreactor are set."
-                    )
-                
-                # Check bioreactor availability
-                if bioreactor and bioreactor.is_running_experiment():
-                    raise HTTPException(
-                        status_code=409, 
-                        detail="Bioreactor is already running an experiment"
-                    )
-                
-                experiment.start_experiment()
-                
-                # Update bioreactor status
-                if bioreactor:
-                    bioreactor.set_experiment_id(str(experiment.id))
-                    bioreactor.set_control_mode('experiment')
-                
-                message = "Experiment started successfully"
-                
-            elif action == 'pause':
-                if not experiment.can_pause():
-                    raise HTTPException(
-                        status_code=409, 
-                        detail="Experiment cannot be paused"
-                    )
-                
-                experiment.pause_experiment()
-                message = "Experiment paused successfully"
-                
-            elif action == 'resume':
-                if not experiment.can_resume():
-                    raise HTTPException(
-                        status_code=409, 
-                        detail="Experiment cannot be resumed"
-                    )
-                
-                experiment.resume_experiment()
-                message = "Experiment resumed successfully"
-                
-            elif action == 'stop':
-                if not experiment.can_stop():
-                    raise HTTPException(
-                        status_code=409, 
-                        detail="Experiment cannot be stopped"
-                    )
-                
-                # Stop experiment and clear bioreactor association
-                experiment.fail_experiment("Experiment stopped by user")
-                if bioreactor:
-                    bioreactor.set_experiment_id(None)
-                    bioreactor.set_control_mode('manual')
-                
-                message = "Experiment stopped successfully"
-                
-            elif action == 'complete':
-                if not experiment.is_running:
-                    raise HTTPException(
-                        status_code=409, 
-                        detail="Experiment is not running"
-                    )
-                
-                experiment.complete_experiment(control_data.results)
-                
-                # Clear bioreactor association
-                if bioreactor:
-                    bioreactor.set_experiment_id(None)
-                    bioreactor.set_control_mode('manual')
-                
-                message = "Experiment completed successfully"
-                
-            elif action == 'fail':
-                if not experiment.is_running:
-                    raise HTTPException(
-                        status_code=409, 
-                        detail="Experiment is not running"
-                    )
-                
-                experiment.fail_experiment(control_data.error_message or "Experiment failed")
-                
-                # Clear bioreactor association
-                if bioreactor:
-                    bioreactor.set_experiment_id(None)
-                    bioreactor.set_control_mode('manual')
-                
-                message = "Experiment marked as failed"
-            
-            else:
-                raise HTTPException(status_code=400, detail=f"Invalid action: {action}")
-            
-            experiment.last_updated = datetime.utcnow()
+            # Commit both experiment update and event together
             self.db.commit()
             self.db.refresh(experiment)
             
-            logger.info(f"Experiment {experiment_id} {action} by user {user_id}")
+            # Convert to response format
+            response_data = self._entity_to_experiment_dict(experiment)
+            experiment_response = ExperimentResponse(**response_data)
             
             return ExperimentControlResponse(
                 success=True,
                 message=message,
-                experiment=ExperimentResponse.from_orm(experiment)
+                experiment=experiment_response
             )
             
-        except HTTPException:
-            raise
         except Exception as e:
-            logger.error(f"Error controlling experiment {experiment_id}: {e}")
             self.db.rollback()
-            raise HTTPException(status_code=500, detail="Failed to control experiment")
+            raise BusinessLogicException(f"Experiment control failed: {str(e)}")
     
     def create_trial(
-        self, 
-        experiment_id: UUID, 
+        self,
+        experiment_id: UUID,
         trial_data: ExperimentTrialCreate,
-        user_id: UUID
-    ) -> Optional[ExperimentTrial]:
+        current_user: User
+    ) -> Entity:
         """
-        Create a new trial for an experiment.
+        Create a new trial for an experiment using entity architecture.
         
         Args:
             experiment_id: Experiment ID
             trial_data: Trial creation data
-            user_id: ID of the user creating the trial
+            current_user: Current authenticated user
             
         Returns:
-            Created trial or None if experiment not found
+            Created trial entity
             
         Raises:
-            HTTPException: If validation fails
+            NotFoundException: If experiment not found
+            PermissionException: If user lacks access
+            ConflictException: If trial number already exists
         """
+        # Get the experiment
+        experiment = self.get_experiment(experiment_id, current_user)
+        
+        # Check if trial number already exists
+        existing_trial = self.db.query(Entity).filter(
+            and_(
+                Entity.entity_type == 'experiment.trial',
+                Entity.properties.op('->>')('experiment_id') == str(experiment_id),
+                Entity.properties.op('->>')('trial_number') == str(trial_data.trial_number)
+            )
+        ).first()
+        
+        if existing_trial:
+            raise ConflictException(f"Trial number {trial_data.trial_number} already exists for this experiment")
+        
+        # Create trial entity
+        trial_entity = Entity(
+            entity_type='experiment.trial',
+            name=f"Trial {trial_data.trial_number}",
+            description=f"Trial {trial_data.trial_number} for {experiment.name}",
+            status='pending',
+            organization_id=experiment.organization_id,
+            properties={
+                'experiment_id': str(experiment_id),
+                'trial_number': trial_data.trial_number,
+                'status': 'pending',
+                'started_at': None,
+                'completed_at': None,
+                'parameters': trial_data.parameters or {},
+                'results': {},
+                'error_message': None,
+                'created_by': str(current_user.id)
+            }
+        )
+        
         try:
-            experiment = self.get_experiment_by_id(experiment_id)
-            if not experiment:
-                raise HTTPException(status_code=404, detail="Experiment not found")
+            self.db.add(trial_entity)
+            self.db.flush()  # Flush to get the ID without committing
             
-            # Check if trial number already exists
-            existing_trial = self.db.query(ExperimentTrial).filter(
-                ExperimentTrial.experiment_id == experiment_id,
-                ExperimentTrial.trial_number == trial_data.trial_number
-            ).first()
+            # Create relationship between trial and experiment
+            relationship = Relationship(
+                from_entity=trial_entity.id,
+                to_entity=experiment_id,
+                relationship_type='trial_of',
+                properties={
+                    'trial_number': trial_data.trial_number,
+                    'created_by': str(current_user.id)
+                }
+            )
+            self.db.add(relationship)
             
-            if existing_trial:
-                raise HTTPException(
-                    status_code=409, 
-                    detail=f"Trial number {trial_data.trial_number} already exists for this experiment"
-                )
-            
-            # Create trial
-            trial = ExperimentTrial(
-                experiment_id=experiment_id,
-                trial_number=trial_data.trial_number,
-                parameters=trial_data.parameters,
-                created_by=user_id
+            # Log trial creation event
+            self._log_event(
+                "entity.created",
+                trial_entity.id,
+                "experiment.trial",
+                {
+                    "experiment_id": str(experiment_id),
+                    "trial_number": trial_data.trial_number,
+                    "status": "pending"
+                },
+                current_user.id
             )
             
-            self.db.add(trial)
+            # Commit trial, relationship, and event together
             self.db.commit()
-            self.db.refresh(trial)
+            self.db.refresh(trial_entity)
             
-            logger.info(f"Created trial {trial.id} for experiment {experiment_id} by user {user_id}")
-            return trial
+            return trial_entity
             
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error(f"Error creating trial for experiment {experiment_id}: {e}")
+        except IntegrityError as e:
             self.db.rollback()
-            raise HTTPException(status_code=500, detail="Failed to create trial")
+            raise ConflictException("Trial creation failed due to database constraint")
+        except Exception as e:
+            self.db.rollback()
+            raise BusinessLogicException(f"Trial creation failed: {str(e)}")
     
-    def get_trials_by_experiment(self, experiment_id: UUID) -> List[ExperimentTrial]:
+    def get_trial(self, trial_id: UUID, current_user: User) -> Entity:
         """
-        Get all trials for an experiment.
+        Get a trial by ID using entity architecture.
+        
+        Args:
+            trial_id: Trial ID
+            current_user: Current authenticated user
+            
+        Returns:
+            Trial entity object
+            
+        Raises:
+            NotFoundException: If trial not found
+            PermissionException: If user lacks access
+        """
+        trial = self.db.query(Entity).filter(
+            and_(
+                Entity.id == trial_id,
+                Entity.entity_type == 'experiment.trial'
+            )
+        ).first()
+        
+        if not trial:
+            raise NotFoundException("Trial not found")
+        
+        # Check access through the associated experiment
+        experiment_id = UUID(trial.properties.get('experiment_id'))
+        experiment = self.get_experiment(experiment_id, current_user)
+        
+        return trial
+    
+    def list_trials(
+        self,
+        experiment_id: UUID,
+        current_user: User,
+        status: Optional[str] = None,
+        page: int = 1,
+        per_page: int = 10
+    ) -> List[Entity]:
+        """
+        List trials for an experiment using entity architecture.
         
         Args:
             experiment_id: Experiment ID
+            current_user: Current authenticated user
+            status: Filter by status
+            page: Page number
+            per_page: Items per page
             
         Returns:
-            List of trials
+            List of trial entities
         """
-        try:
-            return self.db.query(ExperimentTrial).filter(
-                ExperimentTrial.experiment_id == experiment_id
-            ).order_by(ExperimentTrial.trial_number).all()
-        except Exception as e:
-            logger.error(f"Error getting trials for experiment {experiment_id}: {e}")
-            return []
+        # Verify access to experiment
+        experiment = self.get_experiment(experiment_id, current_user)
+        
+        # Build query for trial entities
+        query = self.db.query(Entity).filter(
+            and_(
+                Entity.entity_type == 'experiment.trial',
+                Entity.properties.op('->>')('experiment_id') == str(experiment_id)
+            )
+        )
+        
+        # Apply status filter
+        if status:
+            query = query.filter(Entity.properties.op('->>')('status') == status)
+        
+        # Apply pagination and ordering
+        trials = query.order_by(Entity.properties.op('->>')('trial_number')).offset((page - 1) * per_page).limit(per_page).all()
+        
+        return trials
     
-    def get_experiment_stats(self, organization_id: UUID) -> ExperimentStatsResponse:
+    def update_trial(
+        self,
+        trial_id: UUID,
+        trial_data: ExperimentTrialUpdate,
+        current_user: User
+    ) -> Entity:
         """
-        Get experiment statistics for an organization.
+        Update a trial using entity architecture.
+        
+        Args:
+            trial_id: Trial ID
+            trial_data: Trial update data
+            current_user: Current authenticated user
+            
+        Returns:
+            Updated trial entity
+            
+        Raises:
+            NotFoundException: If trial not found
+            PermissionException: If user lacks access
+            ValidationException: If update data is invalid
+        """
+        trial = self.get_trial(trial_id, current_user)
+        
+        # Update properties
+        properties = trial.properties.copy()
+        
+        if 'status' in trial_data.dict(exclude_unset=True):
+            new_status = trial_data.status
+            if new_status == 'running':
+                properties['status'] = 'running'
+                properties['started_at'] = datetime.utcnow().isoformat()
+            elif new_status == 'completed':
+                properties['status'] = 'completed'
+                properties['completed_at'] = datetime.utcnow().isoformat()
+                if trial_data.results:
+                    properties['results'] = trial_data.results
+            elif new_status == 'failed':
+                properties['status'] = 'failed'
+                properties['completed_at'] = datetime.utcnow().isoformat()
+                if trial_data.error_message:
+                    properties['error_message'] = trial_data.error_message
+        
+        if 'parameters' in trial_data.dict(exclude_unset=True):
+            properties['parameters'] = trial_data.parameters
+        if 'results' in trial_data.dict(exclude_unset=True):
+            properties['results'] = trial_data.results
+        if 'error_message' in trial_data.dict(exclude_unset=True):
+            properties['error_message'] = trial_data.error_message
+        
+        trial.properties = properties
+        trial.updated_at = datetime.utcnow()
+        
+        try:
+            # Log update event
+            self._log_event(
+                "entity.updated",
+                trial.id,
+                "experiment.trial",
+                {
+                    "experiment_id": trial.properties.get('experiment_id'),
+                    "trial_number": trial.properties.get('trial_number'),
+                    "status": properties.get('status'),
+                    "updated_fields": list(trial_data.dict(exclude_unset=True).keys())
+                },
+                current_user.id
+            )
+            
+            # Commit both trial update and event together
+            self.db.commit()
+            self.db.refresh(trial)
+            
+            return trial
+            
+        except Exception as e:
+            self.db.rollback()
+            raise BusinessLogicException(f"Trial update failed: {str(e)}")
+    
+    def get_experiment_stats(self, organization_id: UUID, current_user: User) -> ExperimentStatsResponse:
+        """
+        Get experiment statistics for an organization using entity architecture.
         
         Args:
             organization_id: Organization ID
+            current_user: Current authenticated user
             
         Returns:
             Experiment statistics
         """
+        # Check organization access
+        if not self._user_has_org_access(current_user, organization_id):
+            raise PermissionException("Access denied to organization")
+        
         try:
-            # Get experiment counts by status
-            experiments = self.db.query(Experiment).filter(
-                Experiment.organization_id == organization_id,
-                Experiment.entity_type == 'experiment'
-            ).all()
-            
+            from sqlalchemy import func, case
+
+            base_filter = and_(
+                Entity.entity_type == 'experiment',
+                Entity.organization_id == organization_id
+            )
+
+            # Use SQL-level JSONB filtering for status counts
+            status_counts = self.db.query(
+                func.count().label('total'),
+                func.count().filter(Entity.properties['status'].astext == 'active').label('active'),
+                func.count().filter(Entity.properties['status'].astext == 'completed').label('completed'),
+                func.count().filter(Entity.properties['status'].astext == 'failed').label('failed'),
+                func.count().filter(Entity.properties['status'].astext == 'draft').label('draft'),
+                func.count().filter(Entity.properties['status'].astext == 'archived').label('archived'),
+            ).filter(base_filter).first()
+
+            experiments = self.db.query(Entity).filter(base_filter).all()
+
             stats = {
-                'total_experiments': len(experiments),
-                'active_experiments': len([e for e in experiments if e.is_active]),
-                'completed_experiments': len([e for e in experiments if e.is_completed]),
-                'failed_experiments': len([e for e in experiments if e.is_failed]),
-                'draft_experiments': len([e for e in experiments if e.is_draft]),
-                'archived_experiments': len([e for e in experiments if e.is_archived]),
+                'total_experiments': status_counts.total if status_counts else 0,
+                'active_experiments': status_counts.active if status_counts else 0,
+                'completed_experiments': status_counts.completed if status_counts else 0,
+                'failed_experiments': status_counts.failed if status_counts else 0,
+                'draft_experiments': status_counts.draft if status_counts else 0,
+                'archived_experiments': status_counts.archived if status_counts else 0,
                 'total_trials': 0,
                 'running_trials': 0
             }
             
             # Get trial statistics
             for experiment in experiments:
-                trials = self.get_trials_by_experiment(experiment.id)
+                trials = self.list_trials(experiment.id, current_user)
                 stats['total_trials'] += len(trials)
-                stats['running_trials'] += len([t for t in trials if t.status == 'running'])
+                stats['running_trials'] += len([t for t in trials if t.properties.get('status') == 'running'])
             
             return ExperimentStatsResponse(**stats)
             
@@ -646,43 +769,311 @@ class ExperimentService(BaseService[Experiment]):
                 running_trials=0
             )
     
-    def validate_experiment_data(self, experiment_data: ExperimentCreate) -> List[str]:
+    # Helper methods for entity-based operations
+    
+    def _experiment_name_exists(
+        self, 
+        name: str, 
+        organization_id: Optional[UUID], 
+        exclude_id: Optional[UUID] = None
+    ) -> bool:
+        """Check if an experiment name already exists in the organization."""
+        query = self.db.query(Entity).filter(
+            and_(
+                Entity.entity_type == 'experiment',
+                Entity.name == name,
+                Entity.organization_id == organization_id,
+                Entity.status != 'archived'
+            )
+        )
+        
+        if exclude_id:
+            query = query.filter(Entity.id != exclude_id)
+        
+        return query.first() is not None
+    
+    def _user_has_org_access(self, user: User, organization_id: UUID) -> bool:
+        """Check if user has access to the organization."""
+        if user.is_superuser:
+            return True
+        
+        # Check organization_members table first (current system)
+        from ..models.organization_member import OrganizationMember
+        membership = self.db.query(OrganizationMember).filter(
+            and_(
+                OrganizationMember.user_id == user.id,
+                OrganizationMember.organization_id == organization_id,
+                OrganizationMember.is_active == True
+            )
+        ).first()
+        
+        if membership:
+            return True
+        
+        # Fall back to legacy organization_id field for backward compatibility
+        return user.organization_id == organization_id
+    
+    def _validate_experiment_schema(self, experiment_data: ExperimentCreate) -> None:
+        """Validate experiment data against schema if available."""
+        try:
+            # Check if schema validation function exists
+            result = self.db.execute(
+                text("SELECT validate_against_schema(:data, :schema_id)"),
+                {
+                    'data': str(experiment_data.dict()),
+                    'schema_id': 'experiment'
+                }
+            ).scalar()
+            
+            if not result:
+                raise ValidationException("Experiment data does not match required schema")
+                
+        except Exception as e:
+            # If schema validation fails, log but don't block creation
+            logger.warning(f"Schema validation failed: {e}")
+    
+    def _entity_to_experiment_dict(self, entity: Entity) -> Dict[str, Any]:
+        """Convert experiment entity to dictionary representation."""
+        return {
+            "id": str(entity.id),
+            "name": entity.name,
+            "description": entity.description,
+            "organization_id": str(entity.organization_id) if entity.organization_id else None,
+            "project_id": entity.properties.get('project_id'),
+            "process_id": entity.properties.get('process_id'),
+            "bioreactor_id": entity.properties.get('bioreactor_id'),
+            "status": entity.properties.get('status', 'draft'),
+            "parameters": entity.properties.get('parameters', {}),
+            "metadata": entity.properties.get('metadata', {}),
+            "total_trials": entity.properties.get('total_trials', 1),
+            "current_trial": entity.properties.get('current_trial', 1),
+            "started_at": entity.properties.get('started_at'),
+            "completed_at": entity.properties.get('completed_at'),
+            "results": entity.properties.get('results', {}),
+            "error_message": entity.properties.get('error_message'),
+            "created_by": entity.properties.get('created_by'),
+            "created_at": entity.created_at.isoformat() if entity.created_at else None,
+            "updated_at": entity.updated_at.isoformat() if entity.updated_at else None
+        }
+    
+    def _is_experiment_running(self, experiment: Entity) -> bool:
+        """Check if experiment is running."""
+        status = experiment.properties.get('status', 'draft')
+        return status in ['active', 'paused']
+    
+    def _can_start_experiment(self, experiment: Entity) -> bool:
+        """Check if experiment can be started."""
+        status = experiment.properties.get('status', 'draft')
+        return (status == 'draft' and 
+                experiment.properties.get('project_id') and 
+                experiment.properties.get('process_id') and 
+                experiment.properties.get('bioreactor_id'))
+    
+    def _can_pause_experiment(self, experiment: Entity) -> bool:
+        """Check if experiment can be paused."""
+        status = experiment.properties.get('status', 'draft')
+        return status == 'active'
+    
+    def _can_resume_experiment(self, experiment: Entity) -> bool:
+        """Check if experiment can be resumed."""
+        status = experiment.properties.get('status', 'draft')
+        return status == 'paused'
+    
+    def _can_stop_experiment(self, experiment: Entity) -> bool:
+        """Check if experiment can be stopped."""
+        return self._is_experiment_running(experiment)
+    
+    def get_experiment_by_id(self, experiment_id: UUID) -> Optional[Entity]:
         """
-        Validate experiment creation data.
+        Get experiment by ID (legacy compatibility method).
         
         Args:
-            experiment_data: Experiment creation data
+            experiment_id: Experiment ID
             
         Returns:
-            List of validation errors
+            Experiment entity or None if not found
         """
-        errors = []
+        try:
+            return self.db.query(Entity).filter(
+                and_(
+                    Entity.id == experiment_id,
+                    Entity.entity_type == 'experiment'
+                )
+            ).first()
+        except Exception as e:
+            logger.error(f"Error getting experiment {experiment_id}: {e}")
+            return None
+    
+    def get_user_accessible_experiments(
+        self, 
+        user_id: UUID, 
+        filters: ExperimentFilterRequest
+    ) -> Tuple[List[Entity], int]:
+        """
+        Get experiments that a user has access to through organization membership.
         
-        # Validate project exists
-        project = self.project_service.get_project_by_id(experiment_data.project_id)
-        if not project:
-            errors.append("Project not found")
+        Args:
+            user_id: User ID
+            filters: Filter criteria
+            
+        Returns:
+            Tuple of (experiments, total_count)
+        """
+        try:
+            # Get user's organizations from user entity
+            user = self.db.query(Entity).filter(
+                and_(
+                    Entity.id == user_id,
+                    Entity.entity_type == 'user'
+                )
+            ).first()
+            
+            if not user:
+                return [], 0
+            
+            # Get user's organization_id
+            organization_id = user.organization_id
+            if not organization_id:
+                return [], 0
+            
+            # Build query for experiments in user's organization
+            query = self.db.query(Entity).filter(
+                and_(
+                    Entity.entity_type == 'experiment',
+                    Entity.organization_id == organization_id
+                )
+            )
+            
+            # Apply filters
+            if filters.status:
+                query = query.filter(Entity.status == filters.status)
+            
+            if filters.project_id:
+                query = query.filter(Entity.properties['project_id'].astext == str(filters.project_id))
+            
+            if filters.process_id:
+                query = query.filter(Entity.properties['process_id'].astext == str(filters.process_id))
+            
+            if filters.bioreactor_id:
+                query = query.filter(Entity.properties['bioreactor_id'].astext == str(filters.bioreactor_id))
+            
+            if filters.search:
+                search_term = f"%{filters.search}%"
+                query = query.filter(
+                    or_(
+                        Entity.name.ilike(search_term),
+                        Entity.description.ilike(search_term)
+                    )
+                )
+            
+            # Get total count
+            total_count = query.count()
+            
+            # Apply pagination
+            if filters.page and filters.page_size:
+                offset = (filters.page - 1) * filters.page_size
+                query = query.offset(offset).limit(filters.page_size)
+            
+            experiments = query.order_by(Entity.created_at.desc()).all()
+            return experiments, total_count
+            
+        except Exception as e:
+            logger.error(f"Error getting user accessible experiments: {e}")
+            return [], 0
+    
+    def archive_experiment(self, experiment_id: UUID, user_id: UUID) -> Optional[Entity]:
+        """
+        Archive an experiment.
         
-        # Validate process exists
-        process = self.process_service.get_process_by_id(experiment_data.process_id)
-        if not process:
-            errors.append("Process not found")
+        Args:
+            experiment_id: Experiment ID
+            user_id: ID of the user archiving the experiment
+            
+        Returns:
+            Archived experiment entity or None if not found
+        """
+        try:
+            experiment = self.get_experiment_by_id(experiment_id)
+            if not experiment:
+                return None
+            
+            # Prevent archiving running experiments
+            status = experiment.properties.get('status', 'draft')
+            if status in ['active', 'paused']:
+                raise BusinessLogicException("Cannot archive experiment while it is running")
+            
+            # Update status to archived
+            experiment.properties = experiment.properties or {}
+            experiment.properties['status'] = 'archived'
+            experiment.last_updated = datetime.utcnow()
+            
+            self.db.commit()
+            self.db.refresh(experiment)
+            
+            # Log event
+            self._log_event(
+                'experiment.archived',
+                experiment.id,
+                'experiment',
+                {'previous_status': status},
+                user_id
+            )
+            
+            return experiment
+            
+        except Exception as e:
+            logger.error(f"Error archiving experiment {experiment_id}: {e}")
+            self.db.rollback()
+            return None
+    
+    def get_trials_by_experiment(self, experiment_id: UUID) -> List[Entity]:
+        """
+        Get all trials for an experiment.
         
-        # Validate bioreactor exists and is available
-        bioreactor = self.bioreactor_service.get_bioreactor_by_id(experiment_data.bioreactor_id)
-        if not bioreactor:
-            errors.append("Bioreactor not found")
-        elif bioreactor.is_running_experiment():
-            errors.append("Bioreactor is already running an experiment")
+        Args:
+            experiment_id: Experiment ID
+            
+        Returns:
+            List of trial entities
+        """
+        try:
+            from sqlalchemy import Integer
+            return self.db.query(Entity).filter(
+                and_(
+                    Entity.entity_type == 'experiment.trial',
+                    Entity.properties['experiment_id'].astext == str(experiment_id)
+                )
+            ).order_by(Entity.properties['trial_number'].astext.cast(Integer)).all()
+        except Exception as e:
+            logger.error(f"Error getting trials for experiment {experiment_id}: {e}")
+            return []
+
+    def _log_event(self, event_type: str, entity_id: UUID, entity_type: str, data: Dict[str, Any], user_id: Optional[UUID] = None):
+        """
+        Log experiment event.
         
-        # Validate parameters against process requirements
-        if process and experiment_data.parameters:
-            process_params = process.get_parameters()
-            for param_name, param_value in experiment_data.parameters.items():
-                if param_name in process_params:
-                    # Basic range validation (could be enhanced)
-                    expected_type = type(process_params[param_name])
-                    if not isinstance(param_value, expected_type):
-                        errors.append(f"Parameter {param_name} has wrong type")
-        
-        return errors 
+        Args:
+            event_type: Event type
+            entity_id: Entity ID
+            entity_type: Entity type
+            data: Event data
+            user_id: Optional user ID who triggered the event
+        """
+        try:
+            # Include user_id in the data if provided
+            event_data = data.copy()
+            if user_id:
+                event_data['user_id'] = str(user_id)
+                
+            event = Event(
+                event_type=event_type,
+                entity_id=entity_id,
+                entity_type=entity_type,
+                data=event_data,
+                timestamp=datetime.utcnow()
+            )
+            self.db.add(event)
+            # Note: No commit here - let the calling method handle the transaction
+        except Exception as e:
+            logger.error(f"Failed to log experiment event: {str(e)}")
+

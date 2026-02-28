@@ -1,85 +1,87 @@
 """
-Organization service for multi-tenant organization management.
+Organization service for the VerdoyLab system - Entity-based implementation.
 
-This service handles:
-- Organization creation and management
-- Multi-tenant data isolation
-- User-organization relationships
-- Organization settings and configuration
-- Billing and subscription management
+This module provides business logic for organization management using the pure entity architecture,
+including organization creation, updates, membership management, and invitation handling.
 """
 
-from typing import Optional, Dict, Any, List
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
-from datetime import datetime, timedelta
-from uuid import UUID
-import logging
+from datetime import datetime
+from typing import Optional, List, Dict, Any, Tuple
+from uuid import UUID, uuid4
 
-from .base import BaseService
-from ..models.organization import Organization
-from ..models.user import User
+from sqlalchemy.orm import Session
+from sqlalchemy import and_, or_, desc, asc, text
+from sqlalchemy.exc import IntegrityError
+
 from ..models.entity import Entity
+from ..models.user import User
+from ..models.event import Event
+from ..models.relationship import Relationship
 from ..schemas.organization import OrganizationCreate, OrganizationUpdate
 from ..exceptions import (
-    ServiceException,
-    ValidationException,
-    OrganizationAlreadyExistsException,
-    OrganizationNotFoundException,
-    UserNotFoundException
+    ValidationException, NotFoundException, PermissionException,
+    ConflictException, BusinessLogicException
 )
+from .base import BaseService
+import logging
 
 logger = logging.getLogger(__name__)
 
 
-class OrganizationService(BaseService[Organization]):
+class OrganizationService(BaseService):
     """
-    Organization service for multi-tenant organization management.
+    Entity-based service for managing organizations and organization memberships.
     
-    This service provides business logic for:
-    - Organization creation and management
-    - Multi-tenant data isolation and security
-    - User-organization relationship management
-    - Organization settings and configuration
-    - Billing and subscription integration
+    This service works with the pure entity architecture, storing all organization
+    data in the entities table with entity_type = 'organization' and
+    entity_type = 'organization.member'.
     """
     
     @property
-    def model_class(self) -> type[Organization]:
-        """Return the Organization model class."""
-        return Organization
+    def model_class(self):
+        """Return the Entity model class."""
+        return Entity
     
-    def create_organization(self, org_data: OrganizationCreate, created_by: Optional[UUID] = None) -> Organization:
+    def __init__(self, db: Session):
+        super().__init__(db)
+    
+    def create_organization(
+        self, 
+        org_data: OrganizationCreate, 
+        current_user: User
+    ) -> Entity:
         """
-        Create a new organization.
+        Create a new organization using entity architecture.
         
         Args:
             org_data: Organization creation data
-            created_by: User ID who created the organization
+            current_user: Current authenticated user
             
         Returns:
-            The created organization
+            Created organization entity
             
         Raises:
-            OrganizationAlreadyExistsException: If organization already exists
-            ValidationException: If data validation fails
-            ServiceException: If creation fails
+            ValidationException: If organization data is invalid
+            ConflictException: If organization name already exists
         """
-        start_time = datetime.utcnow()
-        
         try:
             # Validate organization data
-            self.validate_organization_data(org_data)
+            self._validate_organization_data(org_data)
             
-            # Check if organization already exists
-            if self.organization_exists_by_name(org_data.name):
-                raise OrganizationAlreadyExistsException(f"Organization with name '{org_data.name}' already exists")
+            # Check for duplicate organization name
+            if self._organization_name_exists(org_data.name):
+                raise ConflictException(f"Organization with name '{org_data.name}' already exists")
             
-            # Create organization
-            organization = Organization(
+            # Validate against schema if available
+            self._validate_organization_schema(org_data)
+            
+            # Create organization entity
+            organization_entity = Entity(
+                entity_type='organization',
                 name=org_data.name,
                 description=org_data.description,
-                is_active=True,
+                status='active',
+                organization_id=None,  # Organizations don't belong to other organizations
                 properties={
                     'organization_type': org_data.organization_type.value if hasattr(org_data.organization_type, 'value') else str(org_data.organization_type),
                     'contact_email': getattr(org_data, 'contact_email', None),
@@ -93,561 +95,568 @@ class OrganizationService(BaseService[Organization]):
                     'timezone': getattr(org_data, 'timezone', 'UTC'),
                     'member_count': 0,
                     'device_count': 0,
-                    **(org_data.settings or {})
+                    'subscription_plan': 'free',
+                    'settings': org_data.settings or {},
+                    'created_by': str(current_user.id)
                 }
             )
             
-            # Save to database
-            self.db.add(organization)
+            self.db.add(organization_entity)
+            self.db.flush()  # Flush to get the ID without committing
+            
+            # Add creator as organization admin
+            self._add_user_to_organization(current_user.id, organization_entity.id, 'admin', current_user.id)
+            
+            # Log creation event
+            self._log_event(
+                "entity.created",
+                organization_entity.id,
+                "organization",
+                {
+                    "organization_name": organization_entity.name,
+                    "organization_type": org_data.organization_type.value if hasattr(org_data.organization_type, 'value') else str(org_data.organization_type),
+                    "created_by": str(current_user.id)
+                },
+                current_user.id
+            )
+            
+            # Commit both organization and event together
+            self.db.commit()
+            self.db.refresh(organization_entity)
+            
+            return organization_entity
+            
+        except IntegrityError as e:
+            self.db.rollback()
+            raise ConflictException("Organization creation failed due to database constraint")
+        except Exception as e:
+            self.db.rollback()
+            raise BusinessLogicException(f"Organization creation failed: {str(e)}")
+    
+    def get_organization(self, organization_id: UUID, current_user: User) -> Entity:
+        """
+        Get an organization by ID using entity architecture.
+        
+        Args:
+            organization_id: Organization ID
+            current_user: Current authenticated user
+            
+        Returns:
+            Organization entity object
+            
+        Raises:
+            NotFoundException: If organization not found
+            PermissionException: If user lacks access
+        """
+        organization = self.db.query(Entity).filter(
+            and_(
+                Entity.id == organization_id,
+                Entity.entity_type == 'organization'
+            )
+        ).first()
+        
+        if not organization:
+            raise NotFoundException("Organization not found")
+        
+        # Check organization access
+        if not self._user_has_org_access(current_user, organization_id):
+            raise PermissionException("Access denied to organization")
+        
+        return organization
+    
+    def list_organizations(
+        self,
+        current_user: User,
+        status: Optional[str] = None,
+        page: int = 1,
+        per_page: int = 10,
+        search: Optional[str] = None
+    ) -> List[Entity]:
+        """
+        List organizations with filtering and pagination using entity architecture.
+        
+        Args:
+            current_user: Current authenticated user
+            status: Filter by status
+            page: Page number
+            per_page: Items per page
+            search: Search term for name/description
+            
+        Returns:
+            List of organization entities
+        """
+        # Build query for organization entities
+        query = self.db.query(Entity).filter(Entity.entity_type == 'organization')
+        
+        # Apply status filter
+        if status:
+            query = query.filter(Entity.status == status)
+        
+        if search:
+            search_term = f"%{search}%"
+            query = query.filter(
+                or_(
+                    Entity.name.ilike(search_term),
+                    Entity.description.ilike(search_term)
+                )
+            )
+        
+        # Apply pagination and ordering
+        organizations = query.order_by(desc(Entity.created_at)).offset((page - 1) * per_page).limit(per_page).all()
+        
+        return organizations
+    
+    def update_organization(
+        self,
+        organization_id: UUID,
+        org_data: OrganizationUpdate,
+        current_user: User
+    ) -> Entity:
+        """
+        Update an organization using entity architecture.
+        
+        Args:
+            organization_id: Organization ID
+            org_data: Organization update data
+            current_user: Current authenticated user
+            
+        Returns:
+            Updated organization entity
+            
+        Raises:
+            NotFoundException: If organization not found
+            PermissionException: If user lacks access
+            ValidationException: If update data is invalid
+        """
+        organization = self.get_organization(organization_id, current_user)
+        
+        # Check if name is being changed and if it conflicts
+        if org_data.name and org_data.name != organization.name:
+            if self._organization_name_exists(org_data.name, exclude_id=organization_id):
+                raise ConflictException(f"Organization with name '{org_data.name}' already exists")
+        
+        # Update entity fields
+        update_data = org_data.dict(exclude_unset=True)
+        
+        # Update basic entity fields
+        if 'name' in update_data:
+            organization.name = update_data['name']
+        if 'description' in update_data:
+            organization.description = update_data['description']
+        
+        # Update properties
+        properties = organization.properties.copy()
+        for field in ['organization_type', 'contact_email', 'contact_phone', 'website', 
+                     'address', 'city', 'state', 'country', 'postal_code', 'timezone', 'settings']:
+            if field in update_data:
+                if field == 'organization_type' and hasattr(update_data[field], 'value'):
+                    properties[field] = update_data[field].value
+                else:
+                    properties[field] = update_data[field]
+        
+        organization.properties = properties
+        organization.updated_at = datetime.utcnow()
+        
+        try:
+            # Log update event
+            self._log_event(
+                "entity.updated",
+                organization.id,
+                "organization",
+                {
+                    "organization_name": organization.name,
+                    "updated_fields": list(update_data.keys())
+                },
+                current_user.id
+            )
+            
+            # Commit both organization update and event together
             self.db.commit()
             self.db.refresh(organization)
             
-            # Add creator as organization admin if provided
-            if created_by:
-                self.add_user_to_organization(created_by, organization.id, role="admin")
-            
-            # Audit log
-            self.audit_log("organization_created", organization.id, {
-                "name": organization.name,
-                "created_by": str(created_by) if created_by else "system"
-            })
-            
-            # Performance monitoring
-            self.performance_monitor("organization_creation", start_time)
-            
-            logger.info(f"Organization created successfully: {organization.name}")
             return organization
             
         except IntegrityError as e:
             self.db.rollback()
-            logger.error(f"Database integrity error during organization creation: {e}")
-            raise OrganizationAlreadyExistsException("Organization with this name already exists")
+            raise ConflictException("Organization update failed due to database constraint")
         except Exception as e:
             self.db.rollback()
-            logger.error(f"Error during organization creation: {e}")
-            raise ServiceException("Failed to create organization")
+            raise BusinessLogicException(f"Organization update failed: {str(e)}")
     
-    def add_user_to_organization(self, user_id: UUID, organization_id: UUID, role: str = "member") -> bool:
+    def deactivate_organization(self, organization_id: UUID, current_user: User) -> Entity:
         """
-        Add a user to an organization with a specific role.
+        Deactivate an organization (soft delete) using entity architecture.
+        
+        Args:
+            organization_id: Organization ID
+            current_user: Current authenticated user
+            
+        Returns:
+            Deactivated organization entity
+            
+        Raises:
+            NotFoundException: If organization not found
+            PermissionException: If user lacks access
+        """
+        organization = self.get_organization(organization_id, current_user)
+        
+        organization.status = 'inactive'
+        organization.updated_at = datetime.utcnow()
+        
+        # Update properties
+        properties = organization.properties.copy()
+        properties['deactivated_at'] = datetime.utcnow().isoformat()
+        organization.properties = properties
+        
+        try:
+            # Log deactivation event
+            self._log_event(
+                "entity.updated",
+                organization.id,
+                "organization",
+                {
+                    "organization_name": organization.name,
+                    "status": "inactive"
+                },
+                current_user.id
+            )
+            
+            # Commit both organization deactivation and event together
+            self.db.commit()
+            self.db.refresh(organization)
+            
+            return organization
+            
+        except Exception as e:
+            self.db.rollback()
+            raise BusinessLogicException(f"Organization deactivation failed: {str(e)}")
+    
+    def add_user_to_organization(
+        self,
+        user_id: UUID,
+        organization_id: UUID,
+        role: str,
+        current_user: User
+    ) -> Entity:
+        """
+        Add a user to an organization using entity architecture.
         
         Args:
             user_id: User ID to add
             organization_id: Organization ID
-            role: User role in the organization (admin, member, viewer)
+            role: User role in the organization
+            current_user: Current authenticated user
             
         Returns:
-            True if user added successfully
+            Created membership entity
             
         Raises:
-            UserNotFoundException: If user not found
-            OrganizationNotFoundException: If organization not found
-            ServiceException: If operation fails
+            NotFoundException: If user or organization not found
+            PermissionException: If user lacks access
+            ConflictException: If user is already a member
         """
+        # Verify organization exists and user has access
+        organization = self.get_organization(organization_id, current_user)
+        
+        # Verify user exists
+        user = self.db.query(Entity).filter(
+            and_(
+                Entity.id == user_id,
+                Entity.entity_type == 'user'
+            )
+        ).first()
+        
+        if not user:
+            raise NotFoundException("User not found")
+        
+        # Check if user is already a member
+        existing_membership = self.db.query(Entity).filter(
+            and_(
+                Entity.entity_type == 'organization.member',
+                Entity.properties.op('->>')('user_id') == str(user_id),
+                Entity.properties.op('->>')('organization_id') == str(organization_id),
+                Entity.status == 'active'
+            )
+        ).first()
+        
+        if existing_membership:
+            raise ConflictException("User is already a member of this organization")
+        
+        # Create membership entity
+        membership_entity = Entity(
+            entity_type='organization.member',
+            name=f"{user.name} - {organization.name}",
+            description=f"Membership of {user.name} in {organization.name}",
+            status='active',
+            organization_id=organization_id,
+            properties={
+                'user_id': str(user_id),
+                'organization_id': str(organization_id),
+                'role': role,
+                'invited_by': str(current_user.id),
+                'joined_at': datetime.utcnow().isoformat(),
+                'invited_at': datetime.utcnow().isoformat(),
+                'accepted_at': datetime.utcnow().isoformat()
+            }
+        )
+        
         try:
-            # Verify user exists
-            user = self.db.query(User).filter(User.id == user_id).first()
-            if not user:
-                raise UserNotFoundException(f"User {user_id} not found")
+            self.db.add(membership_entity)
+            self.db.flush()  # Flush to get the ID without committing
             
-            # Verify organization exists
-            organization = self.get_by_id_or_raise(organization_id)
+            # Create relationship between user and organization
+            relationship = Relationship(
+                from_entity=user_id,
+                to_entity=organization_id,
+                relationship_type='member_of',
+                properties={
+                    'role': role,
+                    'joined_at': datetime.utcnow().isoformat(),
+                    'invited_by': str(current_user.id)
+                }
+            )
+            self.db.add(relationship)
             
-            # Add user to organization by updating user's organization_id
-            user = self.db.query(User).filter(User.id == user_id).first()
-            if user:
-                user.organization_id = organization_id
-                # Store role in user properties
-                if not user.properties:
-                    user.properties = {}
-                user.properties['organization_role'] = role
-                user.properties['organization_joined_at'] = datetime.utcnow().isoformat()
+            # Update organization member count
+            self._update_organization_member_count(organization_id, 1)
             
+            # Log membership creation event
+            self._log_event(
+                "entity.created",
+                membership_entity.id,
+                "organization.member",
+                {
+                    "user_id": str(user_id),
+                    "organization_id": str(organization_id),
+                    "role": role,
+                    "invited_by": str(current_user.id)
+                },
+                current_user.id
+            )
+            
+            # Commit membership, relationship, and event together
             self.db.commit()
+            self.db.refresh(membership_entity)
             
-            # Audit log
-            self.audit_log("user_added_to_organization", organization_id, {
-                "user_id": str(user_id),
-                "role": role,
-                "organization_name": organization.name
-            })
+            return membership_entity
             
-            logger.info(f"User {user_id} added to organization {organization_id} with role {role}")
-            return True
-            
+        except IntegrityError as e:
+            self.db.rollback()
+            raise ConflictException("Membership creation failed due to database constraint")
         except Exception as e:
             self.db.rollback()
-            logger.error(f"Error adding user to organization: {e}")
-            raise ServiceException("Failed to add user to organization")
+            raise BusinessLogicException(f"Membership creation failed: {str(e)}")
     
-    def remove_user_from_organization(self, user_id: UUID, organization_id: UUID) -> bool:
+    def remove_user_from_organization(
+        self,
+        user_id: UUID,
+        organization_id: UUID,
+        current_user: User
+    ) -> bool:
         """
-        Remove a user from an organization.
+        Remove a user from an organization using entity architecture.
         
         Args:
             user_id: User ID to remove
             organization_id: Organization ID
+            current_user: Current authenticated user
             
         Returns:
             True if user removed successfully
             
         Raises:
-            UserNotFoundException: If user not found
-            OrganizationNotFoundException: If organization not found
-            ServiceException: If operation fails
+            NotFoundException: If user or organization not found
+            PermissionException: If user lacks access
         """
+        # Verify organization exists and user has access
+        organization = self.get_organization(organization_id, current_user)
+        
+        # Find membership entity
+        membership = self.db.query(Entity).filter(
+            and_(
+                Entity.entity_type == 'organization.member',
+                Entity.properties.op('->>')('user_id') == str(user_id),
+                Entity.properties.op('->>')('organization_id') == str(organization_id),
+                Entity.status == 'active'
+            )
+        ).first()
+        
+        if not membership:
+            raise NotFoundException("User is not a member of this organization")
+        
         try:
-            # Verify user exists
-            user = self.db.query(User).filter(User.id == user_id).first()
-            if not user:
-                raise UserNotFoundException(f"User {user_id} not found")
+            # Deactivate membership
+            membership.status = 'inactive'
+            membership.updated_at = datetime.utcnow()
             
-            # Verify organization exists
-            organization = self.get_by_id_or_raise(organization_id)
+            # Update properties
+            properties = membership.properties.copy()
+            properties['removed_at'] = datetime.utcnow().isoformat()
+            properties['removed_by'] = str(current_user.id)
+            membership.properties = properties
             
-            # Remove user from organization by updating user's organization_id
-            user = self.db.query(User).filter(User.id == user_id).first()
-            if user and user.organization_id == organization_id:
-                user.organization_id = None
-                # Remove organization-related properties
-                if user.properties:
-                    user.properties.pop('organization_role', None)
-                    user.properties.pop('organization_joined_at', None)
-                
-                self.db.commit()
-                
-                # Audit log
-                self.audit_log("user_removed_from_organization", organization_id, {
+            # Update organization member count
+            self._update_organization_member_count(organization_id, -1)
+            
+            # Log membership removal event
+            self._log_event(
+                "entity.updated",
+                membership.id,
+                "organization.member",
+                {
                     "user_id": str(user_id),
-                    "organization_name": organization.name
-                })
-                
-                logger.info(f"User {user_id} removed from organization {organization_id}")
-                return True
-            else:
-                logger.warning(f"User {user_id} not found in organization {organization_id}")
-                return False
-                
+                    "organization_id": str(organization_id),
+                    "status": "inactive",
+                    "removed_by": str(current_user.id)
+                },
+                current_user.id
+            )
+            
+            # Commit membership update and event together
+            self.db.commit()
+            
+            return True
+            
         except Exception as e:
             self.db.rollback()
-            logger.error(f"Error removing user from organization: {e}")
-            raise ServiceException("Failed to remove user from organization")
+            raise BusinessLogicException(f"Membership removal failed: {str(e)}")
     
-    def get_organization_users(self, organization_id: UUID, role: Optional[str] = None) -> List[User]:
+    def get_organization_members(
+        self,
+        organization_id: UUID,
+        current_user: User,
+        role: Optional[str] = None,
+        page: int = 1,
+        per_page: int = 10
+    ) -> List[Entity]:
         """
-        Get all users in an organization with optional role filtering.
+        Get all members of an organization using entity architecture.
         
         Args:
             organization_id: Organization ID
+            current_user: Current authenticated user
             role: Optional role filter
+            page: Page number
+            per_page: Items per page
             
         Returns:
-            List of users in the organization
+            List of membership entities
         """
-        try:
-            # Get users through their organization_id
-            query = self.db.query(User).filter(
-                User.organization_id == organization_id
+        # Verify organization exists and user has access
+        organization = self.get_organization(organization_id, current_user)
+        
+        # Build query for membership entities
+        query = self.db.query(Entity).filter(
+            and_(
+                Entity.entity_type == 'organization.member',
+                Entity.properties.op('->>')('organization_id') == str(organization_id),
+                Entity.status == 'active'
             )
-            
-            if role:
-                query = query.filter(User.properties['organization_role'].astext == role)
-            
-            users = query.all()
-            logger.debug(f"Retrieved {len(users)} users for organization {organization_id}")
-            return users
-            
-        except Exception as e:
-            logger.error(f"Error getting organization users: {e}")
-            return []
+        )
+        
+        # Apply role filter
+        if role:
+            query = query.filter(Entity.properties.op('->>')('role') == role)
+        
+        # Apply pagination and ordering
+        memberships = query.order_by(Entity.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
+        
+        return memberships
     
-    def get_user_organizations(self, user_id: UUID) -> List[Organization]:
+    def get_user_organizations(
+        self,
+        user_id: UUID,
+        current_user: User,
+        page: int = 1,
+        per_page: int = 10
+    ) -> List[Entity]:
         """
-        Get all organizations a user belongs to.
+        Get all organizations a user belongs to using entity architecture.
         
         Args:
             user_id: User ID
+            current_user: Current authenticated user
+            page: Page number
+            per_page: Items per page
             
         Returns:
-            List of organizations the user belongs to
+            List of organization entities
         """
-        try:
-            # Import OrganizationMember model
-            from ..models.organization_member import OrganizationMember
-            
-            # Get organizations through organization_members table
-            memberships = self.db.query(OrganizationMember).filter(
-                OrganizationMember.user_id == user_id,
-                OrganizationMember.is_active == True
+        # Build query for membership entities
+        query = self.db.query(Entity).filter(
+            and_(
+                Entity.entity_type == 'organization.member',
+                Entity.properties.op('->>')('user_id') == str(user_id),
+                Entity.status == 'active'
+            )
+        )
+        
+        # Apply pagination and ordering
+        memberships = query.order_by(Entity.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
+        
+        # Get organization entities
+        organization_ids = [UUID(membership.properties.get('organization_id')) for membership in memberships]
+        organizations = []
+        
+        if organization_ids:
+            organizations = self.db.query(Entity).filter(
+                and_(
+                    Entity.entity_type == 'organization',
+                    Entity.id.in_(organization_ids),
+                    Entity.status == 'active'
+                )
             ).all()
-            
-            # Get organization IDs from memberships
-            organization_ids = [membership.organization_id for membership in memberships]
-            
-            # Get organizations
-            organizations = []
-            if organization_ids:
-                organizations = self.db.query(Organization).filter(
-                    Organization.id.in_(organization_ids),
-                    Organization.entity_type == "organization",
-                    Organization.is_active == True
-                ).all()
-            
-            # Fallback: if no memberships found, check the old organization_id field
-            if not organizations:
-                user = self.db.query(User).filter(User.id == user_id).first()
-                if user and user.organization_id:
-                    organization = self.db.query(Organization).filter(
-                        Organization.id == user.organization_id,
-                        Organization.entity_type == "organization",
-                        Organization.is_active == True
-                    ).first()
-                    if organization:
-                        organizations = [organization]
-            
-            logger.debug(f"Retrieved {len(organizations)} organizations for user {user_id}")
-            return organizations
-            
-        except Exception as e:
-            logger.error(f"Error getting user organizations: {e}")
-            return []
-    
-    def get_all_organizations(self) -> List[Organization]:
-        """
-        Get all organizations in the system.
         
-        Returns:
-            List of all organizations
-        """
-        try:
-            organizations = self.db.query(Organization).filter(
-                Organization.entity_type == "organization",
-                Organization.is_active == True
-            ).order_by(Organization.created_at.desc()).all()
-            
-            logger.debug(f"Retrieved {len(organizations)} total organizations")
-            return organizations
-            
-        except Exception as e:
-            logger.error(f"Error getting all organizations: {e}")
-            return []
+        return organizations
     
-    def update_organization_settings(self, organization_id: UUID, settings: Dict[str, Any]) -> Organization:
+    def get_organization_stats(self, organization_id: UUID, current_user: User) -> Dict[str, Any]:
         """
-        Update organization settings.
+        Get statistics for a specific organization using entity architecture.
         
         Args:
             organization_id: Organization ID
-            settings: New settings dictionary
+            current_user: Current authenticated user
             
-        Returns:
-            The updated organization
-            
-        Raises:
-            OrganizationNotFoundException: If organization not found
-            ServiceException: If update fails
-        """
-        try:
-            organization = self.get_by_id_or_raise(organization_id)
-            
-            # Update settings
-            current_settings = organization.settings or {}
-            current_settings.update(settings)
-            organization.settings = current_settings
-            organization.last_updated = datetime.utcnow()
-            
-            self.db.commit()
-            self.db.refresh(organization)
-            
-            # Audit log
-            self.audit_log("organization_settings_updated", organization_id, {
-                "updated_settings": list(settings.keys())
-            })
-            
-            logger.info(f"Organization settings updated: {organization.name}")
-            return organization
-            
-        except Exception as e:
-            self.db.rollback()
-            logger.error(f"Error updating organization settings: {e}")
-            raise ServiceException("Failed to update organization settings")
-    
-    def update_organization(self, organization_id: UUID, **kwargs) -> Organization:
-        """
-        Update organization details.
-        
-        Args:
-            organization_id: Organization ID
-            **kwargs: Organization fields to update
-            
-        Returns:
-            The updated organization
-            
-        Raises:
-            OrganizationNotFoundException: If organization not found
-            ServiceException: If update fails
-        """
-        try:
-            organization = self.get_by_id_or_raise(organization_id)
-            
-            # Update allowed fields
-            allowed_fields = {
-                'name', 'organization_type', 'description', 'contact_email',
-                'contact_phone', 'website', 'address', 'city', 'state',
-                'country', 'postal_code', 'timezone'
-            }
-            
-            update_data = {}
-            for field, value in kwargs.items():
-                if field in allowed_fields and value is not None:
-                    update_data[field] = value
-            
-            # Update organization fields
-            for field, value in update_data.items():
-                setattr(organization, field, value)
-            
-            organization.last_updated = datetime.utcnow()
-            
-            self.db.commit()
-            self.db.refresh(organization)
-            
-            # Audit log
-            self.audit_log("organization_updated", organization_id, {
-                "updated_fields": list(update_data.keys()),
-                "name": organization.name
-            })
-            
-            logger.info(f"Organization updated: {organization.name}")
-            return organization
-            
-        except Exception as e:
-            self.db.rollback()
-            logger.error(f"Error updating organization: {e}")
-            raise ServiceException("Failed to update organization")
-    
-    def deactivate_organization(self, organization_id: UUID) -> bool:
-        """
-        Deactivate an organization.
-        
-        Args:
-            organization_id: Organization ID
-            
-        Returns:
-            True if organization deactivated successfully
-            
-        Raises:
-            OrganizationNotFoundException: If organization not found
-            ServiceException: If deactivation fails
-        """
-        try:
-            organization = self.get_by_id_or_raise(organization_id)
-            
-            # Deactivate organization
-            organization.is_active = False
-            organization.deactivated_at = datetime.utcnow()
-            self.db.commit()
-            
-            # Audit log
-            self.audit_log("organization_deactivated", organization_id, {
-                "name": organization.name,
-                "deactivation_time": datetime.utcnow().isoformat()
-            })
-            
-            logger.info(f"Organization deactivated: {organization.name}")
-            return True
-            
-        except Exception as e:
-            self.db.rollback()
-            logger.error(f"Error deactivating organization: {e}")
-            raise ServiceException("Failed to deactivate organization")
-    
-    def reactivate_organization(self, organization_id: UUID) -> bool:
-        """
-        Reactivate an organization.
-        
-        Args:
-            organization_id: Organization ID
-            
-        Returns:
-            True if organization reactivated successfully
-            
-        Raises:
-            OrganizationNotFoundException: If organization not found
-            ServiceException: If reactivation fails
-        """
-        try:
-            organization = self.get_by_id_or_raise(organization_id)
-            
-            # Reactivate organization
-            organization.is_active = True
-            organization.deactivated_at = None
-            self.db.commit()
-            
-            # Audit log
-            self.audit_log("organization_reactivated", organization_id, {
-                "name": organization.name,
-                "reactivation_time": datetime.utcnow().isoformat()
-            })
-            
-            logger.info(f"Organization reactivated: {organization.name}")
-            return True
-            
-        except Exception as e:
-            self.db.rollback()
-            logger.error(f"Error reactivating organization: {e}")
-            raise ServiceException("Failed to reactivate organization")
-    
-    def get_organization_by_name(self, name: str) -> Optional[Organization]:
-        """
-        Get organization by name.
-        
-        Args:
-            name: Organization name
-            
-        Returns:
-            Organization if found, None otherwise
-        """
-        try:
-            return self.db.query(Organization).filter(Organization.name == name).first()
-        except Exception as e:
-            logger.error(f"Error getting organization by name: {e}")
-            return None
-    
-    def organization_exists_by_name(self, name: str) -> bool:
-        """
-        Check if organization exists by name.
-        
-        Args:
-            name: Organization name
-            
-        Returns:
-            True if organization exists, False otherwise
-        """
-        try:
-            return self.db.query(Organization).filter(Organization.name == name).first() is not None
-        except Exception as e:
-            logger.error(f"Error checking organization existence by name: {e}")
-            return False
-    
-    def validate_organization_data(self, org_data: OrganizationCreate) -> bool:
-        """
-        Validate organization creation data.
-        
-        Args:
-            org_data: Organization creation data
-            
-        Returns:
-            True if data is valid
-            
-        Raises:
-            ValidationException: If data validation fails
-        """
-        if not org_data.name:
-            raise ValidationException("Organization name is required")
-        
-        if len(org_data.name) < 2:
-            raise ValidationException("Organization name must be at least 2 characters long")
-        
-        if len(org_data.name) > 100:
-            raise ValidationException("Organization name must be less than 100 characters")
-        
-        if org_data.description and len(org_data.description) > 500:
-            raise ValidationException("Organization description must be less than 500 characters")
-        
-        return True
-    
-    def get_organization_statistics(self) -> Dict[str, Any]:
-        """
-        Get organization statistics for analytics.
-        
         Returns:
             Dictionary containing organization statistics
         """
+        # Verify organization exists and user has access
+        organization = self.get_organization(organization_id, current_user)
+        
         try:
-            total_organizations = self.db.query(Organization).count()
-            active_organizations = self.db.query(Organization).filter(Organization.is_active == True).count()
-            inactive_organizations = self.db.query(Organization).filter(Organization.is_active == False).count()
-            
-            # Get organizations created in last 30 days
-            thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-            new_organizations = self.db.query(Organization).filter(
-                Organization.created_at >= thirty_days_ago
+            # Get member count
+            member_count = self.db.query(Entity).filter(
+                and_(
+                    Entity.entity_type == 'organization.member',
+                    Entity.properties.op('->>')('organization_id') == str(organization_id),
+                    Entity.status == 'active'
+                )
             ).count()
             
-            return {
-                "total_organizations": total_organizations,
-                "active_organizations": active_organizations,
-                "inactive_organizations": inactive_organizations,
-                "new_organizations_30_days": new_organizations,
-                "activation_rate": (active_organizations / total_organizations * 100) if total_organizations > 0 else 0
-            }
-            
-        except Exception as e:
-            logger.error(f"Error getting organization statistics: {e}")
-            return {
-                "total_organizations": 0,
-                "active_organizations": 0,
-                "inactive_organizations": 0,
-                "new_organizations_30_days": 0,
-                "activation_rate": 0
-            }
-    
-    def get_organization_stats(self, organization_id: UUID) -> Dict[str, Any]:
-        """
-        Get statistics for a specific organization.
-        
-        Args:
-            organization_id: Organization ID
-            
-        Returns:
-            Dictionary containing organization statistics
-        """
-        try:
-            # Get organization
-            organization = self.get_by_id(organization_id)
-            if not organization:
-                return {
-                    "member_count": 0,
-                    "device_count": 0,
-                    "project_count": 0,
-                    "active_members": 0,
-                    "online_devices": 0,
-                    "total_readings": 0,
-                    "total_alerts": 0,
-                    "active_alerts": 0,
-                    "data_usage_gb": 0.0,
-                    "storage_usage_gb": 0.0,
-                    "last_activity": None
-                }
-            
-            # Get member count
-            member_count = self.get_organization_users(organization_id)
-            
-            # Get device count (placeholder - would need Device model)
-            device_count = 0
-            
-            # Get project count (placeholder - would need Project model)
-            project_count = 0
-            
             # Get active members
-            active_members = len([user for user in member_count if user.is_active])
+            active_members = self.db.query(Entity).filter(
+                and_(
+                    Entity.entity_type == 'organization.member',
+                    Entity.properties.op('->>')('organization_id') == str(organization_id),
+                    Entity.status == 'active'
+                )
+            ).count()
             
-            # Placeholder statistics
+            # Placeholder statistics (would need other entity types for full stats)
             stats = {
-                "member_count": len(member_count),
-                "device_count": device_count,
-                "project_count": project_count,
+                "member_count": member_count,
+                "device_count": 0,  # Would need device entities
+                "project_count": 0,  # Would need project entities
                 "active_members": active_members,
                 "online_devices": 0,  # Would need device status tracking
-                "total_readings": 0,  # Would need Reading model
-                "total_alerts": 0,    # Would need Alert model
-                "active_alerts": 0,   # Would need Alert model
+                "total_readings": 0,  # Would need reading entities
+                "total_alerts": 0,    # Would need alert entities
+                "active_alerts": 0,   # Would need alert entities
                 "data_usage_gb": 0.0, # Would need data tracking
                 "storage_usage_gb": 0.0, # Would need storage tracking
                 "last_activity": organization.updated_at.isoformat() if organization.updated_at else None
             }
             
-            logger.debug(f"Retrieved stats for organization {organization_id}: {stats}")
             return stats
             
         except Exception as e:
@@ -664,4 +673,162 @@ class OrganizationService(BaseService[Organization]):
                 "data_usage_gb": 0.0,
                 "storage_usage_gb": 0.0,
                 "last_activity": None
-            } 
+            }
+    
+    # Helper methods for entity-based operations
+    
+    def _organization_name_exists(
+        self, 
+        name: str, 
+        exclude_id: Optional[UUID] = None
+    ) -> bool:
+        """Check if an organization name already exists."""
+        query = self.db.query(Entity).filter(
+            and_(
+                Entity.entity_type == 'organization',
+                Entity.name == name,
+                Entity.status != 'inactive'
+            )
+        )
+        
+        if exclude_id:
+            query = query.filter(Entity.id != exclude_id)
+        
+        return query.first() is not None
+    
+    def _user_has_org_access(self, user: User, organization_id: UUID) -> bool:
+        """Check if user has access to the organization."""
+        if user.is_superuser:
+            return True
+        
+        # Check organization_members table first (current system)
+        from ..models.organization_member import OrganizationMember
+        membership = self.db.query(OrganizationMember).filter(
+            and_(
+                OrganizationMember.user_id == user.id,
+                OrganizationMember.organization_id == organization_id,
+                OrganizationMember.is_active == True
+            )
+        ).first()
+        
+        if membership:
+            return True
+        
+        # Fall back to legacy organization_id field for backward compatibility
+        return user.organization_id == organization_id
+    
+    def _validate_organization_data(self, org_data: OrganizationCreate) -> None:
+        """Validate organization creation data."""
+        if not org_data.name:
+            raise ValidationException("Organization name is required")
+        
+        if len(org_data.name) < 2:
+            raise ValidationException("Organization name must be at least 2 characters long")
+        
+        if len(org_data.name) > 100:
+            raise ValidationException("Organization name must be less than 100 characters")
+        
+        if org_data.description and len(org_data.description) > 500:
+            raise ValidationException("Organization description must be less than 500 characters")
+    
+    def _validate_organization_schema(self, org_data: OrganizationCreate) -> None:
+        """Validate organization data against schema if available."""
+        try:
+            # Check if schema validation function exists
+            result = self.db.execute(
+                text("SELECT validate_against_schema(:data, :schema_id)"),
+                {
+                    'data': str(org_data.dict()),
+                    'schema_id': 'organization'
+                }
+            ).scalar()
+            
+            if not result:
+                raise ValidationException("Organization data does not match required schema")
+                
+        except Exception as e:
+            # If schema validation fails, log but don't block creation
+            logger.warning(f"Schema validation failed: {e}")
+    
+    def _add_user_to_organization(self, user_id: UUID, organization_id: UUID, role: str, invited_by: UUID) -> Entity:
+        """Internal method to add user to organization without permission checks."""
+        # Create membership entity
+        membership_entity = Entity(
+            entity_type='organization.member',
+            name=f"Membership {user_id} - {organization_id}",
+            description=f"Membership in organization",
+            status='active',
+            organization_id=organization_id,
+            properties={
+                'user_id': str(user_id),
+                'organization_id': str(organization_id),
+                'role': role,
+                'invited_by': str(invited_by),
+                'joined_at': datetime.utcnow().isoformat(),
+                'invited_at': datetime.utcnow().isoformat(),
+                'accepted_at': datetime.utcnow().isoformat()
+            }
+        )
+        
+        self.db.add(membership_entity)
+        return membership_entity
+    
+    def _update_organization_member_count(self, organization_id: UUID, delta: int) -> None:
+        """Update organization member count."""
+        organization = self.db.query(Entity).filter(
+            and_(
+                Entity.id == organization_id,
+                Entity.entity_type == 'organization'
+            )
+        ).first()
+        
+        if organization:
+            properties = organization.properties.copy()
+            current_count = properties.get('member_count', 0)
+            properties['member_count'] = max(0, current_count + delta)
+            organization.properties = properties
+    
+    def get_all_organizations(self) -> List[Entity]:
+        """
+        Get all organizations (legacy compatibility method).
+        
+        Returns:
+            List of organization entities
+        """
+        try:
+            return self.db.query(Entity).filter(
+                Entity.entity_type == 'organization'
+            ).order_by(Entity.created_at.desc()).all()
+        except Exception as e:
+            logger.error(f"Error getting all organizations: {e}")
+            return []
+
+    def _log_event(self, event_type: str, entity_id: UUID, entity_type: str, data: Dict[str, Any], user_id: Optional[UUID] = None):
+        """
+        Log organization event.
+        
+        Args:
+            event_type: Event type
+            entity_id: Entity ID
+            entity_type: Entity type
+            data: Event data
+            user_id: Optional user ID who triggered the event
+        """
+        try:
+            # Include user_id in the data if provided
+            event_data = data.copy()
+            if user_id:
+                event_data['user_id'] = str(user_id)
+                
+            event = Event(
+                event_type=event_type,
+                entity_id=entity_id,
+                entity_type=entity_type,
+                data=event_data,
+                timestamp=datetime.utcnow()
+            )
+            self.db.add(event)
+            # Note: No commit here - let the calling method handle the transaction
+        except Exception as e:
+            logger.error(f"Failed to log organization event: {str(e)}")
+

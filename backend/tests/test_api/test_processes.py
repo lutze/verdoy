@@ -2,7 +2,7 @@
 Tests for Process API endpoints with entity-based service.
 
 This module tests the process API routes to ensure they work correctly
-with the ProcessServiceEntity and maintain backward compatibility.
+with the ProcessService and maintain backward compatibility.
 """
 
 import pytest
@@ -13,7 +13,7 @@ from uuid import uuid4
 from app.models.user import User
 from app.models.entity import Entity
 from app.models.organization import Organization
-from app.services.process_service_entity import ProcessServiceEntity
+from app.services.process_service import ProcessService
 from app.schemas.process import ProcessCreate, ProcessType, ProcessDefinition, ProcessUpdate, ProcessStatus
 
 
@@ -60,7 +60,7 @@ class TestProcessAPIEntity:
     def test_get_process_api(self, authenticated_client: TestClient, test_user: User, db_session: Session):
         """Test retrieving a process via API with entity-based service."""
         # First create a process
-        service = ProcessServiceEntity(db_session)
+        service = ProcessService(db_session)
         process_data = ProcessCreate(
             name="Test Process for Retrieval",
             version="1.0",
@@ -93,7 +93,7 @@ class TestProcessAPIEntity:
     def test_list_processes_api(self, authenticated_client: TestClient, test_user: User, db_session: Session):
         """Test listing processes via API with entity-based service."""
         # Create multiple processes
-        service = ProcessServiceEntity(db_session)
+        service = ProcessService(db_session)
         for i in range(3):
             process_data = ProcessCreate(
                 name=f"Test Process {i}",
@@ -127,7 +127,7 @@ class TestProcessAPIEntity:
     def test_update_process_api(self, authenticated_client: TestClient, test_user: User, db_session: Session):
         """Test updating a process via API with entity-based service."""
         # First create a process
-        service = ProcessServiceEntity(db_session)
+        service = ProcessService(db_session)
         process_data = ProcessCreate(
             name="Test Process for Update",
             version="1.0",
@@ -163,7 +163,7 @@ class TestProcessAPIEntity:
     def test_archive_process_api(self, authenticated_client: TestClient, test_user: User, db_session: Session):
         """Test archiving a process via API with entity-based service."""
         # First create a process
-        service = ProcessServiceEntity(db_session)
+        service = ProcessService(db_session)
         process_data = ProcessCreate(
             name="Test Process for Archive",
             version="1.0",
@@ -191,7 +191,7 @@ class TestProcessAPIEntity:
     def test_create_process_instance_api(self, authenticated_client: TestClient, test_user: User, db_session: Session):
         """Test creating a process instance via API with entity-based service."""
         # First create a process
-        service = ProcessServiceEntity(db_session)
+        service = ProcessService(db_session)
         process_data = ProcessCreate(
             name="Test Process for Instance",
             version="1.0",
@@ -229,7 +229,7 @@ class TestProcessAPIEntity:
     def test_list_process_instances_api(self, authenticated_client: TestClient, test_user: User, db_session: Session):
         """Test listing process instances via API with entity-based service."""
         # First create a process and instances
-        service = ProcessServiceEntity(db_session)
+        service = ProcessService(db_session)
         process_data = ProcessCreate(
             name="Test Process for Instances",
             version="1.0",
@@ -272,7 +272,7 @@ class TestProcessAPIEntity:
     def test_get_process_instance_api(self, authenticated_client: TestClient, test_user: User, db_session: Session):
         """Test retrieving a process instance via API with entity-based service."""
         # First create a process and instance
-        service = ProcessServiceEntity(db_session)
+        service = ProcessService(db_session)
         process_data = ProcessCreate(
             name="Test Process for Instance Retrieval",
             version="1.0",
@@ -312,7 +312,7 @@ class TestProcessAPIEntity:
     def test_update_process_instance_api(self, authenticated_client: TestClient, test_user: User, db_session: Session):
         """Test updating a process instance via API with entity-based service."""
         # First create a process and instance
-        service = ProcessServiceEntity(db_session)
+        service = ProcessService(db_session)
         process_data = ProcessCreate(
             name="Test Process for Instance Update",
             version="1.0",
@@ -393,7 +393,7 @@ class TestProcessAPIEntity:
     def test_process_api_pagination(self, authenticated_client: TestClient, test_user: User, db_session: Session):
         """Test pagination in process API endpoints."""
         # Create multiple processes
-        service = ProcessServiceEntity(db_session)
+        service = ProcessService(db_session)
         for i in range(15):
             process_data = ProcessCreate(
                 name=f"Test Process {i}",
@@ -430,7 +430,7 @@ class TestProcessAPIEntity:
     def test_process_api_filtering(self, authenticated_client: TestClient, test_user: User, db_session: Session):
         """Test filtering in process API endpoints."""
         # Create processes with different types
-        service = ProcessServiceEntity(db_session)
+        service = ProcessService(db_session)
         
         # Create fermentation process
         fermentation_data = ProcessCreate(
@@ -483,7 +483,7 @@ class TestProcessAPIEntity:
     def test_process_api_search(self, authenticated_client: TestClient, test_user: User, db_session: Session):
         """Test search functionality in process API endpoints."""
         # Create processes with searchable names
-        service = ProcessServiceEntity(db_session)
+        service = ProcessService(db_session)
         
         searchable_data = ProcessCreate(
             name="Unique Searchable Process Name",

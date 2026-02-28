@@ -278,6 +278,6 @@ def project_service(db_session) -> ProjectService:
 
 @pytest.fixture
 def process_service(db_session):
-    """Create ProcessServiceEntity instance for testing."""
-    from app.services.process_service_entity import ProcessServiceEntity
-    return ProcessServiceEntity(db_session) 
+    """Create ProcessService instance for testing."""
+    from app.services.process_service import ProcessService
+    return ProcessService(db_session) 
