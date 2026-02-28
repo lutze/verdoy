@@ -70,7 +70,7 @@ class Entity(BaseModel):
         if self.properties is None:
             self.properties = {}
         self.properties[key] = value
-        self.last_updated = datetime.utcnow()
+        self.updated_at = datetime.utcnow()
     
     def update_properties(self, **kwargs):
         """
